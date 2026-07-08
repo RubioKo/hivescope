@@ -1,0 +1,31 @@
+# ── Secrets & local configuration ───────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# ── ChatDev output (private user projects) ──────
+WareHouse/
+*.log
+logs/
+
+# ── Dependencies & builds ───────────────────────
+node_modules/
+dist/
+build/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# ── OS & editors ────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ── Personal test data ──────────────────────────
+*.local.json
+private_sessions/

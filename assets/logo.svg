@@ -1,0 +1,81 @@
+<svg width="240" height="240" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
+  <!-- ============================================================
+       HIVESCOPE · Official logo
+       Concept: a single honeycomb cell — the hive — holding a
+       living colony of agent nodes. The traveling light pulse
+       between nodes IS the product: real-time agent telemetry
+       made visible.
+       Built 100% in code. Author: RubioKo · License: MIT
+       ============================================================ -->
+  <defs>
+    <linearGradient id="cell" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1F6FEB"/>
+      <stop offset="100%" stop-color="#58A6FF"/>
+    </linearGradient>
+    <linearGradient id="deep" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0D1117"/>
+      <stop offset="100%" stop-color="#101B2E"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#58A6FF" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#58A6FF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="3.2"/>
+    </filter>
+  </defs>
+
+  <!-- The hive cell: hexagonal container -->
+  <polygon points="120,14 212,67 212,173 120,226 28,173 28,67"
+           fill="url(#deep)" stroke="url(#cell)" stroke-width="5" stroke-linejoin="round"/>
+  <!-- Inner top sheen (the observation glass) -->
+  <polygon points="120,26 200,72 120,72" fill="#58A6FF" opacity="0.07"/>
+
+  <!-- Links between agents -->
+  <g stroke="#2E5FA3" stroke-width="2.5" stroke-linecap="round">
+    <path d="M120,62 L74,138" fill="none"/>
+    <path d="M74,138 L166,138" fill="none"/>
+    <path d="M166,138 L120,62" fill="none"/>
+    <path d="M120,62 L120,182" fill="none" stroke-dasharray="4 7" opacity="0.8"/>
+  </g>
+
+  <!-- Light pulses traveling the links (live telemetry) -->
+  <circle r="5" fill="#7EE7FC" filter="url(#soft)">
+    <animateMotion dur="2.4s" repeatCount="indefinite" path="M120,62 L74,138"/>
+  </circle>
+  <circle r="5" fill="#7EE7FC" filter="url(#soft)">
+    <animateMotion dur="2.4s" begin="0.8s" repeatCount="indefinite" path="M74,138 L166,138"/>
+  </circle>
+  <circle r="5" fill="#7EE7FC" filter="url(#soft)">
+    <animateMotion dur="2.4s" begin="1.6s" repeatCount="indefinite" path="M166,138 L120,62"/>
+  </circle>
+
+  <!-- Lead agent (top) -->
+  <circle cx="120" cy="62" r="17" fill="url(#glow)" opacity="0.55">
+    <animate attributeName="r" values="17;24;17" dur="2.4s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="120" cy="62" r="11" fill="#0D1117" stroke="url(#cell)" stroke-width="4">
+    <animate attributeName="stroke-width" values="4;5.5;4" dur="2.4s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Worker agents (sides) -->
+  <circle cx="74" cy="138" r="9" fill="#0D1117" stroke="#58A6FF" stroke-width="3.5"/>
+  <circle cx="166" cy="138" r="9" fill="#0D1117" stroke="#58A6FF" stroke-width="3.5"/>
+
+  <!-- Executor agent (bottom, green = done) -->
+  <circle cx="120" cy="182" r="8" fill="#0D1117" stroke="#3ECF8E" stroke-width="3.5">
+    <animate attributeName="stroke-opacity" values="1;0.45;1" dur="1.8s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Rising motes (subtle hive activity) -->
+  <g fill="#58A6FF">
+    <circle cx="188" cy="118" r="2.4" opacity="0.5">
+      <animate attributeName="cy" values="150;96" dur="4.5s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.55;0" dur="4.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="50" cy="120" r="1.8" opacity="0.4">
+      <animate attributeName="cy" values="160;100" dur="5.6s" begin="1.2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.45;0" dur="5.6s" begin="1.2s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+</svg>

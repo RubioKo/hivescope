@@ -1,0 +1,94 @@
+<svg width="1200" height="300" viewBox="0 0 1200 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- HIVESCOPE · README hero banner · Built 100% in code · MIT -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0D1117"/>
+      <stop offset="55%" stop-color="#0F1B33"/>
+      <stop offset="100%" stop-color="#0D1117"/>
+    </linearGradient>
+    <linearGradient id="word" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1F6FEB"/>
+      <stop offset="50%" stop-color="#58A6FF"/>
+      <stop offset="100%" stop-color="#7EE7FC"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1F6FEB" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#1F6FEB" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="2.6"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="300" fill="url(#bg)"/>
+  <ellipse cx="600" cy="150" rx="460" ry="170" fill="url(#halo)"/>
+
+  <!-- Left agent constellation -->
+  <g stroke="#274B85" stroke-width="1.6" fill="none">
+    <path d="M90,80 L190,150"/>
+    <path d="M190,150 L110,225"/>
+    <path d="M190,150 L300,110"/>
+  </g>
+  <g fill="#0D1117" stroke="#58A6FF" stroke-width="2.5">
+    <circle cx="90" cy="80" r="7"/>
+    <circle cx="190" cy="150" r="10">
+      <animate attributeName="r" values="10;12.5;10" dur="2.6s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="110" cy="225" r="6"/>
+    <circle cx="300" cy="110" r="6" stroke="#3ECF8E"/>
+  </g>
+  <circle r="4" fill="#7EE7FC" filter="url(#blur)">
+    <animateMotion dur="2.8s" repeatCount="indefinite" path="M90,80 L190,150"/>
+  </circle>
+  <circle r="4" fill="#7EE7FC" filter="url(#blur)">
+    <animateMotion dur="3.4s" begin="1s" repeatCount="indefinite" path="M190,150 L300,110"/>
+  </circle>
+
+  <!-- Right agent constellation -->
+  <g stroke="#274B85" stroke-width="1.6" fill="none">
+    <path d="M1110,90 L1010,155"/>
+    <path d="M1010,155 L1090,230"/>
+    <path d="M1010,155 L900,115"/>
+  </g>
+  <g fill="#0D1117" stroke="#58A6FF" stroke-width="2.5">
+    <circle cx="1110" cy="90" r="7"/>
+    <circle cx="1010" cy="155" r="10">
+      <animate attributeName="r" values="10;12.5;10" dur="2.6s" begin="1.3s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="1090" cy="230" r="6"/>
+    <circle cx="900" cy="115" r="6" stroke="#3ECF8E"/>
+  </g>
+  <circle r="4" fill="#7EE7FC" filter="url(#blur)">
+    <animateMotion dur="3s" begin="0.6s" repeatCount="indefinite" path="M1110,90 L1010,155"/>
+  </circle>
+  <circle r="4" fill="#7EE7FC" filter="url(#blur)">
+    <animateMotion dur="3.6s" begin="1.8s" repeatCount="indefinite" path="M1010,155 L900,115"/>
+  </circle>
+
+  <!-- Wordmark -->
+  <text x="600" y="150" text-anchor="middle"
+        font-family="Segoe UI, Ubuntu, Helvetica, Arial, sans-serif"
+        font-size="74" font-weight="800" letter-spacing="13"
+        fill="url(#word)">HIVESCOPE
+    <animate attributeName="opacity" values="0.92;1;0.92" dur="3.5s" repeatCount="indefinite"/>
+  </text>
+
+  <!-- Scan line under the wordmark -->
+  <rect x="380" y="172" width="440" height="2.5" rx="1.25" fill="#1F6FEB" opacity="0.5"/>
+  <rect y="172" width="90" height="2.5" rx="1.25" fill="#7EE7FC">
+    <animate attributeName="x" values="380;730;380" dur="4s" repeatCount="indefinite"/>
+  </rect>
+
+  <!-- Tagline -->
+  <text x="600" y="212" text-anchor="middle"
+        font-family="Consolas, Fira Code, monospace"
+        font-size="19" letter-spacing="3" fill="#8B949E">「 watch your AI agents think · live 」</text>
+
+  <!-- Status signature -->
+  <g font-family="Consolas, Fira Code, monospace" font-size="13" fill="#3ECF8E">
+    <circle cx="470" cy="246" r="4" fill="#3ECF8E">
+      <animate attributeName="opacity" values="1;0.25;1" dur="1.6s" repeatCount="indefinite"/>
+    </circle>
+    <text x="482" y="251">ws://localhost:8765 · streaming</text>
+  </g>
+</svg>
