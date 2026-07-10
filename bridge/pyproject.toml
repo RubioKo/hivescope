@@ -23,10 +23,16 @@ dev = [
     "ruff>=0.1",
     "httpx>=0.27",
 ]
+chatdev = [
+    "httpx>=0.27",
+]
+
+[project.scripts]
+chatdev-with-hivescope = "hivescope_bridge.adapters.chatdev:cli_main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["hivescope_bridge*"]
+include = ["hivescope_bridge*", "scripts*"]
 
 [tool.ruff]
 target-version = "py310"
