@@ -156,7 +156,7 @@ async def _demo_loop():
     store.clear()
     cycle = 0
     try:
-        while _demo_running and cycle < 50:
+        while _demo_running and cycle < 100:
             agent = random.choice(_AGENTS)
             targets = _TARGETS.get(agent["id"], [])
             target = random.choice(targets) if targets else None

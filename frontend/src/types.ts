@@ -22,6 +22,7 @@ export interface GraphNode {
   phase: string;
   parentId: string | null;
   depth: number;
+  lastEvent: HiveEvent | null;
 }
 
 export interface GraphLink {
@@ -29,6 +30,7 @@ export interface GraphLink {
   target: string;
   phase: string;
   timestamp: string;
+  createdAt: number;
 }
 
 export type WsStatus = "connecting" | "connected" | "disconnected" | "error";

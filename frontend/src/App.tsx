@@ -1,6 +1,6 @@
 import { useWebSocket } from "./hooks/useWebSocket";
 import { useWsStore } from "./store/wsStore";
-import { GraphCanvas, ControlPanel, MessageLog } from "./components";
+import { GraphCanvas, ControlPanel, MessageLog, NodeInfoPanel } from "./components";
 
 function ConnectionBadge() {
   const status = useWsStore((s) => s.status);
@@ -26,6 +26,7 @@ export default function App() {
     <div className="relative w-full h-full">
       <ConnectionBadge />
       <ControlPanel />
+      <NodeInfoPanel />
       <GraphCanvas />
       <MessageLog />
     </div>
