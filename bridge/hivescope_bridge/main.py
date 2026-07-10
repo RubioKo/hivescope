@@ -42,8 +42,20 @@ async def ingest_event(event: HiveEvent):
     return {"ok": True}
 
 
+@app.post("/events")
+async def ingest_batch(events: list[HiveEvent]):
+    for event in events:
+        store.push(event)
+    payload = "[" + ",".join(e.model_dump_json() for e in events) + "]"
+    await _broadcast(payload)
+    return {"ok": True, "count": len(events)}
+
+
 @app.post("/demo/start")
 async def demo_start():
+    global _demo_running
+    if _demo_running:
+        return {"ok": False, "message": "Demo already running"}
     asyncio.create_task(_demo_loop())
     return {"ok": True, "message": "Demo events started"}
 
@@ -81,9 +93,7 @@ _AGENTS = [
     {"id": "File System", "type": "tool", "phase": "coding"},
 ]
 
-_ACTIONS = [
-    "message", "file_create", "file_edit", "state_change"
-]
+_ACTIONS = ["message", "file_create", "file_edit", "state_change"]
 
 _PHASES = ["planning", "coding", "reviewing", "testing"]
 

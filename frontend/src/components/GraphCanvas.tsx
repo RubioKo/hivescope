@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 import ForceGraph2D from "react-force-graph-2d";
 import { useGraphStore } from "../store/graphStore";
 import { useThemeStore } from "../store/themeStore";
@@ -58,11 +58,21 @@ function drawShape(
 }
 
 export function GraphCanvas() {
+  const containerRef = useRef<HTMLDivElement>(null);
   const fgRef = useRef<any>(null);
+  const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
   const nodes = useGraphStore((s) => s.nodes);
   const links = useGraphStore((s) => s.links);
   const selectNode = useGraphStore((s) => s.selectNode);
   const theme = useThemeStore((s) => s.theme);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setDimensions({ width: window.innerWidth, height: window.innerHeight });
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const graphData = useMemo(
     () => ({
@@ -87,7 +97,7 @@ export function GraphCanvas() {
   }, [graphData.nodes.length]);
 
   return (
-    <div className="w-full h-full">
+    <div ref={containerRef} className="w-full h-full">
       <ForceGraph2D
         ref={fgRef}
         graphData={graphData}
@@ -164,8 +174,8 @@ export function GraphCanvas() {
         onNodeClick={(node: any) => selectNode(node.id as string)}
         onBackgroundClick={() => selectNode(null)}
         backgroundColor={theme === "light" ? "#FFFFFF" : "#0D1117"}
-        width={window.innerWidth}
-        height={window.innerHeight}
+        width={dimensions.width}
+        height={dimensions.height}
       />
     </div>
   );

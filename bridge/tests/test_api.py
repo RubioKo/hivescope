@@ -16,13 +16,16 @@ class TestHealth:
 
 class TestEvents:
     def test_ingest_event(self):
-        resp = client.post("/event", json={
-            "source": "Programmer",
-            "phase": "coding",
-            "action": "message",
-            "message": "hello",
-            "status": "running",
-        })
+        resp = client.post(
+            "/event",
+            json={
+                "source": "Programmer",
+                "phase": "coding",
+                "action": "message",
+                "message": "hello",
+                "status": "running",
+            },
+        )
         assert resp.status_code == 200
         assert resp.json()["ok"] is True
 

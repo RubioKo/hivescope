@@ -1,4 +1,5 @@
 """Quick end-to-end smoke test for the bridge."""
+
 import asyncio
 
 import httpx

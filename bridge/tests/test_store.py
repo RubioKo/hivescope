@@ -19,9 +19,7 @@ class TestEventStore:
     def test_maxlen_eviction(self):
         store = EventStore(maxlen=3)
         for i in range(5):
-            store.push(HiveEvent(
-                source=str(i), phase="p", action="m", status="running"
-            ))
+            store.push(HiveEvent(source=str(i), phase="p", action="m", status="running"))
         assert len(store) == 3
         assert store.get_all()[0].source == "2"
         assert store.get_all()[-1].source == "4"

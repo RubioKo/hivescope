@@ -1,14 +1,20 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { useWsStore } from "../store/wsStore";
 import { useGraphStore } from "../store/graphStore";
 import type { HiveEvent } from "../types";
 
-const WS_URL = `ws://${import.meta.env.VITE_WS_HOST || "localhost"}:${import.meta.env.VITE_WS_PORT || 8765}/ws`;
+const WS_HOST = import.meta.env.VITE_WS_HOST || "localhost";
+const WS_PORT = import.meta.env.VITE_WS_PORT || 8765;
+const WS_URL = `ws://${WS_HOST}:${WS_PORT}/ws`;
+const MAX_RETRY_DELAY = 30000;
 
 export function useWebSocket() {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout>>();
-  const { setStatus, addEvent, setError } = useWsStore();
+  const retryCountRef = useRef(0);
+  const mountedRef = useRef(true);
+  const [retryDelay, setRetryDelay] = useState(0);
+  const { setStatus, addEvent, setError, error } = useWsStore();
   const addGraphEvent = useGraphStore((s) => s.addEvent);
 
   const connect = useCallback(() => {
@@ -17,7 +23,12 @@ export function useWebSocket() {
     setStatus("connecting");
     const ws = new WebSocket(WS_URL);
 
-    ws.onopen = () => setStatus("connected");
+    ws.onopen = () => {
+      retryCountRef.current = 0;
+      setRetryDelay(0);
+      setStatus("connected");
+      setError(null);
+    };
 
     ws.onmessage = (msg) => {
       try {
@@ -35,16 +46,22 @@ export function useWebSocket() {
     };
 
     ws.onclose = () => {
+      if (!mountedRef.current) return;
       setStatus("disconnected");
-      reconnectTimer.current = setTimeout(connect, 3000);
+      const delay = Math.min(1000 * Math.pow(2, retryCountRef.current), MAX_RETRY_DELAY);
+      retryCountRef.current += 1;
+      setRetryDelay(delay);
+      reconnectTimer.current = setTimeout(connect, delay);
     };
 
     wsRef.current = ws;
   }, [setStatus, addEvent, addGraphEvent, setError]);
 
   useEffect(() => {
+    mountedRef.current = true;
     connect();
     return () => {
+      mountedRef.current = false;
       clearTimeout(reconnectTimer.current);
       wsRef.current?.close();
     };
@@ -56,5 +73,5 @@ export function useWebSocket() {
     }
   }, []);
 
-  return { send };
+  return { send, retryDelay, error };
 }
