@@ -20,6 +20,17 @@ __pycache__/
 .venv/
 venv/
 
+# ── Package build artifacts ─────────────────────
+*.egg-info/
+.eggs/
+dist/
+
+# ── Caches ──────────────────────────────────────
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.pyc
+
 # ── OS & editors ────────────────────────────────
 .DS_Store
 Thumbs.db
@@ -29,3 +40,7 @@ Thumbs.db
 # ── Personal test data ──────────────────────────
 *.local.json
 private_sessions/
+
+# ── AI agent instructions (never committed) ────
+AGENTS.md
+CLAUDE.md

@@ -1,0 +1,22 @@
+name: Hygiene Check
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+      - name: Extra secrets grep
+        run: |
+          ! grep -r --include="*.py" --include="*.ts" --include="*.tsx" --include="*.json" \
+            -E '(sk-[a-zA-Z0-9]{20,}|api[-_]?key|api[-_]?secret|password|token|-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY)' \
+            --exclude-dir=node_modules --exclude-dir=__pycache__ --exclude-dir=.git \
+            .
