@@ -31,8 +31,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: "22"
-      - uses: pnpm/action-setup@v4
       - name: Install frontend
-        run: pnpm install
+        run: corepack enable && pnpm install
       - name: Build frontend
         run: pnpm build
