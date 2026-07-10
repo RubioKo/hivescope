@@ -1,8 +1,20 @@
 {
   "name": "hivescope-frontend",
-  "private": true,
-  "version": "0.0.0",
+  "private": false,
+  "version": "0.0.1",
   "type": "module",
+  "description": "HiveScope UI — real-time graph visualization for multi-agent AI systems",
+  "license": "MIT",
+  "author": "RubioKo",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RubioKo/hivescope.git"
+  },
+  "homepage": "https://github.com/RubioKo/hivescope#readme",
+  "bugs": {
+    "url": "https://github.com/RubioKo/hivescope/issues"
+  },
+  "keywords": ["hivescope", "ai", "multi-agent", "visualization", "react", "d3"],
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

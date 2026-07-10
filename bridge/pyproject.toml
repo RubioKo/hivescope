@@ -6,8 +6,24 @@ build-backend = "setuptools.build_meta"
 name = "hivescope-bridge"
 version = "0.0.1"
 description = "HiveScope real-time bridge — WebSocket server for multi-agent AI visualization"
+readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
+authors = [
+    { name = "RubioKo", email = "rubioko@users.noreply.github.com" },
+]
+keywords = ["hivescope", "ai", "multi-agent", "visualization", "websocket"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 dependencies = [
     "fastapi>=0.115",
     "pydantic>=2.0",
@@ -15,6 +31,12 @@ dependencies = [
     "websockets>=12.0",
     "pluggy>=1.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/RubioKo/hivescope"
+Repository = "https://github.com/RubioKo/hivescope"
+Documentation = "https://github.com/RubioKo/hivescope#readme"
+Issues = "https://github.com/RubioKo/hivescope/issues"
 
 [project.optional-dependencies]
 dev = [

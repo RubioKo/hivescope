@@ -1,182 +1,243 @@
 <div align="center">
 
-<img src="assets/banner.svg" alt="HiveScope — watch your AI agents think, live" width="100%"/>
+# HiveScope
 
-<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=24&pause=1200&color=58A6FF&center=true&vCenter=true&width=900&lines=Real-time+visualizer+for+multi-agent+AI+systems;Every+agent+is+a+node.+Every+message+is+a+pulse.;Local-first+%7C+Plug+%26+Play+%7C+Zero+cloud;D3.js+%2B+WebSockets+%2B+React" alt="Typing SVG"/>
+**Real-time visualizer for multi-agent AI systems**
 
-<br/>
+Every agent is a node. Every message is a pulse. Every file is a trail.
 
 [![License: MIT](https://img.shields.io/badge/LICENSE-MIT-58A6FF?style=for-the-badge)](LICENSE)
-[![Status](https://img.shields.io/badge/STATUS-ALPHA-1F6FEB?style=for-the-badge)]()
-[![PRs Welcome](https://img.shields.io/badge/PRs-WELCOME-3ECF8E?style=for-the-badge)](CONTRIBUTING.md)
-[![Local First](https://img.shields.io/badge/100%25-LOCAL-0D1117?style=for-the-badge&logo=ollama&logoColor=white)]()
+[![Python](https://img.shields.io/badge/python-3.10%2B-3ECF8E?style=for-the-badge&logo=python)](bridge/)
+[![TypeScript](https://img.shields.io/badge/typescript-5.6%2B-3178C6?style=for-the-badge&logo=typescript)](frontend/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-WELCOME-1F6FEB?style=for-the-badge)]()
 
-<br/>
-
-`「 Your AI agent team works blind inside a terminal. HiveScope gives it a hive with glass walls. 」`
+`「 Local-first · Plug & Play · Zero cloud 」`
 
 </div>
 
 ---
 
-## 🔭 What is HiveScope?
+## What is HiveScope?
 
-**HiveScope** is an **open-source, local-first, real-time visualizer** for multi-agent AI systems.
-It turns plain-text agent logs into a **living graph**: every agent is a node, every message is a
-pulse of light traveling between nodes, and every generated file shows up in an IDE-style audit panel.
+HiveScope turns plain-text agent logs into a **living graph**: agents are nodes, messages are pulses of light traveling between them, and generated files are inspectable in an info panel.
 
-No cloud. No accounts. No telemetry leaving your machine. If it runs on `localhost`, HiveScope can see it.
-
-<table>
-<tr>
-<td width="50%" valign="top">
-
-### 🧠 The problem
-
-ChatDev v2 (DevAll) dropped its classic visualizer. Frameworks like CrewAI, LangGraph, and AutoGen
-ship no local UI at all. Today, understanding which agent is blocked, who is talking to whom, and
-which files are being generated means **manually reading consoles and `.log` files**. Existing
-observability platforms are cloud-based, heavyweight, or paid.
-
-</td>
-<td width="50%" valign="top">
-
-### ⚡ The solution
-
-A **single-line telemetry bridge** streams every agent event over WebSockets into a D3.js
-force-directed canvas. **Non-invasive by design** — the original framework code is never modified.
-First adapter: **ChatDev v2**. The adapter architecture is ready for CrewAI, LangGraph, and AutoGen.
-
-</td>
-</tr>
-</table>
+- **No cloud** — everything runs on `localhost`
+- **No accounts** — zero telemetry leaves your machine
+- **No framework modification** — non-invasive adapter architecture
 
 ---
 
-## 🗺️ Architecture
-
-```mermaid
-flowchart LR
-    A["🧠 Ollama<br/>(local LLM)"] --> B["⚙️ ChatDev v2<br/>(agent engine)"]
-    B --> C["📡 hivescope_bridge.py<br/>WebSockets · :8765"]
-    C -->|live JSON stream| D["🔭 HiveScope UI<br/>React + Vite · :5173"]
-    D --> E["🕸️ Agent graph<br/>D3.js · force simulation"]
-    D --> F["🖥️ Audit panel<br/>chat + file tree + code"]
-    style A fill:#0D1117,stroke:#58A6FF,color:#fff
-    style B fill:#0D1117,stroke:#58A6FF,color:#fff
-    style C fill:#0D1117,stroke:#1F6FEB,color:#fff
-    style D fill:#0D1117,stroke:#7EE7FC,color:#fff
-    style E fill:#0D1117,stroke:#3ECF8E,color:#fff
-    style F fill:#0D1117,stroke:#3ECF8E,color:#fff
-```
-
----
-
-## ✨ Features
-
-| | Feature | Status |
-|---|---|---|
-| 🕸️ | **Live D3.js graph** — self-organizing nodes via attraction/repulsion forces, zoom & drag | 🔨 Phase 1 |
-| 💫 | **Message pulses** — a particle of light travels between agents on every communication | 🔨 Phase 1 |
-| 🫀 | **Live node states** — nodes pulse while their agent is thinking; state changes recolor them | 🔨 Phase 1 |
-| 🖥️ | **Audit panel** — cascading chat of the selected node + file tree of generated artifacts | 🔨 Phase 1 |
-| 🔌 | **True Plug & Play** — `python run_with_hivescope.py` and done; zero framework modification | 🔨 Phase 1 |
-| 📼 | **Replay mode** — drop a `.json` session file and replay the entire run with play/pause | 📋 Phase 2 |
-| 🧩 | **Adapters** — ChatDev v2 first; CrewAI, LangGraph, and AutoGen on the roadmap | 📋 Phase 3 |
-| 🔒 | **Privacy by design** — nothing leaves your machine; works fully offline | ✅ Always |
-
----
-
-## 🚀 Quick start (3 steps)
+## Quick start
 
 ```bash
-# 1 · Clone and install the frontend
+# 1. Prerequisites
+node >= 18
+python >= 3.10
+pnpm >= 9  (or npm)
+
+# 2. Clone
 git clone https://github.com/RubioKo/hivescope.git
-cd hivescope/frontend && npm install && npm run dev
+cd hivescope
 
-# 2 · Attach the bridge to ChatDev v2
-cp ../bridge/hivescope_bridge.py /path/to/ChatDev/
-pip install websockets
+# 3. Frontend
+cd frontend
+pnpm install
+pnpm dev        # → http://localhost:5173
 
-# 3 · Launch your task through the wrapper (with Ollama running)
-python run_with_hivescope.py "build a snake game"
-# ➜ open http://localhost:5173 and watch your agents work 🔭
+# 4. Bridge (separate terminal)
+cd bridge
+pip install -e ".[dev]"
+uvicorn hivescope_bridge.main:app --reload --port 8765
+
+# 5. Open http://localhost:5173 and click "▶ Demo"
 ```
 
-> 💡 **No ChatDev at hand?** Open the UI and hit **"View demo"** to load
-> `examples/demo_session.json`, a fully synthetic sample session.
+### Docker (one command)
+
+```bash
+docker compose up --build
+# → http://localhost:5173
+```
 
 ---
 
-## 🧬 The data contract (schema v1)
+## Architecture
 
-Everything in HiveScope revolves around a single versioned JSON schema — identical for
-real-time streaming and offline replay:
+```
+Agent Engine ──→ Adapter ──→ WebSocket ──→ Zustand Store ──→ D3.js Canvas
+(ChatDev, etc.)  (pluggy)    (port 8765)                   (React + Vite)
+                                                          ──→ ControlPanel
+                                                          ──→ MessageLog
+```
 
-```json
-{
-  "schema_version": 1,
-  "timestamp": "2026-07-08T14:32:00Z",
-  "source": "Programmer",
-  "target": "Code Reviewer",
-  "phase": "Coding",
-  "action": "Writing main.py",
-  "message": "…",
-  "files": ["main.py"],
-  "status": "working"
+| Layer | Tech | Role |
+|-------|------|------|
+| **Frontend** | React 18 + TypeScript + Vite + Tailwind CSS + Zustand + react-force-graph-2d | Real-time graph visualization, filter/search, theme toggle |
+| **Bridge** | FastAPI + Pydantic v2 + Uvicorn + WebSocket | Event ingestion, ring buffer, broadcast to all clients |
+| **Adapters** | pluggy hookspec + ABC (`BaseAdapter`) | Translate engine-specific events to `HiveEvent` schema |
+| **Transport** | WebSocket (bidirectional) | Live JSON stream + command channel (clear, pause) |
+
+### Data schema
+
+```typescript
+interface HiveEvent {
+  schema_version: 1;
+  timestamp: string;              // ISO 8601 UTC
+  source: string;                 // agent / tool name
+  target: string | null;          // recipient
+  phase: "planning" | "coding" | "reviewing" | "testing";
+  action: "message" | "file_create" | "file_edit" | "state_change";
+  message: string | null;
+  files: string[];
+  code: string | null;
+  status: "running" | "success" | "error" | "idle";
+  node_type: "agent" | "tool" | "user" | "gateway";
+  parent_id: string | null;
+  metadata: Record<string, unknown>;
 }
 ```
 
-📖 Full specification: [`docs/data-schema.md`](docs/data-schema.md)
+---
+
+## Features
+
+| | Feature | Status |
+|---|---|---|
+| 🕸️ | Force-directed agent graph with custom node shapes | ✅ Phase 2 |
+| 💫 | Animated link particles on recent messages | ✅ Phase 2 |
+| 🫀 | Pulsing ring animation for active agents | ✅ Phase 2 |
+| 🔍 | Node click → info panel (status, phase, last message, files) | ✅ Phase 2 |
+| 🎚️ | Phase/status filter checkboxes + node search | ✅ Phase 4 |
+| 📜 | Searchable, collapsible message log with event counter | ✅ Phase 4 |
+| ☀/☾ | Dark/light theme toggle with localStorage persistence | ✅ Phase 4 |
+| 🔄 | Exponential backoff reconnection (1s → 30s max) | ✅ Phase 5 |
+| 🧩 | ChatDev 2.0 adapter (filesystem poller, CLI entry point) | ✅ Phase 3 |
+| ▶ | Demo mode: 6 synthetic agents, 100 events, phase-colored | ✅ Phase 1 |
+| 🛡️ | React ErrorBoundary, WebSocket init message, model validation | ✅ Phase 6 |
+| 🧪 | 100 tests: 65 Python (bridge) + 35 TypeScript (frontend) | ✅ Phase 6 |
 
 ---
 
-## 🛣️ Roadmap
+## API Reference
 
-```
-╭──────────────────────────────────────────────────────────────╮
-│  PHASE 1 · v0.1  ▸ Real-time D3.js graph (ChatDev v2)        │
-│  PHASE 2 · v0.2  ▸ Offline replay mode + syntax highlighting │
-│  PHASE 3 · v0.3  ▸ Adapters: CrewAI · LangGraph · AutoGen    │
-│  PHASE 4 · v0.4  ▸ Per-agent metrics (latency & tokens)      │
-╰──────────────────────────────────────────────────────────────╯
-```
+### REST Endpoints
 
-Track progress on the [Milestones](../../milestones) page and grab a
-[`good first issue`](../../labels/good%20first%20issue) to start contributing.
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/health` | Bridge status + buffered event count |
+| `GET` | `/events` | Retrieve all buffered events (JSON array) |
+| `POST` | `/event` | Ingest a single `HiveEvent` |
+| `POST` | `/events` | Ingest a batch of `HiveEvent` (array) |
+| `POST` | `/demo/start` | Start synthetic demo event stream |
+
+### WebSocket (`/ws`)
+
+- **On connect**: receives all buffered events + `{"type":"init","count":N}`
+- **Incoming commands**: `{"type":"clear"}` / `{"type":"pause"}` / `{"type":"resume"}` / `{"type":"filter","payload":{...}}`
+- **Outgoing**: each ingested event is broadcast to all connected clients
 
 ---
 
-## 🤝 Contributing
+## Development
 
-HiveScope is **100% free for the community** and contributions are welcome.
+```bash
+# Bridge
+cd bridge
+pip install -e ".[dev]"
+ruff check . && ruff format --check .
+pytest
 
-1. Read the full guide: [`CONTRIBUTING.md`](CONTRIBUTING.md)
-2. Review the [`Code of Conduct`](CODE_OF_CONDUCT.md)
-3. Golden rule of this repo: **zero secrets, zero personal data, zero real logs** —
-   every sample dataset is synthetic.
+# Frontend
+cd frontend
+pnpm install
+pnpm test
+pnpm build
+```
+
+### Stress test
+
+```bash
+cd bridge
+python scripts/stress_test.py
+# → Sends 1000 events in batches of 50, measures throughput
+```
+
+---
+
+## Project structure
+
+```
+hivescope/
+├── frontend/                 # React + Vite + TypeScript
+│   ├── src/
+│   │   ├── components/       # GraphCanvas, ControlPanel, FilterPanel, MessageLog, NodeInfoPanel, ErrorBoundary
+│   │   ├── store/            # Zustand: graphStore, wsStore, themeStore
+│   │   ├── hooks/            # useWebSocket (exponential backoff)
+│   │   ├── types.ts          # HiveEvent, GraphNode, GraphLink
+│   │   └── test/             # Vitest setup
+│   ├── index.html
+│   └── vite.config.ts
+├── bridge/
+│   ├── hivescope_bridge/     # FastAPI + Pydantic models + ring buffer
+│   │   ├── adapters/         # BaseAdapter, registry (pluggy), ChatDev adapter
+│   │   ├── main.py           # FastAPI app + WebSocket + demo loop
+│   │   ├── models.py         # HiveEvent, WsCommand
+│   │   └── store.py          # Ring buffer (deque, max 5000)
+│   ├── scripts/
+│   │   └── stress_test.py    # 1000-event burst test
+│   └── tests/                # 65 tests (pytest)
+├── Dockerfile                # Multi-stage build
+├── docker-compose.yml        # Frontend + bridge orchestration
+└── README.md
+```
+
+---
+
+## Adapters
+
+HiveScope uses a **pluggy-based adapter system** to support multiple agent frameworks:
+
+| Adapter | Status | Method |
+|---------|--------|--------|
+| **ChatDev 2.0** | ✅ | Filesystem poller (WareHouse/ directory) |
+| CrewAI | 📋 Planned | — |
+| LangGraph | 📋 Planned | — |
+| AutoGen | 📋 Planned | — |
+
+### Using the ChatDev adapter
+
+```bash
+# While HiveScope bridge is running, in another terminal:
+chatdev-with-hivescope "build a snake game"
+# or attach to an existing task:
+chatdev-with-hivescope --attach /path/to/ChatDev/WareHouse/Task_001
+```
+
+---
+
+## Release
+
+```bash
+# Create a new release
+git tag v1.0.0
+git push origin v1.0.0
+# → GitHub Action builds, tests, creates release, publishes to PyPI + npm
+```
+
+---
+
+## Contributing
+
+1. Fork the repo
+2. Create a feature branch from `dev`
+3. Run tests: `pytest` (bridge) + `pnpm test` (frontend)
+4. Run `gitleaks detect --source . -v` before committing
+5. Open a PR to `dev` (never `main`)
+
+---
 
 <div align="center">
 
-| 💙 Where we need help the most |
-|---|
-| D3.js force-simulation performance tuning |
-| Adapters for CrewAI / LangGraph / AutoGen |
-| Syntax highlighting in the code panel |
-| Documentation and translations |
-
-</div>
-
----
-
-<div align="center">
-
-<img src="assets/logo.svg" alt="HiveScope logo" width="120"/>
-
-`⚡ Built with open source, for the open-source community.`
-
-**[⬆ Back to top](#-what-is-hivescope)**
-
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:58A6FF,50:1F6FEB,100:0D1117&height=120&section=footer" width="100%"/>
+Built with open source, for the open-source community.
 
 </div>
