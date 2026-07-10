@@ -2,6 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --hive-bg: #0D1117;
+  --hive-surface: #161B22;
+  --hive-border: #30363D;
+  --hive-blue: #58A6FF;
+  --hive-green: #3ECF8E;
+  --hive-red: #F85149;
+  --hive-yellow: #D29922;
+  --hive-text: #E6EDF3;
+  --hive-muted: #8B949E;
+  --hive-canvas-bg: #0D1117;
+}
+
+[data-theme="light"] {
+  --hive-bg: #FFFFFF;
+  --hive-surface: #F6F8FA;
+  --hive-border: #D0D7DE;
+  --hive-blue: #0969DA;
+  --hive-green: #1A7F37;
+  --hive-red: #CF222E;
+  --hive-yellow: #9A6700;
+  --hive-text: #1F2328;
+  --hive-muted: #656D76;
+  --hive-canvas-bg: #FFFFFF;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -14,4 +40,10 @@ body,
   width: 100%;
   height: 100%;
   overflow: hidden;
+}
+
+body {
+  background-color: var(--hive-bg);
+  color: var(--hive-text);
+  transition: background-color 0.2s, color 0.2s;
 }

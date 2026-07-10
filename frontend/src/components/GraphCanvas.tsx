@@ -1,6 +1,7 @@
 import { useEffect, useRef, useMemo } from "react";
 import ForceGraph2D from "react-force-graph-2d";
 import { useGraphStore } from "../store/graphStore";
+import { useThemeStore } from "../store/themeStore";
 import type { GraphNode, GraphLink } from "../types";
 
 const NODE_COLORS: Record<string, string> = {
@@ -61,6 +62,7 @@ export function GraphCanvas() {
   const nodes = useGraphStore((s) => s.nodes);
   const links = useGraphStore((s) => s.links);
   const selectNode = useGraphStore((s) => s.selectNode);
+  const theme = useThemeStore((s) => s.theme);
 
   const graphData = useMemo(
     () => ({
@@ -132,7 +134,7 @@ export function GraphCanvas() {
 
           if (globalScale > 0.6) {
             ctx.font = `${Math.max(10, 11 / globalScale)}px monospace`;
-            ctx.fillStyle = "#E6EDF3";
+            ctx.fillStyle = "var(--hive-text, #E6EDF3)";
             ctx.textAlign = "center";
             ctx.fillText(n.label, x, y + r + 14 / globalScale);
           }
@@ -161,7 +163,7 @@ export function GraphCanvas() {
         }}
         onNodeClick={(node: any) => selectNode(node.id as string)}
         onBackgroundClick={() => selectNode(null)}
-        backgroundColor="#0D1117"
+        backgroundColor={theme === "light" ? "#FFFFFF" : "#0D1117"}
         width={window.innerWidth}
         height={window.innerHeight}
       />
