@@ -7,10 +7,10 @@ from pydantic import BaseModel, Field
 class HiveEvent(BaseModel):
     schema_version: int = Field(default=1, ge=1)
     timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-    source: str
+    source: str = Field(min_length=1)
     target: str | None = None
-    phase: str
-    action: str
+    phase: str = Field(min_length=1)
+    action: str = Field(min_length=1)
     message: str | None = None
     files: list[str] = Field(default_factory=list)
     code: str | None = None

@@ -1,4 +1,5 @@
 import asyncio
+import json
 import random
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -64,8 +65,10 @@ async def demo_start():
 async def websocket_endpoint(ws: WebSocket):
     await ws.accept()
     _clients.add(ws)
-    for event in store.get_all():
+    events = store.get_all()
+    for event in events:
         await ws.send_text(event.model_dump_json())
+    await ws.send_text(json.dumps({"type": "init", "count": len(events)}))
     try:
         while True:
             raw = await ws.receive_text()
