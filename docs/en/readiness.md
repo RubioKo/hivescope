@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 4 -->
+<!-- docs-pair: readiness; revision: 5 -->
 
 [English](readiness.md) | [Español](../es/readiness.md) | [Index](README.md)
 
@@ -84,7 +84,7 @@ each row needs a reviewed specification in English and Spanish.
 | Order | Design question | Evidence needed to start that component |
 | --- | --- | --- |
 | 1. Identity and recovery | How are local secrets unlocked and the separate administrative key kept recoverable? | Specify custody and local unlock on each target OS. Use the scoped first-read grant and revocation cases above as constraints. |
-| 2. File and catalog format | How are version keys generated, wrapped and recovered? Which bytes bind a block to its version, position and length? What happens to the nonce and ciphertext after a restart? | Specify the encrypted object and catalog that the recovery package opens. Give synthetic input/output vectors for an empty file and a multi-block file, including a mismatched block. |
+| 2. File and catalog format | The [single-file catalog proposal](file-catalog.md) specifies the version key, encrypted blocks and retry rules. | Reference values cover a five-byte file, an empty file, a two-block file and a substituted record. A future CLI must reproduce them and demonstrate that a failed restore preserves the destination. |
 | 3. Transfer protocol | How do peers reserve, send, resume, acknowledge and retrieve an object? What precisely gets signed? How does a peer distinguish a retry from a new request? | A versioned message table with required fields, signed bytes, frame sizes, concurrency and time limits, error responses, retry rules and agreement validity during transfer. Include an acknowledged upload whose reply is lost. |
 | 4. Disk and restart behavior | At which point may a provider acknowledge durable storage? How do two reservations share the last free bytes? How does restart reconcile the fragment directory with SQLite? | A state table covering reservation, temporary file, verified bytes, durable index and acknowledgment. For each interruption, document what survives, what is charged and how orphaned bytes or reservations are reclaimed. |
 
@@ -120,6 +120,7 @@ desktop alpha will measure home connectivity, relay bandwidth, disk use and batt
 impact on Windows, Linux and macOS. General-purpose private computing and persistent
 hosting have separate acceptance criteria in the [roadmap](roadmap.md).
 
-**Next design step.** Specify the authenticated catalog for the single-file
-trial. Give one entry showing how the replacement finds the object, obtains
-its version key and detects a substituted block before writing the destination.
+**Next design step.** Specify when the provider can acknowledge an upload.
+Trace one request from reservation through durable storage of the object and
+catalog. If the reply is lost and the provider restarts, the client must be
+able to retry and discover which bytes are safe without consuming quota twice.

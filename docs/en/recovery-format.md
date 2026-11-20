@@ -1,4 +1,4 @@
-<!-- docs-pair: recovery-format; revision: 1 -->
+<!-- docs-pair: recovery-format; revision: 2 -->
 
 [English](recovery-format.md) | [Español](../es/recovery-format.md) | [Index](README.md)
 
@@ -52,8 +52,8 @@ the provider over libp2p and compares the remote identity key with the pinned
 bytes. The IPv4 endpoint is a connection hint. A changed or unreachable
 endpoint cannot substitute a different identity. This first profile uses
 Ed25519 peer identities and direct TCP/IPv4. Reject generation zero, port
-zero or malformed keys before connecting. The catalog and file formats will
-specify key wrapping and content verification. [Peer authentication](https://github.com/libp2p/specs/blob/master/tls/tls.md)
+zero or malformed keys before connecting. The file's version key is sealed
+inside the signed catalog. [File catalog and block verification](file-catalog.md) · [Peer authentication](https://github.com/libp2p/specs/blob/master/tls/tls.md)
 
 ## What the replacement signs
 

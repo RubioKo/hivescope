@@ -1,4 +1,4 @@
-<!-- docs-pair: recovery-format; revision: 1 -->
+<!-- docs-pair: recovery-format; revision: 2 -->
 
 [English](../en/recovery-format.md) | [Español](recovery-format.md) | [Índice](README.md)
 
@@ -57,9 +57,8 @@ remota con los bytes fijados. La dirección IPv4 orienta la conexión. Si cambia
 o deja de ser accesible, sigue siendo obligatorio comprobar la misma identidad.
 Este primer perfil usa identidades Ed25519 y conexiones directas TCP/IPv4. Si
 la generación o el puerto valen cero o una clave tiene un formato inválido,
-el equipo rechaza el paquete antes de conectarse. Los
-formatos del catálogo y del archivo especificarán cómo se envuelven las claves y
-cómo se verifica el contenido. [Autenticación entre pares](https://github.com/libp2p/specs/blob/master/tls/tls.md)
+el equipo rechaza el paquete antes de conectarse. La clave de esa versión del
+archivo queda cifrada dentro del catálogo firmado. [Catálogo y verificación de bloques](file-catalog.md) · [Autenticación entre pares](https://github.com/libp2p/specs/blob/master/tls/tls.md)
 
 ## Qué firma el equipo de reemplazo
 

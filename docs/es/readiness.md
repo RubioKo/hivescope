@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 4 -->
+<!-- docs-pair: readiness; revision: 5 -->
 
 [English](../en/readiness.md) | [Español](readiness.md) | [Índice](README.md)
 
@@ -90,7 +90,7 @@ de cada fila requiere una especificación revisada en inglés y español.
 | Orden | Pregunta de diseño | Qué hace falta para empezar ese componente |
 | --- | --- | --- |
 | 1. Identidad y recuperación | ¿Cómo se desbloquean los secretos locales y se mantiene recuperable la clave administrativa separada? | Especificar la custodia y el desbloqueo local en cada sistema objetivo respetando el permiso de primera lectura y los casos de revocación. |
-| 2. Formato de archivos y catálogos | ¿Cómo se generan, protegen y recuperan las claves por versión? ¿Qué bytes vinculan cada bloque con su versión, posición y longitud? ¿Qué ocurre con el nonce y el contenido cifrado tras un reinicio? | Especificar el objeto cifrado y el catálogo que se abren con el paquete de recuperación. Dar ejemplos sintéticos de entrada y salida para un archivo vacío y otro de varios bloques, incluido un bloque que no corresponde. |
+| 2. Formato de archivos y catálogos | La [propuesta de catálogo para un archivo](file-catalog.md) especifica la clave de versión, los bloques cifrados y las reglas de reintento. | Hay valores de referencia para un archivo de cinco bytes, uno vacío, uno de dos bloques y un bloque sustituido. La futura CLI deberá reproducirlos y demostrar que una recuperación fallida conserva el destino. |
 | 3. Protocolo de transferencia | ¿Cómo reservan espacio los pares, envían, reanudan, confirman y recuperan un objeto? ¿Qué se firma exactamente? ¿Cómo distingue el proveedor un reintento de una solicitud nueva? | Una tabla de mensajes versionados con campos obligatorios, bytes firmados, tamaños de trama, límites de concurrencia y tiempo, errores, reintentos y vigencia del acuerdo durante la transferencia. Incluir una carga cuya confirmación se pierde en la red. |
 | 4. Disco y reinicios | ¿Cuándo puede confirmar el proveedor que el contenido quedó guardado de forma duradera? ¿Cómo compiten dos reservas por el último espacio libre? ¿Cómo se concilian el directorio de fragmentos y SQLite al reiniciar? | Una tabla de estados que cubra reserva, temporal, bytes verificados, índice persistido y confirmación. Documentar qué sobrevive a cada interrupción, cómo se contabiliza y cómo se liberan bytes o reservas huérfanos. |
 
@@ -128,6 +128,7 @@ doméstica, el tráfico de relay, el uso de disco y el impacto en batería en Wi
 Linux y macOS. El cómputo privado de propósito general y el alojamiento persistente
 tienen criterios propios en la [hoja de ruta](roadmap.md).
 
-**Siguiente paso de diseño.** Especificar el catálogo autenticado del ensayo con un
-solo archivo. Dar un ejemplo de cómo el equipo de reemplazo localiza el objeto,
-obtiene la clave de su versión y detecta un bloque sustituido antes de escribir en el destino.
+**Siguiente paso de diseño.** Definir cuándo puede el proveedor confirmar una subida.
+Seguir una solicitud desde la reserva hasta que el objeto y el catálogo estén guardados
+de forma duradera. Si se pierde la respuesta y el proveedor se reinicia, el cliente
+debe poder reintentar y saber qué bytes están a salvo sin consumir la cuota dos veces.
