@@ -1,4 +1,4 @@
-<!-- docs-pair: contributing; revision: 1 -->
+<!-- docs-pair: contributing; revision: 2 -->
 
 [English](contributing.md) | [Español](../es/contributing.md) | [Index](README.md)
 
@@ -24,11 +24,14 @@ because a proposal or mockup exists.
 ## Local workflow
 
 1. Fork the repository and clone your fork.
-2. Create a descriptive branch from an up-to-date `main`.
+2. Fetch `development` from `RubioKo/hivescope` and create a short-lived branch
+   from its tip, even if your fork initially contains only `main`.
 3. Make the smallest complete change, including its English and Spanish text.
 4. With Node.js 22 or newer, run `npm ci` and `npm run check` in the repository root.
-5. Open a pull request to `RubioKo/hivescope:main` using the template.
-6. Address review. Only maintainers merge accepted work.
+5. Push your branch to your fork. Open a pull request using the template and
+   select `development` in `RubioKo/hivescope` as the base.
+6. Address review. Maintainers merge accepted work into `development` and
+   promote validated milestones to `main` as described in [Governance](governance.md).
 
 These npm commands install and run documentation tools, not a HiveScope service.
 Do not add empty source trees, placeholder executables or build instructions for
