@@ -1,113 +1,143 @@
-<!-- docs-pair: architecture; revision: 2 -->
+<!-- docs-pair: architecture; revision: 3 -->
 
 [English](../en/architecture.md) | [Español](architecture.md) | [Índice](README.md)
 
 # Arquitectura e interfaces
 
-Todos los componentes de este documento son propuestas. La primera implementación
-utilizará un ejecutable Go con modos daemon y CLI. Esta base documental no incluye
-un módulo Go ni un ejecutable.
+El nodo de escritorio propuesto tiene un servicio en segundo plano y una CLI.
+Go es el primer lenguaje que se evaluará. El repositorio contiene el diseño.
 
 ## Componentes
 
 | Componente | Responsabilidad |
 | --- | --- |
-| Identidad y autorización | Identidades por dispositivo, aprobación de pares y permisos de carpetas. |
-| Transporte P2P | Conexiones autenticadas, actualización de direcciones, NAT y relays limitados. |
-| Sincronización | Vigilancia de archivos, escaneos, versiones firmadas, conflictos y escritura local. |
-| Protección de datos | Cifrado autenticado, catálogos cifrados y recuperación de claves. |
-| Almacenamiento | Fragmentos inmutables, integridad, reservas y cuotas físicas. |
-| Mantenimiento | Disponibilidad, comprobaciones, reparación y renovación de acuerdos. |
-| Control de recursos | Contabilidad de disco, tasas, horarios, concurrencia y pausa. |
+| Identidad y autorización | Autenticar cada dispositivo y comprobar por separado el perfil de recursos del anfitrión y las autorizaciones de carpeta que concede el dueño. |
+| Descubrimiento y transporte | Buscar candidatos en directorios comunitarios reemplazables y establecer conexiones autenticadas entre pares. |
+| Protección de datos y almacenamiento | Cifrar versiones y catálogos, reservar bytes físicos, guardar objetos inmutables y verificar recibos. |
+| Mantenimiento y sincronización | Comprobar conectividad, renovar acuerdos, reparar datos cifrados, reconciliar versiones firmadas y conservar ediciones en conflicto. |
+| Control local de recursos | Aplicar el horario del anfitrión, las cuotas de disco y transferencia, los límites de cómputo y concurrencia y la pausa. |
+| Sesión privada | En un hito posterior, verificar el entorno de ejecución remoto, entregar las claves de sesión y ejecutar el software del solicitante. |
 
-Un dispositivo puede asumir varias funciones. Los lectores de carpetas, los
-proveedores de almacenamiento cifrado y los relays públicos tienen permisos
-independientes. La conectividad o reputación de un nodo no lo autoriza a descifrar.
+Se pueden solicitar recursos sin aportar hardware. Cada anfitrión elige en un
+perfil local persistente qué servicios presta. Las máquinas pueden acordar el
+almacenamiento sin que las personas intercambien datos de contacto. Solo el
+dueño de la carpeta puede conceder a otros dispositivos la facultad de leerla.
 
-## Flujo de datos
+## Flujo de almacenamiento
 
-1. Un dispositivo autorizado detecta un cambio local estable y crea una versión inmutable.
-2. Divide el archivo en bloques, los cifra y produce fragmentos redundantes.
-3. Los proveedores aprobados reservan capacidad, verifican los bytes y emiten recibos.
-4. El dispositivo publica metadatos de versión firmados y cifrados entre sus pares aprobados.
-5. Otro dispositivo autorizado reconcilia versiones, recupera suficientes
-   fragmentos verificados, descifra y reemplaza atómicamente el archivo local.
-
-Las transferencias utilizan streaming con memoria acotada. Los cambios locales
-permanecen pendientes hasta confirmar sus metadatos y los fragmentos requeridos.
+1. Un dispositivo autorizado obtiene una versión local estable y la cifra por
+   bloques. En el hito 1 un solo proveedor en LAN guarda el objeto cifrado
+   completo y un catálogo autenticado. El descubrimiento público automático llega en el hito 2.
+2. El anfitrión reserva espacio y confirma la escritura tras guardar de forma
+   duradera y verificar los bytes. Si se interrumpe la escritura o se pierde la
+   respuesta, se reintenta con el mismo identificador. Una carga por confirmar queda pendiente.
+3. El hito 3 añade fragmentos redundantes, metadatos cifrados y firmados y
+   catálogos replicados. Cada proveedor acepta un acuerdo acotado. Los lectores
+   verifican los metadatos y todos los bloques necesarios antes de publicar el archivo local.
+4. Un dispositivo autorizado o uno de reemplazo con autorización de recuperación
+   vigente obtiene y verifica los datos, los descifra localmente y publica la
+   versión de forma atómica. Los búferes acotados permiten transferir un archivo
+   sin que la memoria necesaria crezca con su tamaño.
 
 ## Red y descubrimiento
 
-Utilizar go-libp2p con QUIC y TCP, canales seguros autenticados, AutoNAT, DCUtR y
-Circuit Relay v2. La red inicial utiliza contactos intercambiados y descubrimiento
-en LAN. Solo los pares aprobados pueden negociar almacenamiento o acceder a las
-operaciones de carpetas. Los registros de direcciones firmados y con vencimiento
-permiten intercambiar actualizaciones entre contactos conocidos.
+La propuesta utiliza go-libp2p con QUIC y TCP, canales autenticados, AutoNAT,
+DCUtR y Circuit Relay v2. A partir del hito 2, el nodo anuncia su servicio con
+un registro firmado y con vencimiento en un directorio reemplazable. Si un
+directorio no responde, el solicitante puede probar otro. El anuncio contiene
+información del servicio y de contacto. Los nombres de archivos, catálogos de
+carpetas y contenidos de sesión quedan fuera del directorio. El nodo autentica
+directamente al candidato que encuentra.
 
-Los contactos de relay públicos son configurables y sustituibles. Los relays
-reenvían tráfico cifrado, aplican presupuestos de transferencia y no controlan
-cuentas ni créditos. Se prefieren las conexiones directas; un NAT restrictivo
-puede exigir relay. Si fallan ambas rutas, el trabajo queda pendiente con un
-estado explícito de conectividad. La primera implementación no tendrá DHT pública
-ni índice global de archivos.
+El anfitrión comprueba horario, espacio físico libre en el volumen ofrecido,
+compromisos vigentes y límites locales antes de reservar. Si dos solicitudes
+compiten por el último espacio, como máximo una obtiene la reserva. Al vencer
+se libera una reserva sin utilizar. La pausa detiene reservas nuevas y conserva
+las obligaciones de retención vigentes. Si falta capacidad, el solicitante puede
+esperar o cancelar. [Ofertas de recursos](resource-offers.md) · [Política de almacenamiento](storage.md)
+
+Se utilizará conexión directa cuando sea posible. Los relays configurables
+reenvían tráfico cifrado con presupuestos de transferencia. Si ambas rutas
+fallan, el trabajo queda pendiente con un motivo de conectividad visible.
+Las renovaciones de anuncios, las reconexiones simultáneas, la saturación de
+relays y el tráfico de reparación se medirán por separado del consumo del PC.
 
 ## Persistencia e interfaces
 
-SQLite guarda el índice local, los acuerdos y la cola reanudable de cada nodo.
-Los fragmentos se guardan en un directorio independiente y configurable. Esta
-base no es un ledger compartido. Los catálogos cifrados y registros de versión
-se replican para no depender del SQLite de un único dispositivo.
+SQLite conserva el índice, las reservas, los acuerdos y la cola reanudable de
+cada nodo. Los objetos se guardan en un directorio configurado por separado.
+Confirmar una escritura requiere que el archivo y su entrada del índice sobrevivan
+a un reinicio. El hito de redundancia replica los catálogos cifrados para poder
+recuperar datos sin la base original.
 
-La CLI cubrirá identidad, aprobación de pares, autorización de carpetas, acuerdos,
-estado, pausa y recuperación. La futura interfaz gráfica utilizará las mismas
-operaciones del daemon. Los mensajes P2P utilizarán protocolos versionados,
-Protobuf y streaming con tramas acotadas. Las versiones desconocidas y los
-mensajes excesivos deben rechazarse antes de reservar recursos.
-
-Los contratos iniciales de diseño son:
+La CLI y la futura interfaz gráfica compartirán operaciones para perfiles,
+solicitudes, pausa, estado, permisos de carpeta y recuperación. Los protocolos
+P2P llevarán versión, mensajes Protobuf y tramas de transferencia acotadas. Se
+rechazarán las versiones desconocidas y los mensajes excesivos antes de reservar
+recursos. Los contratos describen el comportamiento que habrá que especificar y
+probar antes de elegir la codificación.
 
 | Contrato | Significado requerido |
 | --- | --- |
-| `DeviceIdentity` | Identificador de par y clave pública de verificación; nunca un secreto de recuperación. |
-| `FolderAuthorization` | Membresía, función y época de autorización firmadas por el propietario. |
-| `StorageAgreement` | Partes, cuota física, vigencia, límites y operaciones permitidas. |
+| `DeviceIdentity` | Identificador del par y clave pública de verificación. Los secretos de recuperación se custodian aparte. |
+| `FolderAuthorization` | Pertenencia, función y época de autorización del dispositivo firmadas por el dueño. |
+| Anuncio de servicio | Capacidades e información de contacto firmadas y con vencimiento para el descubrimiento. |
+| Reserva de recursos | Solicitud única asociada a solicitante y servicio, cantidad reservada, vencimiento y estado conservado al reintentar. |
+| `StorageAgreement` | Partes, cuota física, vigencia, límites de transferencia y operaciones acordadas por los dos nodos. |
 | `FileVersion` | Autor autorizado, versión causal, metadatos cifrados y referencias de bloques. |
-| `ShardReceipt` | Confirmación firmada del proveedor con ID, resumen, tamaño y acuerdo del fragmento. |
-
-Son límites semánticos, no APIs estables ni esquemas definitivos. Cada hito de
-implementación debe definir codificación, límites, tratamiento de repeticiones
-y compatibilidad antes de añadir código de protocolo.
+| `ShardReceipt` | Confirmación firmada por el proveedor con ID, resumen, tamaño y acuerdo del fragmento. |
 
 ## Propiedad y recuperación
 
-Cada carpeta tiene autoridad y claves de cifrado independientes controladas por
-su dueño. Cada dispositivo tiene identidad propia; copiar una identidad entre
-equipos no es el mecanismo de incorporación. Se verifica una huella y se
-transfieren los secretos mediante un canal autenticado. Revocar un equipo inicia
-una época nueva y rota las claves para versiones futuras; no permite retirar
-texto o claves que ese equipo ya conoció.
+Cada carpeta tiene su propia autoridad y claves de cifrado bajo el control del
+dueño. Cada dispositivo tiene identidad propia. La incorporación verifica su huella
+y transfiere los secretos de carpeta que le corresponden por un canal autenticado.
+Revocar un equipo inicia una época de autorización y rota las claves para
+versiones futuras. El contenido ya leído puede seguir en poder de ese equipo.
 
-La recuperación requiere una exportación cifrada con secretos de carpeta,
-material de autoridad, localizadores de catálogo y contactos aprobados. Importarla
-incorpora una nueva identidad de dispositivo. No hay restablecimiento central de
-contraseñas. La protección local y el formato de exportación deben especificarse
-y revisarse en el hito del núcleo seguro.
+El diseño del hito 1 en revisión concede al equipo de reemplazo un permiso limitado
+para recuperar objetos cifrados y el catálogo. El paquete cifrado contiene la clave
+de firma de recuperación, material de descifrado, localizador y huella del proveedor.
+El dueño guarda por separado la clave de firma administrativa. El proveedor verifica
+una prueba reciente de posesión y la autorización vigente. Una vez confirmada una
+revocación, tiene que seguir rechazando la autorización antigua tras un reinicio.
+El formato del paquete y la protección local de los secretos requieren revisión
+antes de implementar. [Diseño y pruebas de recuperación en el borrador del PR #1](https://github.com/RubioKo/hivescope/pull/1)
 
-## Servicio posterior de IA
+## Cómputo privado y servicios persistentes
 
-Reutilizar identidad, transporte, límites y conceptos de acuerdo, aislando el
-runtime de cómputo del almacenamiento. No permitir programas arbitrarios enviados
-por pares. Las grabaciones privadas, incluidos los archivos sin clasificar, se
-transcribirían en el equipo del propietario con un modelo local. Si el equipo
-carece de recursos, el cliente informaría del problema y ofrecería reintentar allí.
+El solicitante elige el software de su entorno privado. El anfitrión aporta una
+cantidad limitada de CPU, RAM, ancho de banda y, más adelante, GPU. En el hito 5
+se evaluará una máquina virtual confidencial. Antes de entregar secretos, el
+solicitante debe verificar evidencia reciente vinculada a la clave de sesión
+del entorno invitado. Si se necesita GPU, la verificación debe abarcar también
+el acelerador y el recorrido de los datos hasta él. Ante un anfitrión incompatible,
+la solicitud espera y las claves siguen con el solicitante. El acceso a la sesión
+es independiente de la autoridad para descifrar carpetas. [Modelo de seguridad y pruebas propuestas](security.md)
 
-El servicio remoto propuesto aceptaría el identificador de una obra pública de
-un catálogo aprobado y ejecutaría un modelo completo en un entorno aprobado.
-El proveedor obtendría la obra directamente del catálogo. Quedan por revisar
-las cuotas y la integridad del resultado. [Decisión sobre la privacidad de las transcripciones](security.md#decisión-propuesta-sobre-la-transcripción)
+Un servicio persistente necesita conservar el estado y limitar la escritura a
+una sola instancia. Antes de aceptar tráfico, el relevo autorizado debe verificar
+el último guardado confirmado y adquirir la autoridad exclusiva de escritura.
+El anfitrión que vuelve debe comprobar el relevo antes de reanudar escrituras.
+La sesión privada en otro anfitrión requiere una nueva verificación allí. Se
+medirán la interrupción, la latencia de reconexión y el progreso perdido.
 
-## Referencias
+## Evaluación tecnológica
 
-- [Perforación de NAT y relays de libp2p](https://github.com/libp2p/specs/blob/master/connections/hole-punching.md)
-- [Arquitectura de Tahoe-LAFS](https://tahoe-lafs.readthedocs.io/en/stable/architecture.html)
-- [Inferencia colaborativa con Petals](https://github.com/bigscience-workshop/petals)
+Medir el nodo Go en un PC con cuatro núcleos y 8 GB de RAM. Registrar memoria
+residente en reposo y máxima, CPU en reposo, velocidad de recuperación y tiempo
+para hacer efectiva la pausa. Probar transferencia directa y por relay en
+condiciones documentadas. Si Go incumple un presupuesto acordado, identificar
+la causa y comparar Rust con el mismo hardware, archivo, cifrado, tamaño de
+bloque y concurrencia. Evaluar por separado el alojamiento de sesiones
+confidenciales en hardware compatible.
+
+La reconciliación de capacidades, la selección de anfitriones y el manejo de
+reintentos de OpenClaw sirven de referencia. Su SDK de TypeScript permitiría
+ofrecer HiveScope como destino opcional de almacenamiento para OpenClaw.
+El manejo de temporales y los límites de procesos en Windows de REA aportan
+casos de prueba para recuperación y cuotas locales. Para cualquier código
+reutilizado, registrar revisión, procedencia, licencia y avisos de terceros
+aplicables. [Selector de OpenClaw](https://github.com/openclaw/openclaw/blob/3b63f9ea1f552930f8d20215a1cb89a95a261fd0/src/gateway/worker-environments/device-placement-selector.ts#L74-L110) · [SDK de almacenamiento de OpenClaw](https://github.com/openclaw/openclaw/blob/3b63f9ea1f552930f8d20215a1cb89a95a261fd0/docs/plugins/sdk-overview/capabilities.md#L59-L72) · [Archivos temporales de REA](https://github.com/morluto/rea/blob/8bb01b514ac766c0c3ecc8f362bd38186eaec9c2/src/filesystem/OwnedStagedOutput.ts) · [Control de procesos de REA](https://github.com/morluto/rea/blob/8bb01b514ac766c0c3ecc8f362bd38186eaec9c2/native/windows/README.md)
+
+Lecturas sobre transporte y recuperación. [Conexión a través de NAT con libp2p](https://github.com/libp2p/specs/blob/master/connections/hole-punching.md) · [Arquitectura de Tahoe-LAFS](https://tahoe-lafs.readthedocs.io/en/stable/architecture.html)

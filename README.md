@@ -1,4 +1,4 @@
-<!-- docs-pair: home; revision: 7 -->
+<!-- docs-pair: home; revision: 8 -->
 
 English | [Español](README.es.md)
 
@@ -6,102 +6,82 @@ English | [Español](README.es.md)
 
 # HiveScope
 
-HiveScope is an open-source project to help people use their own computers as
-**small community servers**. Someone with spare disk space could keep an encrypted copy
-of a friend's work. A more powerful computer could help caption recordings from a public archive.
-A group of players could take turns keeping their shared world online. Each person decides
-what to lend, to whom and for how long.
+HiveScope is an open-source project for sharing storage and computing power across the
+world. If you need to protect a folder, run your own software or keep a server online
+for your community, the app will look for computers that can help. If you want to lend
+resources, you choose what to share, how much and when. The computers coordinate the work.
 
-**Project status — design and documentation.** The first planned prototype is a
-command-line tool for storing and recovering a file. This repository contains the design,
-security model and tests we intend to run. [Project vision](docs/en/vision.md) · [Roadmap](docs/en/roadmap.md)
+**HiveScope is in design.** The first desktop prototype will focus on storing and
+recovering encrypted files. Private general-purpose computing and service hosting are
+later milestones. [Project vision](docs/en/vision.md) · [Roadmap](docs/en/roadmap.md)
 
-## What the community could use it for
+## What could you do with HiveScope?
 
-- **Protect files and work across devices.** Choose folders containing family photos,
-  coursework, music, source code or other files. Encrypt them on the owner's device
-  before sending them to approved storage providers. Recovery comes first. Later,
-  authorized devices would synchronize changes and keep both versions when offline edits conflict.
-- **Transcribe a private recording.** HiveScope would treat personal recordings as
-  private by default. A podcast creator could transcribe an interview on their own
-  computer. The audio and transcript would stay on that device during the job.
-  If the computer lacks the resources, HiveScope would explain why and offer a local retry.
-- **Lend computing power for public work.** In the first community AI pilot, a
-  volunteer could run an approved open model on an already published recording, such
-  as a recorded story a library makes available for transcription. The request would identify an
-  entry in an approved public catalog. The host could access that recording and the
-  resulting transcript.
-- **Keep a service running together.** The proposed game-hosting trial would give a group
-  one active host and an agreed standby. If the active host goes offline, the standby
-  could restore the last valid world save and the players could reconnect. The host can
-  read the world data it processes. Project Zomboid is one suggested example. A club's
-  events calendar is another possible use, subject to its own hosting and recovery tests.
+- **Protect the files you choose.** Back up folders containing photos, documents, music,
+  source code or other work. You hold the keys and choose which of your devices may read
+  each folder. Folder synchronization will follow recovery.
+- **Run your own software.** Request CPU and memory for a private environment you control.
+  Install tools, compile a project, render a scene or run a model. Your device will release
+  session keys only after it verifies the remote environment, including any GPU used.
+  If verification fails or a compatible host is unavailable, the keys stay on your
+  device. You can wait or cancel. [Security model](docs/en/security.md)
+- **Host a service for a community.** A gaming group could keep a shared world going
+  across volunteers' schedules. One host would accept changes at a time. A compatible
+  standby could take over from a verified save. Project Zomboid is one possible trial.
+  Players' latency, downtime and lost progress would be measured before making an
+  availability claim. [Hosting trial](docs/en/roadmap.md)
 
-The aim is to make services available without a mandatory rental fee. Participants or
-donors would still cover hardware, electricity, connectivity and any relay traffic.
-For games, the pilot would measure when people can actually join, latency from players'
-connections, time to reconnect and how much progress a handoff loses. Those measurements
-will tell a group how close it can get to round-the-clock play. [Community hosting trial](docs/en/roadmap.md#community-game-server-trial)
+## What happens when you ask for or offer resources?
 
-## What it means to offer your computer
+You can participate solely as a requester. Choose what you need and your computer will
+look in community directories for compatible hosts. People who lend resources set a
+profile once. Luis, for example, might offer 20 GB of disk space in the evenings and
+keep his GPU for himself. His computer checks its schedule, free space and existing
+commitments before accepting a reservation. Ana and Luis can be complete strangers.
 
-Luis might offer Ana 20 GB of disk space in the evenings and keep his GPU for his own
-work. In the proposed **Offer my computer** flow, he chooses one service and one approved
-contact, sets a schedule and expiry, and reviews the limits. A disk offer sets a quota
-and transfer limits. A computing offer can cap CPU, memory, GPU use and concurrent jobs.
-The offer stays pending until Ana accepts the terms. She can participate solely as a
-requester if someone agrees to help her.
+Luis can pause new reservations. Existing copies follow their retention agreements.
+If capacity runs out, Ana sees why her request is pending. Retrying the same request
+preserves its state without reserving the space twice. Participation is voluntary. The
+aim is access without a required rental fee. Participants or donors still cover
+hardware, electricity, connectivity and relay traffic. [Offer my computer](docs/en/resource-offers.md)
 
-If Luis needs his computer back, he can pause new requests. Stopping a public catalog transcription
-already in progress may lose unsaved work. Taking a storage host offline makes its
-fragments temporarily unreachable. A game handoff depends on another authorized host
-and a valid save. The proposed shutdown screen shows which of these applies before
-Luis decides what to do. [Resource offers](docs/en/resource-offers.md)
+## How Ana would recover a private folder
 
-## How a private folder would work
-
-### Ana chooses which devices can read her files
+### Ana chooses which devices may read her files
 
 ![Ana points to a family photo beside a document and an audio waveform on her laptop.](assets/story/hivescope-story.jpg)
 
-Ana wants to open her thesis draft, a photo and a recorded interview on both her laptop
-and her desktop. She authorizes both devices for `Studies`. For `Personal documents`,
-she authorizes only the laptop. Each choice applies to every file in that folder.
+Ana authorizes her laptop and desktop to read `Studies`, which holds a thesis draft,
+a photo and a recorded interview. For `Personal documents`, she authorizes only her
+laptop. Each choice covers all files in that folder.
 
-### Luis stores the encrypted copy
+### Luis's computer stores the encrypted copy
 
 ![Luis adjusts a slider beneath rows of colored blocks representing encrypted data on his screen.](assets/story/encrypted-storage.jpg)
 
-Ana's computer encrypts the contents and file names before sending data. Luis stores
-encrypted fragments and can observe details such as transfer size and timing. The keys
-that open the files stay with Ana's authorized devices. If Ana transcribes her private
-interview, the model would run on her own computer. Luis would continue to hold only
-encrypted fragments of her backup. [Security model](docs/en/security.md)
+Ana's computer encrypts the contents and names before sending the copy. Luis's storage
+profile admits the transfer automatically. He can observe its size and timing. The keys
+that open Ana's files stay under her control.
 
-### Ana recovers her work on a replacement computer
+### Ana restores her work on a replacement computer
 
 ![Ana holds a USB drive beside her closed laptop. The photo, document and recording reappear on a desktop monitor.](assets/story/recovering-files.jpg)
 
-With her original laptop off, Ana unlocks the recovery package she kept separately
-using its password. Her new computer needs a reachable catalog and enough valid
-fragments from providers whose agreements still allow retrieval. The first prototype
-must recover a sample file byte for byte. [Recovery design](docs/en/architecture.md#ownership-and-recovery) · [Storage and repair](docs/en/storage.md)
+With her original laptop off, Ana uses her password to unlock the recovery package she
+kept separately. In the first planned test, a reachable provider checks her recovery
+credential, and the new computer restores a sample file byte for byte. Later, the
+design will place each encrypted block across three providers so any two valid
+fragments can reconstruct it. [Recovery design](docs/en/architecture.md) · [Storage and repair](docs/en/storage.md)
 
-## Development and platforms
+## Development and devices
 
-1. **Secure core.** Build a Go command-line prototype for device identity, peer approval,
-   encrypted transfer and recovery on a new computer.
-2. **Resilient storage and folder sync.** Distribute each encrypted block across three
-   approved hosts so that any two valid fragments can recover it. Test repair when a
-   host goes offline, then test offline edits and conflicts across the owner's devices.
-   [Folder synchronization](docs/en/synchronization.md)
-3. **Closed desktop alpha.** Validate the command-line tool on Windows, macOS and Linux
-   over real household connections. The graphical interface would follow a usable
-   background service. Phone and tablet clients are exploratory designs.
-
-Community computing and persistent hosting are later proposals. For technical contributors,
-the design describes a Go background service, authenticated peer connections using libp2p
-and a local SQLite index on each node. [Architecture](docs/en/architecture.md) · [Documentation index](docs/en/README.md)
+The first deliverable is a desktop command-line tool. Go is the first choice for the
+node. A four-core PC with 8 GB of RAM is the reference for measuring memory use, CPU,
+recovery speed and time to pause. Confidential sessions need separate tests on compatible
+hardware. The desktop alpha will test Windows, Linux and macOS and add a graphical
+interface after measuring the background service. Phones and tablets will first be
+evaluated for access and recovery.
+[Architecture](docs/en/architecture.md) · [Documentation index](docs/en/README.md)
 
 ## Contribute
 

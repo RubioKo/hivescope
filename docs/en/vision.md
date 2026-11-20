@@ -1,134 +1,83 @@
-<!-- docs-pair: vision; revision: 5 -->
+<!-- docs-pair: vision; revision: 6 -->
 
 [English](vision.md) | [Español](../es/vision.md) | [Index](README.md)
 
 # Vision and boundaries
 
-HiveScope aims to let anyone with a compatible computer use it as a small community
-server. They could lend space for encrypted files, run a task for someone else or
-keep a service online for a group. Private storage is the first planned service.
-Folder owners keep their keys and decide which devices can read each folder.
+HiveScope is designing an open network where anyone can request storage or computing
+capacity. People may participate solely as requesters. A volunteer decides which
+resources to lend and how much of their computer they need to keep available for
+themselves. Their computers would find each other and agree on work automatically.
 
-## How people lend resources
+## What a person could do
 
-The owner would choose which services to run, who can use them, when they are
-available and how much disk, CPU, memory, available GPU capacity and bandwidth
-to offer. For example, Luis could offer only disk space during the day and help
-transcribe public recordings at night. Someone who needs resources would choose a compatible
-offer from their approved contacts. They could request a service even if their own
-device only acts as a client, provided the other party agrees. Each task would use
-only the data and resources covered by that agreement.
-The proposed flow shows the agreement before it is sent and what happens if the
-host shuts down during service. [Offer my computer](resource-offers.md)
+**Keep a recoverable copy.** A student chooses the folder with their thesis, notes
+and photos. Their computer encrypts file names and contents before transfer. The
+student chooses which of their own devices may read that folder. After the laptop
+fails, the first prototype must recover a sample file from a reachable provider on
+a clean replacement device with a valid recovery credential. A later milestone
+will test repair across independent hosts and preserve both versions when offline
+edits conflict. [Storage and repair](storage.md) · [Folder synchronization](synchronization.md)
 
-## Problems we want to solve
+**Use a private computer session.** A creator requests CPU and RAM, then installs the
+tools of their choice inside their environment. They might build a project, render
+a scene or run their own model. The proposed confidential virtual machine protects
+the workload while it runs. Before releasing session keys, the requester's device
+must verify the environment and bind those keys to that session. A GPU workload
+also requires evidence for the GPU and its connection to the protected environment.
+When the protection cannot be verified, the request waits or the person cancels.
+Private inputs and keys stay with the requester. A host can still observe
+operational information such as session duration or traffic volume and can go offline.
+[Security model](security.md)
 
-- **My only copy is on a computer that could fail.** A family could protect its photos,
-  and a student could protect a thesis or a project's source code. The first
-  test will turn off the original computer and recover an identical file on another
-  device using the recovery package, its password and a reachable provider whose
-  agreement allows retrieval.
-- **I work on two computers and have lost track of the latest version.** A later milestone
-  will let the owner's authorized devices synchronize a folder. If the same document is
-  edited on both computers while they are offline, the test is whether the owner can
-  find both versions after reconnecting and choose which one to keep.
-- **Our archive needs transcripts of public recordings.** For the proposed pilot,
-  an archive volunteer could select a published public-domain recording from a
-  community-reviewed catalog. A host could use spare computing time to turn it into
-  text. A creator transcribing an unpublished interview would use their own device.
-- **I want to help and still need my own computer.** Someone could offer disk space at
-  night and keep their computing capacity for their own work. We can test whether
-  HiveScope respects their schedule and disk quota and requires a separate computing
-  agreement before running a transcription.
-- **Our game world goes offline when its creator leaves.** A group of players could
-  take turns hosting on volunteer computers and keep playing in the same world
-  without depending on one person's schedule.
+**Host a service with a community.** A gaming group could request hosting for its
+world across volunteers' schedules. Project Zomboid is a suggested example. One
+active host accepts changes. A compatible standby could start from the last verified
+save after a handoff. The trial would record how long players take to reconnect,
+what progress they lose and the latency from their actual connections. A club
+calendar or another persistent service would need its own state recovery test.
+[Roadmap](roadmap.md)
 
-## Game servers and other community services
+## What happens between the computers
 
-To test continuous hosting, we propose a game whose dedicated server can save and restore a
-world. The community suggested Project Zomboid as an example. In the pilot, one approved
-computer would host the game and another would be ready to take over from the last
-valid save. Only one would accept changes to the
-world at a time. Each host would opt in to that service separately and choose which
-resources and hours to offer. The host running the server can access the world
-data it processes.
+A host sets a profile once, choosing disk, CPU, RAM, GPU or network bandwidth and
+setting a schedule and limits. For example, Luis may lend 20 GB of disk in the
+evening while keeping all computing capacity for himself. Ana can ask for a copy
+without adding Luis as a contact. Replaceable community directories would carry
+expiring service announcements. File names, session contents and keys remain
+outside those announcements.
 
-The aim is for the group to be able to join at any hour, with low latency and no
-required server rental fee. To evaluate those goals we would measure how often
-players can actually join and play, response times from their own connections
-and the resources each host contributes. We would also test a scheduled handoff
-and an unexpected outage to find out how long it takes players to rejoin and how
-much progress they can lose. Power, connectivity and any relays count toward the
-cost even when volunteers provide them.
+The requester finds candidates and connects to a host. The host checks its local
+profile, physical capacity and existing commitments, then accepts a reservation
+with an expiry. If the final space is contested, only one reservation can succeed.
+A retry returns the state of the same request. A pause stops new reservations.
+Existing storage follows its retention and migration agreement. A compute session
+must report the last confirmed save when interrupted, so its owner can see what work
+survived. [Offer my computer](resource-offers.md) · [Architecture](architecture.md)
 
-To choose a host, we propose comparing round-trip times from players to each
-candidate with available capacity. Recording the results by group will show when
-a good average hides a slow connection.
-[Example of host selection based on player latency](https://docs.aws.amazon.com/gameliftservers/latest/developerguide/queues-design-latency.html)
+## Participation and cost
 
-If the pilot works, the same approach could be evaluated for other services, such
-as a club's events calendar. Each service would need approved software, people
-responsible for maintaining it and a recovery test for its own data. The
-[roadmap](roadmap.md) describes the pilot.
+The goal is access without a required rental fee. People may ask for help regardless of
+the hardware they contribute. The pilot will rely on voluntary capacity and local
+quotas, without required credits, balances or cryptocurrency. Participants or donors
+bear the cost of hardware, electricity, maintenance, connectivity and relay traffic.
+When capacity is unavailable, the requester can see why and choose to wait or cancel.
 
-## First useful service
+## How the project will test its promises
 
-The first prototype will test manual upload and recovery of a sample file. Private
-folder synchronization between the owner's authorized devices follows later in the
-[roadmap](roadmap.md). Approved community providers retain encrypted fragments and
-help restore availability.
-An approved provider does not automatically become a reader of the folder.
+1. Start with an encrypted file, a single provider and recovery on a new device.
+   Test a valid recovery credential and the same credential after a confirmed
+   revocation and provider restart. Record this result separately from redundancy.
+2. Exercise automatic reservations with unfamiliar peers before expanding the
+   storage trial to two data fragments and one parity fragment, repairs and
+   synchronization. Test directory failure, a host pausing and a lost reply.
+3. Test the desktop node on Windows, Linux and macOS. A four-core PC with 8 GB of
+   RAM is the reference for measuring resource use during storage, including pause
+   latency. Measure directory and relay demand separately. Phones and tablets
+   will first be evaluated as clients for access and recovery.
+4. Trial general-purpose CPU and RAM sessions on hardware that can prove the
+   required protection. Later trials will cover a verified GPU path, then persistent
+   hosting with a compatible standby and a recoverable saved state.
 
-The initial network uses bilateral agreements. Each provider decides whom to
-serve, for how much physical capacity, for how long and at which transfer limits.
-There is no network-wide balance, token, blockchain or universal exchange rate.
-Approval is a local decision rather than an account in a central registry.
-
-Some community nodes are expected to be regularly online. Offline editing remains
-possible, but remote recovery needs enough reachable fragments and metadata.
-The alpha will not advertise a durability or availability SLA.
-
-## Participant control
-
-Sharing is opt-in. A participant must configure the storage directory, quota,
-upload/download limits and schedule before accepting data. The design includes
-manual pause and battery-aware pause. Detecting games or video calls is later work.
-Departing providers should allow migration during their agreement's remaining
-term; abrupt failures are still part of the threat and reliability model.
-
-## Meaning of free
-
-The goal is no mandatory service fee. Hardware, electricity, connectivity,
-maintenance and relay traffic still have costs paid by participants or donors.
-An offer of disk space does not guarantee access to scarce GPU capacity.
-The project does not promise unlimited storage, bandwidth or inference.
-
-## Later community AI
-
-Personal recordings are private by default. The proposed transcription tool would
-process them on the owner's device and keep the transcript there. If the recording's
-status is unknown, the same rule applies. Insufficient resources or a failed attempt
-would leave the job local for a retry. Folder backup remains a separate operation
-that sends encrypted fragments to storage providers.
-
-For the community pilot, a requester would choose an approved host and a public
-recording from the reviewed catalog. The host would receive the catalog identifier,
-retrieve the published recording and run a complete open model in an approved
-runtime. The host can hear that audio and read the resulting text. This request accepts catalog identifiers
-only. Local files, pasted notes and private prompts cannot accompany it. Selecting
-a trusted host or marking a file as shareable does not add it to the catalog.
-Each model needs a license review to establish how its weights can be used and
-redistributed.
-
-Additional kinds of work need a design and security review before inclusion.
-After measuring the first service, the community can evaluate splitting a model
-across providers. Model training requires a separate data, licensing, evaluation
-and compute plan.
-
-## Outside the first implementation
-
-Public download links, multi-user editing, mobile clients, transparent cloud-only
-files, global credits, permissionless admission, model training and anonymous
-networking are outside the first storage implementation. The initial architecture
-targets Windows, Linux and macOS with a Go daemon and CLI; a GUI follows later.
+The repository publishes the design, its assumptions and acceptance criteria.
+Implementation and measured results belong to subsequent milestones. [Roadmap](roadmap.md)
