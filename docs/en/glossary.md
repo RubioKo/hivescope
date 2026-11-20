@@ -1,4 +1,4 @@
-<!-- docs-pair: glossary; revision: 1 -->
+<!-- docs-pair: glossary; revision: 2 -->
 
 [English](glossary.md) | [Español](../es/glossary.md) | [Index](README.md)
 
@@ -7,7 +7,11 @@
 | Term | Spanish term | Meaning in HiveScope |
 | --- | --- | --- |
 | Peer | Par | A device participating through an authenticated network identity. |
-| Approved provider | Proveedor aprobado | A peer locally accepted to retain encrypted fragments under an agreement. |
+| Storage provider | Proveedor de almacenamiento | A node that accepts encrypted data under a storage agreement. |
+| Resource profile | Perfil de recursos | The host's choice of services, schedule, capacity and limits for new requests. |
+| Community directory | Directorio comunitario | A replaceable service where nodes discover peers offering a resource. |
+| Reservation | Reserva | A temporary local commitment of capacity for a specific request. |
+| Remote attestation | Atestación remota | Verification of evidence about the execution environment before entrusting it with session keys. |
 | Authorized device | Dispositivo autorizado | An owner's device permitted to read and synchronize a folder. |
 | Daemon | Daemon / servicio en segundo plano | The proposed long-running process implementing node operations. |
 | Agreement | Acuerdo | Mutually accepted capacity, duration, operations and transfer limits. |
