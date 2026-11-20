@@ -1,0 +1,24 @@
+name: Translation / Traducción
+description: Add or improve a language / Añadir o mejorar un idioma
+title: "[Translation / Traducción]: "
+body:
+  - type: input
+    id: language
+    attributes:
+      label: Language and tag / Idioma y etiqueta
+      placeholder: "Español (es)"
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Documents and source revision / Documentos y revisión de referencia
+    validations:
+      required: true
+  - type: textarea
+    id: review
+    attributes:
+      label: Review and draft status / Revisión y estado del borrador
+      description: State human review needs and machine translation use / Indica revisión necesaria y uso de traducción automática.
+    validations:
+      required: true

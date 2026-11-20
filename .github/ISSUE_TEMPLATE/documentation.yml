@@ -1,0 +1,26 @@
+name: Documentation or question / Documentación o pregunta
+description: Report unclear or incorrect documentation / Informar documentación confusa o incorrecta
+title: "[Docs]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not post credentials, user files or recovery material. Sensitive findings: SECURITY.md.
+        No publiques credenciales, archivos personales ni material de recuperación. Hallazgos sensibles: SECURITY.md.
+  - type: input
+    id: document
+    attributes:
+      label: Document or topic / Documento o tema
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Question or correction / Pregunta o corrección
+      description: Explain the current text and expected meaning / Explica el texto actual y el significado esperado.
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: Supporting sources / Fuentes de apoyo

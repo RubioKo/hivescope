@@ -1,0 +1,30 @@
+name: Design proposal / Propuesta de diseño
+description: Propose a bounded change / Proponer un cambio acotado
+title: "[Proposal / Propuesta]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        English and Spanish are welcome. HiveScope is currently a design project.
+        Se aceptan inglés y español. HiveScope está actualmente en fase de diseño.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and audience / Problema y destinatarios
+      description: Explain the need and affected participants / Explica la necesidad y a quién afecta.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior / Comportamiento propuesto
+      description: Include alternatives and affected design documents / Incluye alternativas y documentos afectados.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria and risks / Criterios de aceptación y riesgos
+      description: Explain how to check the result and failure cases / Explica cómo verificar el resultado y sus fallos.
+    validations:
+      required: true

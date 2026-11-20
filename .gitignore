@@ -1,0 +1,21 @@
+# Local tools and generated documentation previews
+node_modules/
+.artifacts/
+coverage/
+*.log
+
+# Local configuration and private material
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets/
+recovery/
+*.local.json
+
+# Editor and operating-system files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

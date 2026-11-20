@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-labelledby="banner-title banner-desc" lang="es">
+  <!-- SPDX-License-Identifier: MIT
+       Copyright (c) 2026 RubioKo.
+       Adapted from the original HiveScope banner. See LICENSES/MIT-banner.txt. -->
+  <title id="banner-title">HiveScope: una red comunitaria de recursos</title>
+  <desc id="banner-desc">Celdas conectadas y pulsos de transferencia rodean el nombre HiveScope. Proyecto de almacenamiento descentralizado en fase de diseño.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#080f1c"/>
+      <stop offset="50%" stop-color="#10233b"/>
+      <stop offset="100%" stop-color="#080f1c"/>
+    </linearGradient>
+    <linearGradient id="word" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#d8f0ff"/>
+      <stop offset="55%" stop-color="#8dccff"/>
+      <stop offset="100%" stop-color="#79e5dd"/>
+    </linearGradient>
+    <radialGradient id="halo">
+      <stop offset="0%" stop-color="#2671bd" stop-opacity=".2"/>
+      <stop offset="100%" stop-color="#2671bd" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="mesh" width="104" height="90" patternUnits="userSpaceOnUse">
+      <path d="M26 0H78L104 45 78 90H26L0 45Z" fill="none" stroke="#72b8ee" stroke-opacity=".055"/>
+    </pattern>
+    <g id="cell">
+      <path d="M0-27 24-13.5V13.5L0 27-24 13.5V-13.5Z" fill="#0b192c" stroke="#4385bc" stroke-width="1.3"/>
+      <circle r="4.5" fill="#8dccff"/>
+      <circle r="10" fill="none" stroke="#8dccff" stroke-opacity=".16"/>
+    </g>
+    <path id="left-links" pathLength="100" d="M65 90 143 45 221 90 221 180 143 225 65 180 65 90 143 135 221 90M65 180 143 135 221 180M143 45V135 225" fill="none"/>
+    <path id="right-links" pathLength="100" d="M979 90 1057 45 1135 90 1135 180 1057 225 979 180 979 90 1057 135 1135 90M979 180 1057 135 1135 180M1057 45V135 225" fill="none"/>
+  </defs>
+  <style>
+    .flow { stroke-dasharray: 3 97; animation: transfer 12s linear infinite; }
+    .flow.second { animation-delay: -6s; }
+    .alive { animation: breathe 8s ease-in-out infinite; }
+    .alive.second { animation-delay: -4s; }
+    @keyframes transfer { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+    @keyframes breathe { 0%,100% { opacity: .65; } 50% { opacity: 1; } }
+    @media (max-width: 600px) {
+      .eyebrow, .signature { display: none; }
+      .wordmark { font-size: 100px; }
+      .tagline { font-size: 28px; }
+      .alive { opacity: .3; animation: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .flow { animation: none; display: none; }
+      .alive { animation: none; opacity: .9; }
+    }
+  </style>
+  <rect width="1200" height="300" rx="12" fill="url(#bg)"/>
+  <rect width="1200" height="300" rx="12" fill="url(#mesh)"/>
+  <ellipse cx="600" cy="130" rx="400" ry="205" fill="url(#halo)"/>
+  <path d="M300 38H900M300 262H900" stroke="#8dccff" stroke-opacity=".13"/>
+  <g stroke="#366183" stroke-width="1.5" opacity=".7">
+    <use href="#left-links"/><use href="#right-links"/>
+  </g>
+  <g fill="none" stroke="#83ddd8" stroke-width="2.7" stroke-linecap="round" opacity=".8">
+    <use href="#left-links" class="flow"/>
+    <use href="#right-links" class="flow second"/>
+  </g>
+  <g class="alive">
+    <use href="#cell" x="65" y="90"/><use href="#cell" x="143" y="45"/>
+    <use href="#cell" x="221" y="90"/><use href="#cell" x="221" y="180"/>
+    <use href="#cell" x="143" y="225"/><use href="#cell" x="65" y="180"/>
+    <use href="#cell" x="143" y="135"/>
+  </g>
+  <g class="alive second">
+    <use href="#cell" x="979" y="90"/><use href="#cell" x="1057" y="45"/>
+    <use href="#cell" x="1135" y="90"/><use href="#cell" x="1135" y="180"/>
+    <use href="#cell" x="1057" y="225"/><use href="#cell" x="979" y="180"/>
+    <use href="#cell" x="1057" y="135"/>
+  </g>
+  <g text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+    <text class="eyebrow" x="600" y="72" fill="#98b2cc" font-size="10.5" letter-spacing="2.5">UNA RED COMUNITARIA DE RECURSOS</text>
+    <text class="wordmark" x="600" y="143" fill="url(#word)" font-size="70" font-weight="700" letter-spacing="2">HiveScope</text>
+    <text class="tagline" x="600" y="181" fill="#bbcee0" font-size="15.5">Almacenamiento descentralizado · Código abierto · Comunidad</text>
+    <path d="M552 204H648" stroke="#79e5dd" stroke-opacity=".55"/>
+    <text class="signature" x="600" y="231" fill="#8ca7c1" font-size="10" letter-spacing="1.4">EN FASE DE DISEÑO · CONSTRUYAMOS JUNTOS</text>
+  </g>
+  <rect x=".5" y=".5" width="1199" height="299" rx="11.5" fill="none" stroke="#7cbbef" stroke-opacity=".13"/>
+</svg>
