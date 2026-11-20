@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package lan starts a HiveScope recovery read on a direct, authenticated LAN connection.
+// Package lan reads a HiveScope recovery catalog on a direct, authenticated LAN connection.
 package lan
 
 import (
@@ -116,12 +116,7 @@ func authenticateProvider(ctx context.Context, socket net.Conn, device crypto.Pr
 	}
 	mux := *yamux.DefaultTransport
 	mux.MaxIncomingStreams = 0 // Only the requester opens streams on this connection.
-	muxers := []upgrader.StreamMuxer{{ID: yamux.ID, Muxer: &mux}}
-	tls, err := libp2ptls.New(libp2ptls.ID, device, muxers)
-	if err != nil {
-		return nil, err
-	}
-	upgrade, err := upgrader.New([]sec.SecureTransport{tls}, muxers, nil, nil, nil)
+	upgrade, err := newLANUpgrader(device, &mux)
 	if err != nil {
 		return nil, err
 	}
@@ -146,4 +141,13 @@ func authenticateProvider(ctx context.Context, socket net.Conn, device crypto.Pr
 		return nil, ErrProviderIdentity
 	}
 	return conn, nil
+}
+
+func newLANUpgrader(identity crypto.PrivKey, mux *yamux.Transport) (transport.Upgrader, error) {
+	muxers := []upgrader.StreamMuxer{{ID: yamux.ID, Muxer: mux}}
+	tls, err := libp2ptls.New(libp2ptls.ID, identity, muxers)
+	if err != nil {
+		return nil, err
+	}
+	return upgrader.New([]sec.SecureTransport{tls}, muxers, nil, nil, nil)
 }

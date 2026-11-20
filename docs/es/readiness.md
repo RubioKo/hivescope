@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 13 -->
+<!-- docs-pair: readiness; revision: 14 -->
 
 [English](../en/readiness.md) | [Español](readiness.md) | [Índice](README.md)
 
@@ -10,11 +10,13 @@ que guarda la copia cifrada? ¿Puede ese mismo proveedor rechazar el mismo
 paquete después de confirmar una revocación y reiniciarse? Estos dos resultados
 definen el primer prototipo de escritorio.
 
-**Resultados actuales.** Las pruebas locales cubren los formatos de recuperación,
-el guardado de archivos verificados y la identidad del proveedor. Las pruebas
-de red usan TCP en la interfaz de bucle local y equipos virtuales aislados en
-Linux. Recuperar un archivo en un equipo de reemplazo y comprobar que un proveedor mantiene la
-revocación tras reiniciar siguen siendo objetivos del ensayo en red local.
+**Resultados actuales.** Las pruebas locales cubren los formatos de recuperación
+y el guardado de archivos verificados. Las pruebas TCP en la interfaz de bucle
+local comprueban la identidad del proveedor y la autorización de un solo uso
+para leer el catálogo. La prueba de identidad también se ejecuta en equipos
+virtuales aislados en Linux. Recuperar un archivo en un equipo de reemplazo
+y comprobar que el proveedor mantiene la revocación tras reiniciar siguen
+siendo objetivos del ensayo en red local.
 
 ## Alcance y contratos
 
@@ -113,9 +115,9 @@ bytes. El contenido recuperado es `48 69 76 65 0a`. La contraseña incorrecta,
 el bloque sustituido, la firma de catálogo alterada y el recibo contrastado con
 un manifiesto modificado fallan sus respectivas comprobaciones. [Objeto y catálogo](../../internal/conformance/snapshot_test.go) · [Recuperación y lecturas](../../internal/conformance/recovery_test.go) · [Recibo](../../internal/conformance/receipt_test.go)
 
-El ejemplo incluye una firma válida hecha con una clave antigua. Para
-demostrar que esa clave pierde el acceso tras la revocación hace falta ejecutar
-al proveedor.
+El ejemplo incluye una firma válida hecha con una clave antigua. M1-03
+también requiere un proveedor que confirme la revocación y la mantenga
+después de reiniciarse.
 
 La función de Go `WithRecoveryPackage` autentica el paquete en el equipo y
 comprueba sus campos antes de pasar el control al código de recuperación del
@@ -134,9 +136,7 @@ ambos intentos. El proveedor cuya clave figura en el paquete recibe una
 solicitud `READ_BEGIN` para el catálogo y devuelve un reto en ese flujo.
 El otro proveedor recibe un intento de negociación TLS y cero solicitudes
 de catálogo. Con otro paquete que contiene su propia clave pública, este
-segundo proveedor recibe una solicitud en esa misma dirección. La prueba
-termina al recibir el reto. Para completar la lectura, el proveedor deberá
-comprobar una prueba firmada y autorizar el envío de los bytes del catálogo.
+segundo proveedor recibe una solicitud en esa misma dirección.
 [Prueba de identidad del proveedor](../../internal/conformance/provider_identity_test.go)
 
 El ensayo en Linux repite los tres casos con pilas de red independientes para
@@ -150,6 +150,18 @@ de 81 bytes con su propio paquete. El recuento incluye la cabecera de la trama. 
 En Linux, con los módulos Go en caché, iproute2 y permiso para crear espacios de
 nombres de red con sudo, ejecuta `bash scripts/test-provider-netns.sh` desde la raíz
 del repositorio. [Prueba de red aislada](../../internal/conformance/provider_netns_linux_test.go) · [Script del ensayo](../../scripts/test-provider-netns.sh)
+
+La prueba de autorización del catálogo usa las mismas identidades del proveedor
+y del equipo de reemplazo en dos conexiones TCP de bucle local. El proveedor
+conserva en memoria el permiso vigente y el catálogo cifrado y firmado. En la
+primera conexión, el equipo de reemplazo firma el reto del proveedor. El permiso
+autoriza la lectura y el equipo recibe los 250 bytes exactos del catálogo de
+`hive.txt`. En la segunda conexión, el proveedor emite un reto nuevo para ese
+mismo catálogo. Reenviar la primera firma de 64 bytes devuelve `DENIED` y
+**cero bytes del catálogo**. La prueba cuenta por separado la trama de error
+y los datos del catálogo. El cliente verifica el catálogo firmado en su equipo
+para identificar el objeto cifrado que deberá solicitar después.
+[Prueba de autorización del catálogo](../../internal/conformance/catalog_proof_test.go)
 
 El lector en Go verifica el catálogo firmado, autentica cada bloque cifrado
 y comprueba la longitud total y el resumen SHA-256 del objeto. Guarda el

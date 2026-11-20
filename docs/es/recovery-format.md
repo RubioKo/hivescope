@@ -1,4 +1,4 @@
-<!-- docs-pair: recovery-format; revision: 4 -->
+<!-- docs-pair: recovery-format; revision: 5 -->
 
 [English](../en/recovery-format.md) | [Español](recovery-format.md) | [Índice](README.md)
 
@@ -8,11 +8,12 @@
 original de Ana está apagada. Ana conserva su paquete de recuperación y su contraseña,
 y puede conectarse al proveedor que guardó su archivo cifrado. Con el paquete, el
 equipo nuevo identifica al proveedor, demuestra su derecho a leer y descifra el resultado
-localmente. El proveedor puede aceptar o rechazar cada lectura por separado. El
-lector en Go se prueba con un desbloqueo local y una solicitud de catálogo
-a un proveedor autenticado mediante TCP en la interfaz de bucle local. La
-autorización de lectura y la transferencia del archivo descritas aquí corresponden
-al diseño del futuro cliente de línea de comandos y del proveedor. [Primera prueba de recuperación](readiness.md)
+localmente. El proveedor puede aceptar o rechazar cada lectura por separado.
+Las pruebas en Go cubren el desbloqueo local y la lectura autenticada del catálogo
+mediante TCP en la interfaz de bucle local. El equipo de reemplazo firma un reto
+nuevo con la clave de recuperación. Reutilizar esa firma en una segunda conexión
+devuelve `DENIED` y cero bytes del catálogo. Recuperar el archivo también exige
+una lectura autorizada independiente de su objeto cifrado. [Primera prueba de recuperación](readiness.md)
 
 ## Qué conserva Ana
 
@@ -142,8 +143,8 @@ las dos mitades de la firma de 64 bytes. Se firman directamente los 196 bytes.
 El hash permite comprobar su codificación. Las cuatro firmas son matemáticamente
 válidas, incluidas las dos que el proveedor debe rechazar en el caso B.
 Los valores se comprobaron con las claves públicas de prueba del RFC y sus
-correspondientes vectores. Los resultados de autorización y recuperación
-descritos arriba quedan pendientes de un prototipo operativo.
+correspondientes vectores. Para completar los casos A y B también hace falta
+leer el objeto y comprobar que el proveedor mantiene la revocación al reiniciar.
 
 ```text
 [11]
