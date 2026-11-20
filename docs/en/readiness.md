@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 10 -->
+<!-- docs-pair: readiness; revision: 11 -->
 
 [English](readiness.md) | [Español](../es/readiness.md) | [Index](README.md)
 
@@ -138,13 +138,30 @@ termination. Physical power loss still requires separate filesystem trials.
 Successful publication requires a final directory flush. The local Windows
 NTFS trial completed that flush. [Linux directory synchronization](https://man7.org/linux/man-pages/man2/fsync.2.html) · [Windows filesystem flush semantics](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/0de7dc40-9627-437e-a4df-c4696cdc3d02)
 
-If the flush fails after the rename, the
-API returns `ErrPublicationUncertain`. The complete new file
-may already be visible. The next step is to reconcile that outcome before a
-retry. Recover the same authenticated snapshot independently and compare the
-destination byte for byte. If they match, flush the file and directory before
-confirming. If they differ, keep the destination and request a new path.
-[Recovery after an uncertain publication](file-catalog.md)
+### Check an uncertain save after restart
+
+If the directory flush fails after the rename, the API returns
+`ErrPublicationUncertain`. The complete new file may already be visible.
+For a restore that can be checked later, call `SaveRecoverableObject` with a
+private state directory dedicated to that restore. Keep this directory along
+with access to the original recovery package and the chosen destination.
+An earlier one-shot save lacks the binding needed for this check.
+[Restore record](file-catalog.md)
+
+After restart, reopen the original signed catalog and call `ReopenPublication`
+with its encrypted object, the chosen destination and the state directory.
+The reader verifies the object again in a separate private temporary file and
+compares it byte for byte with the existing destination. A match confirms the
+save only after the destination and its parent directory have both been flushed.
+If the bytes differ, `ErrDestinationDiffers` tells the caller to preserve the
+file and ask for a fresh destination. If the object is unavailable or a flush
+fails, the save remains uncertain. The desktop client will need to call this
+local Go API when reopening a restore.
+
+In the five-byte test the process that saved the file has exited. Reopening
+confirms `Hive\n`. After a local edit changes only the last byte to `!`, the
+same check reports a difference and preserves all five bytes of `Hive!`.
+[Restart after a failed flush](../../internal/storageformat/publish_test.go) · [Reopening tests](../../internal/conformance/reconciliation_test.go)
 
 Automatic discovery and matching belong to milestone 2. Three-provider
 redundancy and repair, desktop GUI and mobile access, private compute and

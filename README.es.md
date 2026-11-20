@@ -1,4 +1,4 @@
-<!-- docs-pair: home; revision: 13 -->
+<!-- docs-pair: home; revision: 14 -->
 
 [English](README.md) | Español
 
@@ -14,9 +14,11 @@ y cuándo. Las máquinas se encargan de coordinarlo.
 
 **HiveScope ya puede restaurar un archivo cifrado de forma local.** Tú eliges el
 destino y si quieres reemplazar un archivo existente. El lector verifica el archivo
-entero antes de guardarlo. En la prueba de interrupción, al detener el proceso justo
-antes del reemplazo, el original queda intacto. Los ejemplos locales cubren un archivo
-vacío, uno de cinco bytes y otro de 4 MiB + 1 byte.
+entero antes de guardarlo. Si el resultado es incierto, el lector puede reabrir
+el destino y compararlo byte por byte con la misma versión verificada.
+La coincidencia permite confirmar el guardado. Si entretanto editaste el archivo,
+se conservan tus cambios. Los ejemplos locales cubren un archivo vacío, uno de cinco
+bytes y otro de 4 MiB + 1 byte.
 El primer prototipo deberá lograrlo en otra computadora y demostrar
 que un proveedor rechaza una credencial revocada.
 El cómputo privado y el alojamiento de servicios vendrán después.

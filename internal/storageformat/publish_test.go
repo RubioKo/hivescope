@@ -56,7 +56,7 @@ func TestProcessInterruptionBeforeReplace(t *testing.T) {
 			}
 			return errors.New("parent unexpectedly released the pre-rename barrier")
 		}
-		t.Fatalf("child unexpectedly resumed: %v", s.saveObject(bytes.NewReader(object), filepath.Join(childDir, destination), true, pause, syncPublishDir))
+		t.Fatalf("child unexpectedly resumed: %v", s.saveObject(bytes.NewReader(object), filepath.Join(childDir, destination), true, "", pause, syncPublishDir))
 	}
 
 	dir := t.TempDir()
@@ -121,19 +121,96 @@ func TestProcessInterruptionBeforeReplace(t *testing.T) {
 }
 
 func TestFailureAfterReplaceIsUncertain(t *testing.T) {
-	snapshot, object := publicationVector(t)
-	destination := filepath.Join(t.TempDir(), "chosen.bin")
-	if err := os.WriteFile(destination, []byte("keep\n"), 0600); err != nil {
+	const childFlag = "HIVESCOPE_TEST_UNCERTAIN_RESTORE"
+	names := []string{"unchanged.bin", "edited.bin"}
+	if dir := os.Getenv(childFlag); dir != "" {
+		if !filepath.IsAbs(dir) {
+			t.Fatal("expected private test directory")
+		}
+		snapshot, object := publicationVector(t)
+		flushErr := errors.New("injected directory sync failure")
+		for _, name := range names {
+			err := snapshot.saveObject(bytes.NewReader(object), filepath.Join(dir, name), true,
+				filepath.Join(dir, name+".state"), publishStaged, func(*os.File) error { return flushErr })
+			if !errors.Is(err, ErrPublicationUncertain) || !errors.Is(err, flushErr) {
+				t.Fatalf("unexpected post-rename result: %v", err)
+			}
+		}
+		return
+	}
+	dir := t.TempDir()
+	for _, name := range names {
+		if err := os.Mkdir(filepath.Join(dir, name+".state"), 0700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("keep\n"), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	exe, err := os.Executable()
+	if err != nil {
 		t.Fatal(err)
 	}
-	flushErr := errors.New("injected directory sync failure")
-	err := snapshot.saveObject(bytes.NewReader(object), destination, true, publishStaged,
-		func(*os.File) error { return flushErr })
-	if !errors.Is(err, ErrPublicationUncertain) || !errors.Is(err, flushErr) {
-		t.Fatalf("unexpected post-rename result: %v", err)
+	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+	defer cancel()
+	child := exec.CommandContext(ctx, exe, "-test.run=^TestFailureAfterReplaceIsUncertain$")
+	child.Dir = dir
+	child.Env = append(child.Environ(), childFlag+"="+dir)
+	if out, err := child.CombinedOutput(); err != nil {
+		t.Fatalf("saving process: %v\n%s", err, out)
 	}
-	got, err := os.ReadFile(destination)
-	if err != nil || string(got) != "Hive\n" {
-		t.Fatalf("visible destination after failed directory sync = %q, error = %v", got, err)
+	// Both saves were uncertain when the child exited. Only the second
+	// destination is edited before the first reconciliation of either save.
+	if err := os.WriteFile(filepath.Join(dir, "edited.bin"), []byte("Hive!"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	snapshot, object := publicationVector(t)
+	for _, name := range names {
+		dest := filepath.Join(dir, name)
+		want := "Hive\n"
+		var wantErr error
+		if name == "edited.bin" {
+			want, wantErr = "Hive!", ErrDestinationDiffers
+		}
+		err := snapshot.ReopenPublication(bytes.NewReader(object), dest, filepath.Join(dir, name+".state"))
+		if !errors.Is(err, wantErr) {
+			t.Fatalf("%s: reopen returned %v, want %v", name, err, wantErr)
+		}
+		got, err := os.ReadFile(dest)
+		if err != nil || string(got) != want {
+			t.Fatalf("%s after reopen = %q, error = %v", name, got, err)
+		}
+	}
+}
+
+func TestReopenRequiresBothFlushes(t *testing.T) {
+	snapshot, object := publicationVector(t)
+	destination, state := filepath.Join(t.TempDir(), "chosen.bin"), t.TempDir()
+	if err := snapshot.SaveRecoverableObject(bytes.NewReader(object), destination, false, state); err != nil {
+		t.Fatal(err)
+	}
+	injected := errors.New("injected flush failure")
+	for _, failAt := range []string{"file", "directory", ""} {
+		var order []string
+		flush := func(label string) func(*os.File) error {
+			return func(f *os.File) error {
+				order = append(order, label)
+				if label == failAt {
+					return injected
+				}
+				return f.Sync()
+			}
+		}
+		err := snapshot.reopenPublication(bytes.NewReader(object), destination, state, flush("file"), flush("directory"))
+		wantOrder := "file directory"
+		if failAt == "file" {
+			wantOrder = "file"
+		}
+		if strings.Join(order, " ") != wantOrder {
+			t.Fatalf("failure at %q: flush order %v", failAt, order)
+		}
+		if failAt == "" && err != nil || failAt != "" && (!errors.Is(err, ErrPublicationUncertain) || !errors.Is(err, injected)) {
+			t.Fatalf("failure at %q: unexpected reconciliation result: %v", failAt, err)
+		}
 	}
 }

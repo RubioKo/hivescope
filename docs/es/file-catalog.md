@@ -1,4 +1,4 @@
-<!-- docs-pair: file-catalog; revision: 2 -->
+<!-- docs-pair: file-catalog; revision: 3 -->
 
 [English](../en/file-catalog.md) | [Español](file-catalog.md) | [Índice](README.md)
 
@@ -103,6 +103,24 @@ destino y su directorio antes de confirmar. Si el proveedor está inaccesible,
 mantener el resultado como incierto. Si los bytes difieren, conservar el
 destino y pedir uno nuevo. Registrar por separado una
 recuperación interrumpida y un fallo de autenticación. [Supuestos del proveedor y del sistema de archivos](provider-persistence.md)
+
+Para comprobar una recuperación tras reiniciar, el cliente aporta un directorio
+privado dedicado a esa operación. Antes de publicar, guarda un registro opaco que
+vincula el catálogo firmado exacto con la ruta absoluta elegida. El registro
+omite la ruta, las claves y el contenido del archivo. Al reabrir, el cliente
+aporta ese directorio, el contexto de recuperación original y el mismo destino.
+Comprueba el vínculo antes de comparar el archivo. El registro permite repetir
+la comprobación hasta que el cliente lo descarte. Cada intento utiliza un
+directorio de estado nuevo, independiente del directorio que contiene el destino.
+
+El archivo local `restore-v1` contiene 32 bytes derivados mediante HKDF-SHA-256.
+La clave de entrada es la clave de versión autenticada, la sal es la firma
+verificada del catálogo y `info` contiene `HiveScope/local-publication/v1`, un
+byte cero y la ruta absoluta de destino tal como la representa una cadena de Go
+en esa plataforma. El cliente crea el registro de forma exclusiva y sincroniza
+el archivo y el directorio antes del cambio de nombre. Su presencia identifica
+la recuperación prevista. Confirmarla requiere además una comparación nueva y
+ambas sincronizaciones en el destino. [HKDF](https://www.rfc-editor.org/rfc/rfc5869)
 
 ## Tres entradas de catálogo reproducibles
 

@@ -83,28 +83,36 @@ func syncPublishDir(dir *os.File) error {
 	return dir.Sync()
 }
 
-func publishStaged(dir *os.File, stagedName, destName string, replace bool) error {
-	// Open the existing staging entry relative to the pinned directory.
-	// It was created exclusively in a private directory by this operation.
-	src, err := windows.NewNTUnicodeString(stagedName)
+// openExistingFileAt opens a single existing leaf relative to the pinned
+// directory. Open the reparse point itself if the entry has one.
+func openExistingFileAt(dir *os.File, leaf string, access, share uint32) (windows.Handle, error) {
+	name, err := windows.NewNTUnicodeString(leaf)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	parent := windows.Handle(dir.Fd())
-	defer runtime.KeepAlive(dir)
 	attr := windows.OBJECT_ATTRIBUTES{
-		RootDirectory: parent,
-		ObjectName:    src,
+		RootDirectory: windows.Handle(dir.Fd()),
+		ObjectName:    name,
 		Attributes:    windows.OBJ_CASE_INSENSITIVE,
 	}
 	attr.Length = uint32(unsafe.Sizeof(attr))
 	var file windows.Handle
 	var status windows.IO_STATUS_BLOCK
-	err = windows.NtCreateFile(&file, windows.DELETE|windows.SYNCHRONIZE, &attr, &status, nil, 0,
-		windows.FILE_SHARE_READ|windows.FILE_SHARE_WRITE|windows.FILE_SHARE_DELETE, windows.FILE_OPEN,
+	err = windows.NtCreateFile(&file, access, &attr, &status, nil, 0, share, windows.FILE_OPEN,
 		windows.FILE_NON_DIRECTORY_FILE|windows.FILE_OPEN_REPARSE_POINT|windows.FILE_SYNCHRONOUS_IO_NONALERT, 0, 0)
+	runtime.KeepAlive(dir)
 	if err != nil {
-		return fmt.Errorf("open staged file for rename: %w", publishWindowsError(err))
+		return 0, publishWindowsError(err)
+	}
+	return file, nil
+}
+
+func publishStaged(dir *os.File, stagedName, destName string, replace bool) error {
+	// This operation exclusively created the staging entry in a private directory.
+	file, err := openExistingFileAt(dir, stagedName, windows.DELETE|windows.SYNCHRONIZE,
+		windows.FILE_SHARE_READ|windows.FILE_SHARE_WRITE|windows.FILE_SHARE_DELETE)
+	if err != nil {
+		return fmt.Errorf("open staged file for rename: %w", err)
 	}
 	defer windows.CloseHandle(file)
 
@@ -131,6 +139,7 @@ func publishStaged(dir *os.File, stagedName, destName string, replace bool) erro
 	// source's own directory. The source handle already pins that directory.
 	rename.FileNameLength = uint32(2 * (len(name) - 1))
 	copy(rename.FileName[:], name)
+	var status windows.IO_STATUS_BLOCK
 	err = windows.NtSetInformationFile(file, &status, (*byte)(unsafe.Pointer(&rename)),
 		uint32(unsafe.Sizeof(rename)), windows.FileRenameInformation)
 	if err != nil {
