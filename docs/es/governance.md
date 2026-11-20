@@ -1,4 +1,4 @@
-<!-- docs-pair: governance; revision: 1 -->
+<!-- docs-pair: governance; revision: 2 -->
 
 [English](../en/governance.md) | [Español](governance.md) | [Índice](README.md)
 
@@ -26,6 +26,20 @@ llega mediante pull requests. El mantenimiento revisa alcance, precisión, parid
 de idiomas, licencias y comprobaciones. Una comprobación documental correcta no
 es una auditoría de seguridad. Los cambios administrativos directos se reservan
 al mantenimiento del repositorio y se describen si afectan a los colaboradores.
+
+Antes de integrar un PR en `main`, hay que resolver las conversaciones de revisión
+y superar la comprobación `Markdown, links and language parity` de GitHub Actions.
+La regla activa bloquea el borrado de la rama y los envíos forzados, sin
+excepciones. Mientras haya un solo mantenedor con escritura, el mínimo de
+aprobaciones es cero. Al conceder escritura a un segundo mantenedor, se debe
+exigir una aprobación independiente como parte de ese cambio.
+
+Dependabot revisa las dependencias de npm y las acciones de GitHub cada semana
+y puede abrir PR de seguridad entre revisiones programadas. El repositorio
+exige fijar las acciones al SHA completo de un commit y permite dos acciones
+externas, `actions/checkout` y `actions/setup-node`. Para añadir otra, explica
+en un PR la necesidad y los permisos que requiere para que el mantenedor pueda
+revisar el cambio en la lista de acciones permitidas.
 
 ## Publicaciones futuras
 
