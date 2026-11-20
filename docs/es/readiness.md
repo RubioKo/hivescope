@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 5 -->
+<!-- docs-pair: readiness; revision: 6 -->
 
 [English](../en/readiness.md) | [Español](readiness.md) | [Índice](README.md)
 
@@ -91,8 +91,8 @@ de cada fila requiere una especificación revisada en inglés y español.
 | --- | --- | --- |
 | 1. Identidad y recuperación | ¿Cómo se desbloquean los secretos locales y se mantiene recuperable la clave administrativa separada? | Especificar la custodia y el desbloqueo local en cada sistema objetivo respetando el permiso de primera lectura y los casos de revocación. |
 | 2. Formato de archivos y catálogos | La [propuesta de catálogo para un archivo](file-catalog.md) especifica la clave de versión, los bloques cifrados y las reglas de reintento. | Hay valores de referencia para un archivo de cinco bytes, uno vacío, uno de dos bloques y un bloque sustituido. La futura CLI deberá reproducirlos y demostrar que una recuperación fallida conserva el destino. |
-| 3. Protocolo de transferencia | ¿Cómo reservan espacio los pares, envían, reanudan, confirman y recuperan un objeto? ¿Qué se firma exactamente? ¿Cómo distingue el proveedor un reintento de una solicitud nueva? | Una tabla de mensajes versionados con campos obligatorios, bytes firmados, tamaños de trama, límites de concurrencia y tiempo, errores, reintentos y vigencia del acuerdo durante la transferencia. Incluir una carga cuya confirmación se pierde en la red. |
-| 4. Disco y reinicios | ¿Cuándo puede confirmar el proveedor que el contenido quedó guardado de forma duradera? ¿Cómo compiten dos reservas por el último espacio libre? ¿Cómo se concilian el directorio de fragmentos y SQLite al reiniciar? | Una tabla de estados que cubra reserva, temporal, bytes verificados, índice persistido y confirmación. Documentar qué sobrevive a cada interrupción, cómo se contabiliza y cómo se liberan bytes o reservas huérfanos. |
+| 3. Protocolo de transferencia | El [contrato de subida](upload-confirmation.md) define la identidad de la solicitud, el recibo firmado y los resultados de los reintentos. | Especificar los mensajes versionados de reserva, transferencia, consulta y confirmación, con tamaños de trama, concurrencia, plazos y errores. |
+| 4. Disco y reinicios | El contrato de subida especifica en qué momento se confirma la operación y cómo se concilian los dos archivos, el índice y la cuota. | Demostrar la persistencia en cada sistema de archivos admitido. Interrumpir el proveedor antes y después de confirmar la transacción y verificar tras el reinicio la visibilidad, la cuota y la devolución del mismo recibo. |
 
 Tres detalles técnicos orientan estas decisiones. La interfaz AEAD de Go exige
 un nonce único por clave para cada cifrado. La serialización Protobuf no garantiza
@@ -128,7 +128,7 @@ doméstica, el tráfico de relay, el uso de disco y el impacto en batería en Wi
 Linux y macOS. El cómputo privado de propósito general y el alojamiento persistente
 tienen criterios propios en la [hoja de ruta](roadmap.md).
 
-**Siguiente paso de diseño.** Definir cuándo puede el proveedor confirmar una subida.
-Seguir una solicitud desde la reserva hasta que el objeto y el catálogo estén guardados
-de forma duradera. Si se pierde la respuesta y el proveedor se reinicia, el cliente
-debe poder reintentar y saber qué bytes están a salvo sin consumir la cuota dos veces.
+**Siguiente paso de diseño.** Definir los mensajes que se intercambian durante
+la subida. Especificar cómo el cliente reserva espacio, envía cada elemento,
+confirma el par y consulta su estado, con tramas acotadas, tiempos de espera y
+una respuesta que le permita decidir qué hacer ante cada error.

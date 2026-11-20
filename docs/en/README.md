@@ -1,4 +1,4 @@
-<!-- docs-pair: index; revision: 6 -->
+<!-- docs-pair: index; revision: 7 -->
 
 [English](README.md) | [Español](../es/README.md) | [Project home](../../README.md)
 
@@ -17,6 +17,7 @@ one request from the person asking for resources to the machine lending them.
 - [First recovery test and open design decisions](readiness.md)
 - [Recovery package and signed reads](recovery-format.md)
 - [How recovery identifies and verifies the file](file-catalog.md)
+- [When a provider can confirm an upload](upload-confirmation.md)
 - [Encrypted storage and maintenance](storage.md)
 - [Folder synchronization](synchronization.md)
 - [Security and threat model](security.md)

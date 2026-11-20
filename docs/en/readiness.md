@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 5 -->
+<!-- docs-pair: readiness; revision: 6 -->
 
 [English](readiness.md) | [Español](../es/readiness.md) | [Index](README.md)
 
@@ -85,8 +85,8 @@ each row needs a reviewed specification in English and Spanish.
 | --- | --- | --- |
 | 1. Identity and recovery | How are local secrets unlocked and the separate administrative key kept recoverable? | Specify custody and local unlock on each target OS. Use the scoped first-read grant and revocation cases above as constraints. |
 | 2. File and catalog format | The [single-file catalog proposal](file-catalog.md) specifies the version key, encrypted blocks and retry rules. | Reference values cover a five-byte file, an empty file, a two-block file and a substituted record. A future CLI must reproduce them and demonstrate that a failed restore preserves the destination. |
-| 3. Transfer protocol | How do peers reserve, send, resume, acknowledge and retrieve an object? What precisely gets signed? How does a peer distinguish a retry from a new request? | A versioned message table with required fields, signed bytes, frame sizes, concurrency and time limits, error responses, retry rules and agreement validity during transfer. Include an acknowledged upload whose reply is lost. |
-| 4. Disk and restart behavior | At which point may a provider acknowledge durable storage? How do two reservations share the last free bytes? How does restart reconcile the fragment directory with SQLite? | A state table covering reservation, temporary file, verified bytes, durable index and acknowledgment. For each interruption, document what survives, what is charged and how orphaned bytes or reservations are reclaimed. |
+| 3. Transfer protocol | The [upload contract](upload-confirmation.md) defines the request identity, signed receipt and retry outcomes. | Specify the versioned messages for reservation, transfer, status and finalization, including frame sizes, concurrency, time limits and errors. |
+| 4. Disk and restart behavior | The upload contract specifies the commit point and how to reconcile the two files, index and quota. | Demonstrate durability on each supported filesystem. Interrupt the provider on both sides of commit and verify visibility, accounting and receipt replay after restart. |
 
 Three implementation details inform these decisions. Go's AEAD interface requires
 nonce uniqueness for each key. Protobuf serialization does not guarantee canonical
@@ -120,7 +120,6 @@ desktop alpha will measure home connectivity, relay bandwidth, disk use and batt
 impact on Windows, Linux and macOS. General-purpose private computing and persistent
 hosting have separate acceptance criteria in the [roadmap](roadmap.md).
 
-**Next design step.** Specify when the provider can acknowledge an upload.
-Trace one request from reservation through durable storage of the object and
-catalog. If the reply is lost and the provider restarts, the client must be
-able to retry and discover which bytes are safe without consuming quota twice.
+**Next design step.** Define the messages exchanged during this upload. Specify
+how the client reserves space, sends each item, finalizes the pair and asks for
+status, with bounded frames, timeouts and an actionable response for each error.

@@ -1,4 +1,4 @@
-<!-- docs-pair: architecture; revision: 4 -->
+<!-- docs-pair: architecture; revision: 5 -->
 
 [English](../en/architecture.md) | [Español](architecture.md) | [Índice](README.md)
 
@@ -66,9 +66,10 @@ relays y el tráfico de reparación se medirán por separado del consumo del PC.
 
 SQLite conserva el índice, las reservas, los acuerdos y la cola reanudable de
 cada nodo. Los objetos se guardan en un directorio configurado por separado.
-Confirmar una escritura requiere que el archivo y su entrada del índice sobrevivan
-a un reinicio. El hito de redundancia replica los catálogos cifrados para poder
-recuperar datos sin la base original.
+En la primera subida, el proveedor confirma juntos el objeto cifrado y el catálogo.
+Ambos archivos, sus entradas en el índice y el recibo deben sobrevivir a un
+reinicio. El hito de redundancia replica los catálogos cifrados para poder
+recuperar datos sin la base original. [Confirmación de subida y respuesta perdida](upload-confirmation.md)
 
 La CLI y la futura interfaz gráfica compartirán operaciones para perfiles,
 solicitudes, pausa, estado, permisos de carpeta y recuperación. Los protocolos

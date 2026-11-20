@@ -1,4 +1,4 @@
-<!-- docs-pair: architecture; revision: 4 -->
+<!-- docs-pair: architecture; revision: 5 -->
 
 [English](architecture.md) | [Español](../es/architecture.md) | [Index](README.md)
 
@@ -62,9 +62,11 @@ relay saturation and repair traffic separately from desktop resource use.
 ## Persistence and interfaces
 
 SQLite holds each node's index, reservations, agreements and resumable queue.
-Objects occupy a separate configured directory. Confirming a write requires the
-file and its index entry to survive restart. The redundancy milestone replicates
-encrypted catalogs so a replacement can recover without the original database.
+Objects occupy a separate configured directory. For the first upload, the
+provider confirms the encrypted object and catalog together. Both files, their
+index entries and the receipt must survive restart. The redundancy milestone
+replicates encrypted catalogs so a replacement can recover without the original
+database. [Upload confirmation and lost replies](upload-confirmation.md)
 
 The CLI and later GUI share operations for resource profiles, requests, pause,
 status, folder authorization and recovery. P2P protocols are versioned, with
