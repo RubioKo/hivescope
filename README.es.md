@@ -1,4 +1,4 @@
-<!-- docs-pair: home; revision: 1 -->
+<!-- docs-pair: home; revision: 2 -->
 
 [English](README.md) | Español
 
@@ -6,65 +6,65 @@
 
 # HiveScope
 
-HiveScope es un proyecto de código abierto que está diseñando una red comunitaria
-de recursos entre pares. Su primer servicio sincronizará carpetas privadas entre
-tus dispositivos utilizando almacenamiento cifrado aportado por pares aprobados.
+**¿Qué archivos querrías recuperar si mañana tu computadora no encendiera?**
+Quizá sean tus fotos familiares, una tesis, tus grabaciones de música o el código de un proyecto.
+HiveScope es un proyecto de almacenamiento comunitario de código abierto. Lo diseñamos para
+que puedas elegir qué carpetas proteger, guardar copias cifradas en equipos de personas de
+tu confianza y recuperar tus archivos en otro dispositivo.
+Tú conservas las claves y decides cuáles de tus equipos pueden leer cada carpeta. Quien presta
+espacio elige cuánto disco y ancho de banda comparte y en qué horario.
 
-Cada participante controla lo que comparte: capacidad de disco, límites de
-transferencia y horarios. El diseño inicial utiliza acuerdos entre pares en lugar
-de un coordinador central o un libro mayor global de créditos. La IA alojada por
-la comunidad es una dirección posterior, comenzando con modelos abiertos
-existentes ejecutados por voluntarios con equipos capaces.
+**Estado del proyecto — diseño y documentación.** El primer prototipo se usará desde la línea
+de comandos en una computadora. Las plataformas previstas son Windows, Linux y macOS. La
+primera aplicación instalable sigue pendiente. [Visión](docs/es/vision.md) · [Hoja de ruta](docs/es/roadmap.md)
 
-**Estado: diseño y documentación.** Todavía no hay un daemon de almacenamiento,
-cliente de sincronización, instalador ni servicio de IA que puedas ejecutar.
-Windows, Linux y macOS son plataformas objetivo; no indican disponibilidad actual
-de software.
+## Los archivos de Ana y el espacio que presta Luis
 
-## Cómo empezar
+[![Ana frente a su computadora con una foto familiar, el borrador de su tesis y una grabación. Ver la historia ilustrada.](assets/story/hivescope-story.jpg)](assets/story/hivescope-es.mp4)
 
-- Conocer el proyecto: [visión y límites](docs/es/vision.md).
-- Explorar el sistema: [arquitectura](docs/es/architecture.md).
-- Encontrar trabajo útil: [hoja de ruta y criterios de aceptación](docs/es/roadmap.md).
-- Proponer un cambio: [guía de contribución](docs/es/contributing.md).
-- Hacer una pregunta: [Issues de GitHub](https://github.com/RubioKo/hivescope/issues).
+[Ver o descargar el ejemplo ilustrado del diseño en español (MP4, 30 segundos)](assets/story/hivescope-es.mp4)
 
-## Documentación esencial
+1. **Ana elige una carpeta.** En `Estudios` guarda una foto familiar, el borrador de su tesis
+   y la grabación de una entrevista. Quiere abrir esos archivos tanto en el portátil como en
+   su computadora de escritorio. Para `Documentos personales` solo autoriza el portátil.
+   Cada elección se aplica a todos los archivos de esa carpeta. [Los archivos de Ana en la ilustración](assets/story/hivescope-story.jpg)
+2. **Luis presta espacio.** Acepta alojar una copia cifrada, fija un límite de disco y
+   acuerda recibir transferencias por la tarde. La computadora de Ana cifra los archivos
+   y sus nombres antes de enviarlos. Luis puede ver el tamaño de una transferencia.
+   Las claves que permiten abrir el PDF, ver la foto o escuchar la grabación se quedan
+   con Ana. [Lo que ve Luis](assets/story/encrypted-storage.jpg) · [Modelo de seguridad](docs/es/security.md)
+3. **Ana recupera su trabajo.** Con el portátil original apagado, Ana usa una computadora
+   de reemplazo y su contraseña para abrir el paquete de recuperación que guardó aparte.
+   Mientras el equipo de Luis esté accesible y el acuerdo permita la lectura, puede
+   recuperar y descifrar `Estudios`. Allí vuelven a estar la misma foto, el borrador y la entrevista.
+   [La escena de recuperación](assets/story/recovering-files.jpg)
 
-- [Índice de documentación](docs/es/README.md)
-- [Almacenamiento y mantenimiento](docs/es/storage.md)
-- [Sincronización de carpetas](docs/es/synchronization.md)
-- [Seguridad y modelo de amenazas](docs/es/security.md)
-- [Gobernanza](docs/es/governance.md)
-- [Código de conducta](docs/es/code-of-conduct.md)
-- [Licencia y atribución](docs/es/licensing.md)
+El primer prototipo probará la recuperación con un archivo de ejemplo. En hitos posteriores
+se probará la recuperación con un proveedor desconectado y la sincronización entre los equipos
+del propietario. [Almacenamiento y mantenimiento](docs/es/storage.md) · [Sincronización de carpetas](docs/es/synchronization.md)
 
-## Encuentra tu función
+## Cómo puedes ayudar hoy
 
-- **Desarrollo:** revisar la arquitectura y proponer una tarea de implementación acotada.
-- **Investigación de seguridad:** estudiar límites de confianza, recuperación de
-  claves y casos de fallo.
-- **Operación de nodos:** ayudar a diseñar pruebas realistas de disponibilidad y
-  límites de recursos.
-- **Documentación o traducción:** mejorar el inglés y el español o
-  [proponer otro idioma](docs/es/translations.md).
-- **Mantenimiento:** seguir el proceso de revisión y decisiones de la gobernanza.
-- **Contribución asistida por IA:** leer [AGENTS.md](AGENTS.md) y la
-  [guía opcional de ECC](docs/es/ai-assisted-development.md).
+- **Revisa un caso de recuperación.** Si la transferencia se corta a mitad de camino,
+  ¿qué debería ver Ana en el equipo nuevo? Describe el resultado esperado y cómo comprobarlo.
+  [Arquitectura](docs/es/architecture.md) · [Proponer un caso](https://github.com/RubioKo/hivescope/issues/new?template=proposal.yml)
+- **Diseña una prueba en casa.** ¿Cuánto disco podrías prestar, en qué horario y con qué
+  límite de subida? Propón una prueba que respete esos límites cuando el equipo se suspenda.
+  [Proponer una prueba](https://github.com/RubioKo/hivescope/issues/new?template=proposal.yml)
+- **Mejora una explicación o traducción.** Elige un pasaje que cueste explicarle a otra
+  persona. Sugiere una redacción más clara en inglés o español, o ayuda a incorporar otra
+  lengua. [Guía de traducción](docs/es/translations.md)
 
-Las contribuciones sin herramientas de IA son igualmente bienvenidas. No se
-requiere ninguna suscripción ni instalación de ECC.
+Aceptamos preguntas y propuestas en inglés y español. Para comunicar un hallazgo de seguridad
+sensible, utiliza el canal privado. [Issues de GitHub](https://github.com/RubioKo/hivescope/issues) ·
+[Informes de seguridad](SECURITY.md)
 
-## Comunicación y ayuda
-
-Utiliza [Issues](https://github.com/RubioKo/hivescope/issues) para preguntas
-públicas, propuestas de diseño y problemas documentales. Se aceptan inglés y
-español. Para informes de seguridad sensibles, sigue [SECURITY.md](SECURITY.md).
-En esta etapa no existe un servicio de soporte de producción ni garantía de
-disponibilidad.
+[Guía de contribución](docs/es/contributing.md) · [Índice de documentación](docs/es/README.md) ·
+[Gobernanza](docs/es/governance.md) · [Código de conducta](docs/es/code-of-conduct.md) ·
+[Instrucciones para colaboradores](AGENTS.md) · [Guía opcional de IA y ECC](docs/es/ai-assisted-development.md)
 
 ## Licencia
 
-El material nuevo utiliza **AGPL-3.0-only**; consulta [LICENSE](LICENSE).
-Los banners animados adaptados conservan su licencia **MIT** y atribución;
-consulta los [avisos de terceros](THIRD_PARTY_NOTICES.md).
+El material nuevo del proyecto utiliza **AGPL-3.0-only**. Los banners animados adaptados conservan
+su licencia **MIT** y su atribución. [Licencia del proyecto](LICENSE) ·
+[Guía de licencias](docs/es/licensing.md) · [Avisos de terceros](THIRD_PARTY_NOTICES.md)

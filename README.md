@@ -1,4 +1,4 @@
-<!-- docs-pair: home; revision: 1 -->
+<!-- docs-pair: home; revision: 2 -->
 
 English | [Español](README.es.md)
 
@@ -6,60 +6,64 @@ English | [Español](README.es.md)
 
 # HiveScope
 
-HiveScope is an open-source project designing a community-owned peer-to-peer
-resource network. Its first service will synchronize private folders between
-your devices using encrypted storage contributed by approved peers.
+**What files would you want back if your computer wouldn't start tomorrow?**
+Maybe it's your family photos, a thesis, music you recorded or the source code for a project.
+HiveScope is an open-source community storage project. We're designing it so you can choose
+which folders to protect, keep encrypted copies on computers run by people you trust
+and recover your files on a new device. You keep the
+keys and choose which of your devices can read each folder. Anyone offering storage chooses
+how much space and bandwidth to share and when their computer is available.
 
-Participants control what they share: disk capacity, transfer limits and hours
-of operation. The initial design uses agreements between peers rather than a
-central coordinator or a global credit ledger. Community-hosted AI is a later
-direction, beginning with existing open models served by capable volunteers.
+**Project status — design and documentation.** The first prototype will run from the command
+line on a computer. Windows, Linux and macOS are our target platforms. An installable app
+is still ahead. [Vision](docs/en/vision.md) · [Roadmap](docs/en/roadmap.md)
 
-**Status: design and documentation.** There is no storage daemon, synchronization
-client, installer or AI service to run yet. Windows, Linux and macOS are target
-platforms, not a statement of current software availability.
+## Ana's files, Luis's spare disk space
 
-## Getting started
+[![Ana at her computer with a family photo, a thesis draft and an audio recording. Play the illustrated story.](assets/story/hivescope-story.jpg)](assets/story/hivescope-en.mp4)
 
-- Understand the project: [vision and boundaries](docs/en/vision.md).
-- Explore the system: [architecture](docs/en/architecture.md).
-- Find useful work: [roadmap and acceptance criteria](docs/en/roadmap.md).
-- Propose a change: [contribution guide](docs/en/contributing.md).
-- Ask a question: [GitHub Issues](https://github.com/RubioKo/hivescope/issues).
+[Watch or download the illustrated design example in English (MP4, 30 seconds)](assets/story/hivescope-en.mp4)
 
-## Essential documentation
+1. **Ana chooses a folder.** Her `Studies` folder holds a family photo, the draft of
+   her thesis and a recorded interview. She wants to open these files on her laptop and
+   desktop. For `Personal documents`, she authorizes only her laptop. Each choice applies
+   to every file in that folder. [Ana's files, illustrated](assets/story/hivescope-story.jpg)
+2. **Luis offers space.** Luis agrees to host an encrypted copy and sets a disk limit
+   and evening transfer hours. Ana's computer encrypts the files and their names before
+   sending them. Luis can see the size of a transfer. The keys needed to open the PDF,
+   view the photo or play the recording stay with Ana. [What Luis sees](assets/story/encrypted-storage.jpg) · [Security model](docs/en/security.md)
+3. **Ana recovers her work.** With her original laptop switched off, Ana unlocks the
+   recovery package she kept separately, using its password on a replacement computer.
+   While Luis's computer is reachable and their agreement allows reads, she can retrieve
+   and decrypt her `Studies` folder. The same photo, draft and interview are there again.
+   [The recovery scene](assets/story/recovering-files.jpg)
 
-- [Documentation index](docs/en/README.md)
-- [Storage and maintenance](docs/en/storage.md)
-- [Folder synchronization](docs/en/synchronization.md)
-- [Security and threat model](docs/en/security.md)
-- [Governance](docs/en/governance.md)
-- [Code of conduct](docs/en/code-of-conduct.md)
-- [License and attribution](docs/en/licensing.md)
+The first prototype will test recovery with a sample file. Later milestones will test recovery
+with one storage provider offline and synchronization between the owner's devices.
+[Storage and maintenance](docs/en/storage.md) · [Folder synchronization](docs/en/synchronization.md)
 
-## Find your role
+## How you can help today
 
-- **Developer:** review the architecture and propose a bounded implementation task.
-- **Security researcher:** examine trust boundaries, key recovery and failure cases.
-- **Node operator:** help design realistic availability and resource-limit trials.
-- **Technical writer or translator:** improve English and Spanish documentation or
-  [propose another language](docs/en/translations.md).
-- **Maintainer:** follow the review and decision process in the governance guide.
-- **AI-assisted contributor:** read [AGENTS.md](AGENTS.md) and the
-  [optional ECC guide](docs/en/ai-assisted-development.md).
+- **Review a recovery scenario.** If a transfer stops halfway through, what should Ana
+  see on the new computer? Describe the expected result and how to check it.
+  [Architecture](docs/en/architecture.md) · [Propose a scenario](https://github.com/RubioKo/hivescope/issues/new?template=proposal.yml)
+- **Design a home-computer trial.** How much disk space could you spare, at what times
+  and with what upload limit? Suggest a test that respects those limits when the computer
+  goes to sleep. [Propose a trial](https://github.com/RubioKo/hivescope/issues/new?template=proposal.yml)
+- **Improve an explanation or translation.** Pick a passage that would be hard to explain
+  to a friend. Suggest clearer wording in English or Spanish, or help introduce another
+  language. [Translation guide](docs/en/translations.md)
 
-Contributions without AI tools are equally welcome. No tool subscription or ECC
-installation is required.
+Questions and proposals are welcome in English and Spanish. Use the private reporting channel
+for sensitive security findings. [GitHub Issues](https://github.com/RubioKo/hivescope/issues) ·
+[Security reporting](SECURITY.md)
 
-## Communication and support
-
-Use [Issues](https://github.com/RubioKo/hivescope/issues) for public questions,
-design proposals and documentation problems. English and Spanish are welcome.
-For sensitive security reports, follow [SECURITY.md](SECURITY.md).
-There is no production support service or availability guarantee at this stage.
+[Contribution guide](docs/en/contributing.md) · [Documentation index](docs/en/README.md) ·
+[Governance](docs/en/governance.md) · [Code of conduct](docs/en/code-of-conduct.md) ·
+[Contributor instructions](AGENTS.md) · [Optional AI and ECC guidance](docs/en/ai-assisted-development.md)
 
 ## License
 
-New project material is licensed under **AGPL-3.0-only**; see [LICENSE](LICENSE).
-The adapted animated banners retain their **MIT** license and attribution; see
-[third-party notices](THIRD_PARTY_NOTICES.md).
+New project material is licensed under **AGPL-3.0-only**. The adapted animated banners retain
+their **MIT** license and attribution. [Project license](LICENSE) ·
+[Licensing guide](docs/en/licensing.md) · [Third-party notices](THIRD_PARTY_NOTICES.md)
