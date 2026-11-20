@@ -1,26 +1,30 @@
-<!-- docs-pair: storage; revision: 1 -->
+<!-- docs-pair: storage; revision: 2 -->
 
 [English](../en/storage.md) | [Español](storage.md) | [Índice](README.md)
 
 # Almacenamiento cifrado y mantenimiento
 
-Esta es la política propuesta para la alfa. Los valores son parámetros de diseño
-por validar, no mediciones ni garantías de una red desplegada.
+En el hito 1 un solo proveedor conservará un objeto cifrado completo. La
+recuperación en un equipo de reemplazo deberá reproducir los bytes originales.
+Esa copia verificada depende de que dicho proveedor siga disponible. La política
+de redundancia y reparación descrita a continuación se aplica a partir del hito 3.
+Sus parámetros necesitan validación.
 
 ## Protección de archivos
 
 - Dividir una versión estable del archivo en bloques de hasta 4 MiB.
-- Cifrar cada bloque con AES-256-GCM de la biblioteca estándar de Go. Utilizar
+- En la implementación candidata con Go, usar AES-256-GCM de la biblioteca estándar. Utilizar
   una clave nueva por versión inmutable y nonces únicos para todos sus bloques.
   Vincular versión y posición como datos asociados autenticados.
 - Aplicar Reed–Solomon al contenido cifrado, incluyendo lo necesario para
   descifrarlo y autenticarlo, mediante una biblioteca existente como `klauspost/reedsolomon`.
-- El perfil inicial tiene dos fragmentos de datos y uno de paridad por bloque.
+- El primer perfil de redundancia tiene dos fragmentos de datos y uno de paridad por bloque.
   Cualquier par válido reconstruye el bloque cifrado. Un fragmento corrupto
   cuenta como no disponible; la paridad por sí sola no autentica el contenido.
-- Guardar los tres fragmentos en tres proveedores aprobados distintos. Separar
-  operadores y hogares mediante información explícita; tres identidades no
-  demuestran independencia física.
+- Colocar los tres fragmentos en proveedores distintos seleccionados según la
+  política de recursos del nodo. En ensayos controlados, confirmar que operadores
+  y hogares son distintos. En una red abierta, un operador puede tener varias
+  identidades. Indicar qué evidencia sustenta la independencia de las ubicaciones.
 
 El consumo es aproximadamente 1,5 veces el contenido cifrado, más relleno,
 metadatos y versiones conservadas. Las copias originales del propietario son
@@ -37,7 +41,7 @@ registros de autorización se replican en los tres proveedores de metadatos
 seleccionados. Los lectores conservan el estado verificado más reciente para
 detectar la repetición de estados antiguos.
 
-Una versión está `pending` hasta confirmar ubicaciones y metadatos. Está
+Bajo el perfil de redundancia, una versión está `pending` hasta confirmar ubicaciones y metadatos. Está
 `protected` con tres ubicaciones válidas y confirmaciones de metadatos, `degraded`
 si quedan dos disponibles y `unavailable` si se pueden leer menos de dos.
 El requisito se aplica por bloque: el archivo completo necesita todos los bloques
@@ -49,10 +53,12 @@ perpetua. La falta de capacidad deja los cambios pendientes y visibles.
 
 ## Acuerdos y capacidad física
 
-Cada acuerdo aceptado por ambas partes define participantes, cuota física en
-bytes, operaciones, vencimiento y límites de subida y bajada. No se generan
-créditos automáticamente por anunciar capacidad libre. La reciprocidad se negocia;
-no se impone globalmente.
+Cualquier persona puede solicitar espacio sin aportar hardware ni ganar créditos.
+Los nodos compatibles aceptan automáticamente un acuerdo según el perfil local
+del anfitrión. Consta de participantes, cuota física en bytes, operaciones
+permitidas, vencimiento y límites de transferencia. El anuncio con vencimiento
+en un directorio permite encontrar al anfitrión. Este comprueba espacio real y
+compromisos existentes antes de hacer una reserva.
 
 La vigencia inicial es de 30 días. Se intenta renovar diariamente cuando haya
 conexión. Tras el vencimiento hay siete días de gracia; un cliente desconectado
@@ -62,18 +68,22 @@ puede eliminarlos. Perder todos los equipos propios durante más tiempo puede
 causar pérdida de datos incluso conservando una exportación de recuperación.
 
 La cuota incluye datos, versiones retenidas, metadatos, reservas entrantes y
-temporales. Repetir una operación no debe contabilizarla dos veces. Conservar una
-reserva configurable de disco libre. Reducir una cuota detiene nuevas escrituras
-y solicita migración; no borra inmediatamente obligaciones vigentes.
+temporales. Contabilizar una sola vez cada solicitud aunque se reintente.
+Reservar de forma atómica para que dos solicitudes no consuman los mismos bytes.
+Mantener un margen configurable de espacio libre en el volumen ofrecido. Pausar
+detiene las reservas nuevas. Reducir una cuota detiene las escrituras nuevas y
+solicita migración. Los datos existentes conservan su acuerdo de retención
+incluso si el anfitrión deja de anunciarse.
 
 ## Comprobaciones y reparación
 
 - Comprobar conectividad cada cinco minutos. Tres fallos consecutivos marcan al
   proveedor como sospechoso y activan la evaluación de reparación si hay menos redundancia.
 - Reparar sin esperar un plazo fijo de 48 horas cuando solo quedan dos fragmentos
-  válidos. El destino debe estar aprobado y disponer de acuerdo y cuota libre.
+  válidos. El destino debe cumplir la política local de asignación y confirmar un
+  acuerdo con cuota disponible antes de recibir datos.
 - El propietario puede delegar lectura, reconstrucción y escritura limitadas de
-  fragmentos cifrados en un reparador aprobado, sin entregar claves de lectura.
+  fragmentos cifrados en un reparador con delegación expresa, sin entregar claves de lectura.
   Esto no permite editar carpetas, firmar acuerdos ni borrar sin límites.
 - El reparador reconstruye contenido cifrado, verifica resúmenes firmados y
   obtiene recibos nuevos. Los dispositivos autorizados reconcilian sus anuncios.

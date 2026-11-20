@@ -1,11 +1,13 @@
-<!-- docs-pair: index; revision: 2 -->
+<!-- docs-pair: index; revision: 3 -->
 
 [English](README.md) | [Español](../es/README.md) | [Project home](../../README.md)
 
 # HiveScope documentation
 
-This is a design baseline, not an implementation manual. Protocol names and
-contracts below describe intended behavior; there is no running service yet.
+HiveScope is in design. Start with the [roadmap](roadmap.md) for the first
+encrypted recovery test and the milestones for automatic resource allocation,
+private computing and hosting. [Offer my computer](resource-offers.md) follows
+one request from the person asking for resources to the machine lending them.
 
 ## Design
 

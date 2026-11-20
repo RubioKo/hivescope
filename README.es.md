@@ -1,4 +1,4 @@
-<!-- docs-pair: home; revision: 7 -->
+<!-- docs-pair: home; revision: 8 -->
 
 [English](README.md) | Español
 
@@ -6,114 +6,92 @@
 
 # HiveScope
 
-HiveScope es un proyecto de código abierto para que las personas puedan usar sus propias
-computadoras como **pequeños servidores comunitarios**. Quien tenga espacio libre podría
-guardar una copia cifrada del trabajo de una amiga. Alguien con un equipo más potente
-podría ayudar a subtitular grabaciones de un archivo público. Un grupo de jugadores podría turnarse
-para mantener en línea su mundo compartido. Cada persona decide qué presta, a quién y por cuánto tiempo.
+HiveScope es un proyecto de código abierto para compartir almacenamiento y potencia de
+cómputo entre personas de todo el mundo. Si necesitas proteger una carpeta, ejecutar
+tu propio software o mantener un servidor para tu comunidad, la aplicación buscará
+equipos que puedan ayudarte. Si quieres prestar recursos, eliges qué compartes, cuánto
+y cuándo. Las máquinas se encargan de coordinarlo.
 
-**Estado del proyecto — diseño y documentación.** El primer prototipo previsto es una
-herramienta de línea de comandos para almacenar y recuperar un archivo. En este repositorio
-se describen el diseño, el modelo de seguridad y las pruebas que queremos realizar.
+**Estamos diseñando HiveScope.** El primer prototipo estará dedicado a guardar y
+recuperar archivos cifrados desde una computadora. El cómputo privado de propósito
+general y el alojamiento de servicios forman parte de la hoja de ruta.
 [Visión del proyecto](docs/es/vision.md) · [Hoja de ruta](docs/es/roadmap.md)
 
-## Para qué podría usarlo la comunidad
+## ¿Para qué podrías usar HiveScope?
 
-- **Proteger archivos y trabajar en varios equipos.** Cada persona podría elegir carpetas con
-  fotos familiares, trabajos de clase, música, código fuente u otros archivos. Su equipo
-  cifraría el contenido antes de enviarlo a los proveedores de almacenamiento aprobados.
-  La primera meta es recuperar los archivos. Más adelante, los equipos autorizados
-  sincronizarían los cambios y conservarían ambas versiones si hubiera ediciones incompatibles sin conexión.
-- **Transcribir una grabación privada.** HiveScope trataría toda grabación personal
-  como privada por defecto. Una creadora de pódcast podría transcribir su entrevista
-  en su propia computadora. Durante la tarea, el audio y el texto se quedarían allí.
-  Si faltaran recursos, HiveScope le avisaría y le permitiría reintentar en ese mismo equipo.
-- **Prestar cómputo para trabajos públicos.** En el primer piloto comunitario de IA,
-  un voluntario podría ejecutar un modelo abierto aprobado sobre una grabación ya
-  publicada, como un cuento que una biblioteca ofrece para su transcripción. La solicitud identificaría
-  una entrada de un catálogo público aprobado. El anfitrión podría acceder a esa
-  grabación y al texto resultante.
-- **Mantener un servicio en línea entre varias personas.** En la prueba de alojamiento de
-  juegos, el grupo elegiría un anfitrión activo y otro de relevo. Si el primero se desconecta,
-  el segundo podría restaurar el último guardado válido del mundo y los jugadores podrían
-  volver a entrar. El anfitrión puede leer los datos del mundo que procesa. Project Zomboid
-  es uno de los ejemplos propuestos. Otro posible uso sería el calendario de una asociación,
-  que necesitaría sus propias pruebas de alojamiento y recuperación.
+- **Proteger los archivos que elijas.** Guarda copias de carpetas con fotos, documentos,
+  música, código fuente u otros trabajos. Tú conservas las claves y eliges cuáles de
+  tus dispositivos pueden leer cada carpeta. La sincronización llegará después de la recuperación.
+- **Ejecutar tu propio software.** Solicita CPU y memoria para un entorno privado que
+  tú controlas. Podrías instalar herramientas, compilar un proyecto, renderizar una
+  escena o ejecutar un modelo. Tu dispositivo solo entregará las claves de la sesión
+  tras verificar el entorno remoto, incluida cualquier GPU que se utilice. Si la
+  verificación falla o falta un anfitrión compatible, las claves seguirán en tu equipo.
+  Podrás esperar o cancelar. [Modelo de seguridad](docs/es/security.md)
+- **Alojar un servicio para tu comunidad.** Un grupo de jugadores podría mantener un
+  mundo compartido aprovechando los horarios de sus voluntarios. Solo un anfitrión
+  aceptaría cambios a la vez. Un relevo compatible podría continuar desde un guardado
+  verificado. Project Zomboid es un posible ensayo. Antes de anunciar una expectativa
+  de disponibilidad se medirán la latencia de los jugadores, las interrupciones y el
+  progreso perdido. [Prueba de alojamiento](docs/es/roadmap.md)
 
-El objetivo es que se puedan utilizar estos servicios sin pagar un alquiler obligatorio.
-Los participantes o donantes asumirían los costes del equipo, la electricidad, la conexión
-y el tráfico que pase por relays. En juegos, el piloto mediría cuándo pueden entrar los
-jugadores, qué latencia experimentan desde sus conexiones, cuánto tardan en reconectarse
-y cuánto progreso se pierde durante un relevo. Así, cada grupo podría evaluar hasta qué
-punto puede mantener su mundo disponible las 24 horas. [Prueba de alojamiento comunitario](docs/es/roadmap.md#prueba-de-un-servidor-de-juego-comunitario)
+## ¿Qué pasa cuando solicitas u ofreces recursos?
 
-## Qué significa ofrecer tu equipo
+Puedes participar solo para solicitar recursos. Eliges lo que necesitas y tu equipo
+buscará anfitriones compatibles en directorios comunitarios. Quien presta recursos
+configura un perfil una sola vez. Por ejemplo, Luis podría ofrecer 20 GB de disco por
+las tardes y reservar su GPU para él. Su computadora comprobaría el horario, el espacio
+libre y los compromisos vigentes antes de aceptar una reserva. Ana y Luis podrían usar
+el servicio sin conocerse.
 
-Luis podría prestar a Ana 20 GB de disco por las tardes y reservar su GPU para su propio
-trabajo. En el flujo propuesto **Ofrecer mi equipo**, elige un servicio y un contacto
-aprobado, fija el horario y la fecha de vencimiento, y revisa los límites. Para disco
-establece una cuota y límites de transferencia. Para cómputo puede limitar la CPU, la
-memoria, el uso de la GPU y las tareas simultáneas. La oferta queda pendiente hasta que
-Ana acepta las condiciones. Ana también puede participar solo para solicitar recursos si
-alguien acepta prestárselos.
+Luis podría pausar las nuevas reservas. Las copias existentes seguirían sus acuerdos de
+retención. Si faltara capacidad, Ana vería por qué su solicitud está pendiente.
+Reintentar la misma solicitud mantendría su estado sin reservar dos veces el espacio.
+La participación será voluntaria. El objetivo es acceder a los servicios sin una cuota
+obligatoria de alquiler. Los participantes o donantes asumirían los costes del equipo,
+la electricidad, la conexión y el tráfico de los relays. [Ofrecer mi equipo](docs/es/resource-offers.md)
 
-Cuando Luis necesita su equipo, puede pausar las solicitudes nuevas. Detener una
-transcripción del catálogo público en curso puede hacer que se pierda el progreso sin guardar. Si apaga un
-equipo que presta disco, sus fragmentos quedan temporalmente inaccesibles. Para ceder
-un mundo de juego hacen falta otro anfitrión autorizado y un guardado válido. La pantalla
-de apagado propuesta le mostraría a Luis cómo se vería afectado el servicio antes de
-decidir qué hacer. [Ofertas de recursos](docs/es/resource-offers.md)
-
-## Cómo funcionaría una carpeta privada
+## Cómo recuperaría Ana una carpeta privada
 
 ### Ana elige qué equipos pueden leer sus archivos
 
 ![Ana señala una foto familiar que aparece en su portátil junto a un documento y la onda de una grabación.](assets/story/hivescope-story.jpg)
 
-Ana quiere abrir el borrador de su tesis, una foto y una entrevista grabada tanto en su
-portátil como en su computadora de escritorio. Autoriza ambos equipos para `Estudios`.
-Para `Documentos personales` solo autoriza el portátil. Cada elección se aplica a todos
-los archivos de esa carpeta.
+Ana autoriza a su portátil y a su computadora de escritorio a leer `Estudios`, donde
+guarda el borrador de su tesis, una foto y una entrevista grabada. Para
+`Documentos personales` autoriza solo el portátil. Cada elección se aplica a todos los
+archivos de esa carpeta.
 
-### Luis guarda la copia cifrada
+### El equipo de Luis guarda la copia cifrada
 
 ![Luis ajusta un control debajo de dos filas de bloques de colores que representan datos cifrados en su pantalla.](assets/story/encrypted-storage.jpg)
 
-La computadora de Ana cifra el contenido y los nombres de los archivos antes de enviarlos.
-Luis guarda fragmentos cifrados y puede observar cuánto se transfiere y en qué momento.
-Las claves que abren los archivos permanecen en los equipos autorizados por Ana. Si Ana
-transcribe su entrevista privada, el modelo se ejecutaría en su propia computadora.
-Luis seguiría alojando únicamente los fragmentos cifrados de la copia.
-[Modelo de seguridad](docs/es/security.md)
+La computadora de Ana cifra el contenido y los nombres antes de enviar la copia. El
+perfil de almacenamiento de Luis admite la transferencia automáticamente. Luis puede
+observar su tamaño y el momento en que ocurre. Ana conserva el control de las claves
+que abren sus archivos.
 
 ### Ana recupera su trabajo en otra computadora
 
 ![Ana sostiene una memoria USB junto al portátil cerrado. La foto, el documento y la grabación vuelven a aparecer en un monitor de escritorio.](assets/story/recovering-files.jpg)
 
 Con el portátil original apagado, Ana usa su contraseña para abrir el paquete de
-recuperación que guardó aparte. Su nuevo equipo necesita acceso al catálogo y suficientes
-fragmentos válidos de proveedores cuyos acuerdos aún permitan recuperar los datos.
-El primer prototipo deberá recuperar un archivo de prueba idéntico al original, byte por
-byte. [Diseño de recuperación](docs/es/architecture.md#propiedad-y-recuperación) · [Almacenamiento y reparación](docs/es/storage.md)
+recuperación que guardó aparte. En la primera prueba prevista, un proveedor accesible
+comprueba su credencial de recuperación y el equipo nuevo restaura un archivo de
+prueba idéntico byte por byte. Más adelante, cada bloque cifrado se distribuiría entre
+tres proveedores para que dos fragmentos válidos puedan reconstruirlo.
+[Diseño de recuperación](docs/es/architecture.md) · [Almacenamiento y reparación](docs/es/storage.md)
 
-## Desarrollo y plataformas
+## Desarrollo y dispositivos
 
-1. **Núcleo seguro.** Crear un prototipo por línea de comandos en Go para identificar
-   equipos, aprobar pares, transferir archivos cifrados y recuperarlos en otra computadora.
-2. **Almacenamiento resistente y sincronización de carpetas.** Distribuir cada bloque
-   cifrado entre tres proveedores aprobados. Cualquier par de fragmentos válidos
-   permitirá reconstruirlo. Probar la reparación cuando uno de los proveedores
-   se desconecte y, después, las ediciones sin conexión y los conflictos entre los
-   equipos del propietario. [Sincronización de carpetas](docs/es/synchronization.md)
-3. **Alfa cerrada para computadoras.** Validar la herramienta de línea de comandos en
-   Windows, macOS y Linux con conexiones domésticas reales. La interfaz gráfica está
-   prevista para cuando el servicio en segundo plano sea utilizable. Los clientes para
-   celulares y tabletas siguen en fase exploratoria.
-
-El cómputo comunitario y el alojamiento de servicios persistentes son propuestas para
-etapas posteriores. Para quienes quieran participar en el desarrollo técnico, el diseño
-describe un servicio en segundo plano en Go, conexiones autenticadas entre pares con
-libp2p y un índice SQLite local en cada nodo. [Arquitectura](docs/es/architecture.md) · [Índice de documentación](docs/es/README.md)
+La primera entrega prevista es una herramienta de línea de comandos para computadoras.
+Go es la primera opción para el nodo. La referencia para medir memoria, CPU, velocidad
+de recuperación y tiempo de respuesta al pausar será un PC de cuatro núcleos y 8 GB
+de RAM. Las sesiones confidenciales requerirán ensayos separados con hardware compatible.
+La alfa de escritorio se probará en Windows, Linux y macOS e incorporará una
+interfaz gráfica tras medir el servicio en segundo plano. Los celulares y tabletas
+se evaluarán primero para acceso y recuperación.
+[Arquitectura](docs/es/architecture.md) · [Índice de documentación](docs/es/README.md)
 
 ## Cómo contribuir
 

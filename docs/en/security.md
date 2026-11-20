@@ -1,88 +1,99 @@
-<!-- docs-pair: security; revision: 2 -->
+<!-- docs-pair: security; revision: 3 -->
 
 [English](security.md) | [Español](../es/security.md) | [Index](README.md)
 
 # Security and threat model
 
-HiveScope has no supported software release. This design has not received a
-cryptographic audit. Never use an experimental build as the only copy of a file.
+HiveScope is in design. The security properties below are requirements for
+future implementations. The design awaits cryptographic review. Keep an
+independent copy of any file used in a future pilot.
 
 ## Trust boundaries
 
-| Party | Authorized access | Remaining risk |
+| Party | Access by design | Remaining risk |
 | --- | --- | --- |
-| Owner-authorized device | Folder plaintext, keys and permitted edits. | Compromise exposes its folders and may publish harmful changes. |
-| Approved storage provider | Encrypted fragments and bounded maintenance metadata. | May drop data, lie, collude or observe traffic patterns. |
-| Delegated repair worker | Limited ciphertext reconstruction and replacement. | Can waste allowed resources or fail to repair. |
-| Relay | Connection and traffic metadata; encrypted payload transport. | Can observe peers, delay or deny traffic. |
+| Owner-authorized device | Folder plaintext, keys and permitted edits. | Compromise exposes those folders and can publish harmful changes. |
+| Storage provider | Agreed operations on opaque objects, ciphertext and bounded maintenance metadata. | It can drop data, misreport capacity, collude or observe traffic. |
+| Delegated repair worker | Limited reconstruction and replacement of ciphertext. | It can waste allowed resources or fail to repair a fragment. |
+| Community directory | Expiring service advertisements with peer contact details. | It can omit offers, retain contact metadata or return stale candidates. |
+| Relay | Connection metadata and transport of encrypted traffic. | It can observe peers, delay traffic or deny service. |
+| Compute host | Physical machine, offered resources, timing and traffic volume. | It can pause or cut power. Protection of session contents depends on the verified environment. |
+| Requester | Its own session, programs and results within the agreed resources. | A workload can exhaust its allocation. The host needs isolation from the guest and enforceable limits. |
 | Maintainer | Repository review and release administration. | A compromised distribution channel can ship malicious software. |
 
-Peer approval limits admission; it does not prove honesty. The initial alpha
-does not solve permissionless Sybil resistance or globally enforce reciprocity.
+Anyone can request capacity. A device identity authenticates one peer, and one
+person may control several identities. Each host must cap total disk, bandwidth,
+reservations, streams and concurrent work as well as per-requester use. Account
+for temporary files and unfinished reservations. Test simultaneous requests,
+repeated IDs and reconnect bursts. An advertisement grants no access to folders
+or sessions. The node must authenticate the peer and authorize each operation.
 
-## Required defenses
+## Required storage defenses
 
-- Use existing cryptographic and transport libraries; do not invent primitives.
-- Authenticate peers and independently authorize every operation and folder role.
-- Keep folder keys separate from device identities and repair permissions.
-- Encrypt file names, paths and catalogs; verify ciphertext commitments and AEAD
-  before making data visible. A signed digest establishes integrity, not availability.
-- Reject malformed, replayed, oversized and unauthorized requests with bounded
-  parsing, queues, streams and per-peer concurrency.
-- Treat paths as untrusted and keep writes inside the configured roots.
-- Protect local secrets with an explicit unlock and encrypted-at-rest design;
-  OS file permissions alone do not protect against an unlocked compromised host.
-- Keep exported recovery material encrypted with a reviewed passphrase-based
-  format. Require explicit user action to export or reveal secrets.
-- Use epochs, signed state and remembered version heads to limit rollback.
-  Recovery from a stale export without an honest up-to-date peer can still miss
-  newer changes; signatures alone do not prove freshness.
+- Use established cryptographic and transport libraries. Keep folder keys,
+  device identity keys, recovery grants and repair privileges separate.
+- Encrypt names, paths and catalogs. Verify ciphertext commitments and
+  authenticated encryption before publishing a recovered file.
+- Bound parsing and queues. Reject unauthorized, replayed, malformed and
+  oversized requests before allocating substantial resources.
+- Keep writes inside the configured storage roots. Treat remote paths and
+  temporary entries as untrusted. Clean up only entries owned by the interrupted operation.
+- Protect local secrets with explicit unlock and encryption at rest. Recovery
+  exports require a reviewed passphrase-based format and an explicit owner action.
+- Persist authorization epochs and remembered version heads to limit rollback.
+  A stale export and an outdated provider can still conceal a newer version.
+  A provider that acknowledged revocation must retain that decision over restart.
 
-## Limits of the privacy claim
+## What storage can protect
 
-The intended confidentiality property is that storage providers cannot read file
-content without keys. This is not a claim that all metadata is hidden or that a
-zero-knowledge proof system is implemented. IP addresses, sizes, timing, placement
-relationships and repair activity remain observable to relevant peers.
+File contents and names are encrypted on the owner's device. Providers can
+observe IP addresses, sizes, timing, placement relationships and repair activity.
+A signed receipt records an obligation at a point in time. Recovery still needs
+valid data, catalog, keys and a reachable provider with a valid read grant.
+Simultaneous household outages, expired agreements or lost keys can prevent
+recovery. Plaintext already read on a compromised owner device may remain there.
 
-Encryption cannot recover deleted data, undo a compromised owner's edits, retract
-downloaded plaintext or guarantee service from volunteers. Simultaneous household
-outages, expired agreements and loss of keys can defeat recovery. Distributed
-inference has different privacy properties and must not inherit storage claims.
+## Proposed decision for private compute
 
-## Proposed decision on transcription
+The requester controls what to install and run inside its guest. The host must
+isolate the guest from its own files, credentials, other guests and the hardware
+outside the allocation. Resource limits govern consumption. Protecting private
+data in use also requires a verifiable execution environment.
 
-Treat a person's recording as private by default. Transcribe it only on the
-owner's device. Audio, excerpts, derived features, instructions and the
-transcript stay there during processing. Logs, crash reports and telemetry
-must exclude that content, private file paths and keys. If the model is
-unavailable, memory runs out or the task fails, report the failure locally.
-Retries follow the same rule. A separately requested storage backup may send
-encrypted fragments under a storage agreement.
+Milestone 5 will evaluate a confidential VM with hardware-backed attestation.
+Before releasing a session key or private input, the requester verifies fresh,
+signed evidence against its accepted measurements and platform policy. The
+evidence must identify the intended guest and bind its channel key to this
+session. Deliver secrets only through that channel. A GPU request must also
+verify the accelerator and data path. Missing, stale, failed or mismatched
+evidence leaves the request pending and the keys with the requester. Every new
+host, including a game standby, must pass verification before receiving session
+secrets. [Confidential VM isolation and key release](https://learn.microsoft.com/en-us/azure/confidential-computing/confidential-vm-overview) · [CPU and GPU trust boundaries](https://docs.nvidia.com/confidential-computing/virtual-machines/threat-model)
 
-For volunteer computing, the proposed input is an item already published in
-an approved public catalog. Remote requests select a public item by its catalog
-identifier and an approved operation. The operator can read the public input
-and its result. Approving a host or checking a sharing box cannot make a private
-file eligible. Remote processing of private material remains a research question.
-Someone who compromises the owner's device could still read local data.
+Only data the requester chooses for the guest enters the session. Folder keys
+and recovery grants stay separate. Encrypt saved state and results before they
+leave the guest for community storage. Logs, crash reports and directory entries
+must exclude payloads, private paths and keys. Software inside the guest can use
+or disclose the inputs given to it. An attested host may still disconnect or
+withhold a result. Publish the supported hardware, trusted components and
+remaining risks with the measurements before offering the service.
 
-**Future acceptance test.** Give a synthetic private recording a distinctive
-spoken phrase and file name. With the local model installed, transcribe it
-offline. Then offer a remote worker, exhaust local resources and retry after
-reconnecting. Inspect outgoing requests at the sender and the worker's queue.
-The first transcript must stay local and neither attempt may request remote work.
-Check logs, crash reports and telemetry for the spoken phrase and the private
-file path. Repeat with an unclassified recording.
+**Future acceptance tests.** Run a requester-supplied program with synthetic
+input after successful verification. Check that an unsupported host, replayed
+evidence, a different guest key or a missing required GPU proof yields zero
+session keys and zero private input at that host, including after retries.
+Pause an active session and verify that resource use stops as agreed. Report
+only the last confirmed checkpoint. Try to resume on another host and require
+fresh evidence before restoring state. Inspect logs and crash reports for the
+synthetic marker, private paths and secrets.
 
 ## Reporting a concern
 
 Use [GitHub private vulnerability reporting](https://github.com/RubioKo/hivescope/security/advisories/new)
-for sensitive findings. Include the affected document or future version, a
-synthetic reproducer, expected behavior and impact. Do not include real files,
-credentials, recovery exports or personal logs. English and Spanish are accepted.
+for sensitive findings. Include the document or future version, a synthetic
+reproducer, expected behavior and impact. Keep real files, credentials, recovery
+exports and personal logs private. English and Spanish are accepted.
 
 Use public [Issues](https://github.com/RubioKo/hivescope/issues) for non-sensitive
-design questions. There is no guaranteed response time or bounty program.
-Maintainers will assess impact, coordinate a fix where applicable and document
-verified outcomes without claiming an audit that did not occur.
+design questions. Maintainers will assess impact, coordinate fixes and document
+verified outcomes. Response times and a bounty program have not been established.

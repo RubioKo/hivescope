@@ -1,4 +1,4 @@
-<!-- docs-pair: glossary; revision: 1 -->
+<!-- docs-pair: glossary; revision: 2 -->
 
 [English](../en/glossary.md) | [Español](glossary.md) | [Índice](README.md)
 
@@ -7,7 +7,11 @@
 | Término inglés | Término español | Significado en HiveScope |
 | --- | --- | --- |
 | Peer | Par | Dispositivo que participa mediante una identidad de red autenticada. |
-| Approved provider | Proveedor aprobado | Par aceptado localmente para conservar fragmentos cifrados mediante un acuerdo. |
+| Storage provider | Proveedor de almacenamiento | Nodo que acepta datos cifrados bajo un acuerdo de almacenamiento. |
+| Resource profile | Perfil de recursos | Servicios, horario, capacidad y límites que el anfitrión elige para las nuevas solicitudes. |
+| Community directory | Directorio comunitario | Servicio reemplazable en el que los nodos descubren pares que ofrecen un recurso. |
+| Reservation | Reserva | Compromiso local y temporal de capacidad para una solicitud concreta. |
+| Remote attestation | Atestación remota | Verificación de las pruebas sobre un entorno de ejecución antes de entregarle las claves de sesión. |
 | Authorized device | Dispositivo autorizado | Equipo del dueño con permiso para leer y sincronizar una carpeta. |
 | Daemon | Daemon / servicio en segundo plano | Proceso continuo propuesto para las operaciones del nodo. |
 | Agreement | Acuerdo | Capacidad, duración, operaciones y límites aceptados por ambas partes. |
