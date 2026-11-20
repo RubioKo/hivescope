@@ -11,57 +11,53 @@ import (
 	"github.com/RubioKo/hivescope/internal/storageformat"
 )
 
-// Both Protobuf fields and all payload lengths in this exchange use
-// one-byte varints. The outer frame has a four-byte big-endian length.
 const (
 	opField      = 0x08
 	payloadField = 0x12
 	readBegin    = 0x07
+	proofOp      = 0x08
+	dataOp       = 0x21
+	endOp        = 0x22
 	challengeOp  = 0x25
+	readSizeOp   = 0x26
 	errorOp      = 0x7f
 	catalogKind  = 0x01
 )
 
+// ErrReadDenied is the authenticated provider's refusal to authorize the read.
+var ErrReadDenied = errors.New("provider denied the read")
+
+func catalogRequest(pkg *storageformat.RecoveryPackage) []byte {
+	request := append([]byte{catalogKind}, pkg.Catalog.FolderID[:]...)
+	request = append(request, pkg.Catalog.AgreementID[:]...)
+	request = binary.BigEndian.AppendUint64(request, pkg.Generation)
+	return append(request, pkg.Catalog.CatalogLocator[:]...)
+}
+
 func writeCatalogRead(w io.Writer, pkg *storageformat.RecoveryPackage) error {
-	const payloadSize = 1 + 16 + 16 + 8 + 32
-	frame := binary.BigEndian.AppendUint32(nil, 4+payloadSize)
-	frame = append(frame, opField, readBegin, payloadField, payloadSize, catalogKind)
-	frame = append(frame, pkg.Catalog.FolderID[:]...)
-	frame = append(frame, pkg.Catalog.AgreementID[:]...)
-	frame = binary.BigEndian.AppendUint64(frame, pkg.Generation)
-	frame = append(frame, pkg.Catalog.CatalogLocator[:]...)
-	n, err := w.Write(frame)
-	if err == nil && n != len(frame) {
-		return io.ErrShortWrite
-	}
-	return err
+	return writeFrame(w, readBegin, catalogRequest(pkg))
 }
 
 func readChallenge(r io.Reader) ([32]byte, error) {
-	var challenge [32]byte
-	var length [4]byte
-	if _, err := io.ReadFull(r, length[:]); err != nil {
-		return challenge, err
+	op, payload, err := readFrame(r, 32)
+	if err != nil {
+		return [32]byte{}, err
 	}
-	const challengeSize = uint32(4 + len(challenge))
-	const errorSize = 4 + 1
-	size := binary.BigEndian.Uint32(length[:])
-	if size != challengeSize && size != errorSize {
-		return challenge, errors.New("invalid challenge response length")
+	if op == errorOp {
+		return [32]byte{}, providerError(payload)
 	}
-	var message [challengeSize]byte
-	if _, err := io.ReadFull(r, message[:size]); err != nil {
-		return challenge, err
+	if op != challengeOp || len(payload) != 32 {
+		return [32]byte{}, errors.New("expected CHALLENGE for the pending catalog read")
 	}
-	if message[0] != opField || message[2] != payloadField || int(message[3]) != int(size)-4 {
-		return challenge, errors.New("invalid challenge response fields")
+	return [32]byte(payload), nil
+}
+
+func providerError(payload []byte) error {
+	if len(payload) != 1 || payload[0] < 1 || payload[0] > 7 {
+		return errors.New("malformed provider error")
 	}
-	if size == errorSize && message[1] == errorOp && message[4] >= 1 && message[4] <= 7 {
-		return challenge, fmt.Errorf("provider returned storage error code 0x%02x", message[4])
+	if payload[0] == 2 {
+		return ErrReadDenied
 	}
-	if size != challengeSize || message[1] != challengeOp {
-		return challenge, errors.New("expected CHALLENGE for the pending catalog read")
-	}
-	copy(challenge[:], message[4:])
-	return challenge, nil
+	return fmt.Errorf("provider returned storage error code 0x%02x", payload[0])
 }

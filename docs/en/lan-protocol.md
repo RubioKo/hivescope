@@ -1,4 +1,4 @@
-<!-- docs-pair: lan-protocol; revision: 2 -->
+<!-- docs-pair: lan-protocol; revision: 3 -->
 
 [English](lan-protocol.md) | [Español](../es/lan-protocol.md) | [Index](README.md)
 
@@ -7,9 +7,10 @@
 This is the v1 design for one encrypted file on one provider. The original
 device uploads the object and its catalog under one reservation. A replacement
 reads each item under a separate proof. The reservation, receipt and recovery
-proof have the same meaning across reconnects. The first client step opens
-a catalog read and receives its challenge. The remaining exchanges describe
-the planned provider and client. [Recovery trial](readiness.md)
+proof have the same meaning across reconnects. The Go catalog exchange runs
+over loopback TCP with the provider's current grant and sealed catalog in
+memory. Object reads, uploads and durable grant updates are later steps.
+[Recovery trial](readiness.md)
 
 ## Connection and framing
 

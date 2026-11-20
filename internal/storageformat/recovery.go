@@ -84,7 +84,7 @@ func parseRecoveryPayload(payload []byte) (*RecoveryPackage, error) {
 	if generation == 0 || port == 0 {
 		return nil, errors.New("invalid recovery generation or endpoint port")
 	}
-	if !validRecoveryPin(payload[40:72]) || !validRecoveryPin(payload[142:174]) {
+	if !ValidEd25519Key(payload[40:72]) || !ValidEd25519Key(payload[142:174]) {
 		return nil, errors.New("invalid Ed25519 public key in recovery package")
 	}
 	return &RecoveryPackage{
@@ -102,7 +102,8 @@ func parseRecoveryPayload(payload []byte) (*RecoveryPackage, error) {
 	}, nil
 }
 
-func validRecoveryPin(raw []byte) bool {
+// ValidEd25519Key checks the canonical, non-small-order public keys used by v1.
+func ValidEd25519Key(raw []byte) bool {
 	point, err := new(edwards25519.Point).SetBytes(raw)
 	// SetBytes accepts some noncanonical encodings. A pinned identity has
 	// one encoding and cannot be a point of order dividing eight.

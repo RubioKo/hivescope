@@ -1,4 +1,4 @@
-<!-- docs-pair: home; revision: 16 -->
+<!-- docs-pair: home; revision: 17 -->
 
 English | [Español](README.es.md)
 
@@ -16,7 +16,10 @@ your recovery package on your device. A wrong passphrase stops recovery before
 it contacts a provider or opens the destination. Before requesting the catalog,
 the client checks the provider's authenticated identity against the public key
 in your package. If another machine takes that address and presents a different
-key, the client stops there. You choose where to save and
+key, the client stops there. In a loopback test, the provider releases the
+encrypted catalog after checking a signed challenge and the current read grant.
+Reusing that signature in another session returns zero catalog bytes.
+You choose where to save and
 whether to replace an existing file. The reader checks the entire file first. If a
 save is uncertain, the reader can reopen the destination and compare it byte for
 byte with the same verified version. A match can confirm the save. If you edited the

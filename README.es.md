@@ -1,4 +1,4 @@
-<!-- docs-pair: home; revision: 16 -->
+<!-- docs-pair: home; revision: 17 -->
 
 [English](README.md) | Español
 
@@ -18,6 +18,9 @@ incorrecta detiene la recuperación antes de contactar a un proveedor o abrir el
 destino. Antes de solicitar el catálogo, el cliente compara la identidad
 autenticada del proveedor con la clave pública de tu paquete. Si otro equipo ocupa
 esa dirección y presenta una clave distinta, la recuperación se detiene ahí.
+En una prueba de bucle local, el proveedor entrega el catálogo cifrado tras
+comprobar la firma del reto y el permiso de lectura vigente. Reutilizar esa
+firma en otra sesión devuelve cero bytes del catálogo.
 Tú eliges dónde guardar y si quieres reemplazar un archivo existente.
 El lector verifica el archivo entero antes de guardarlo. Si el resultado es
 incierto, puede reabrir el destino y compararlo byte por byte con la misma

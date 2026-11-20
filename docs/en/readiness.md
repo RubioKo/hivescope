@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 13 -->
+<!-- docs-pair: readiness; revision: 14 -->
 
 [English](readiness.md) | [Español](../es/readiness.md) | [Index](README.md)
 
@@ -10,10 +10,11 @@ that holds the encrypted copy? Can that same provider refuse the same package
 after it has acknowledged revocation and restarted? These two outcomes define
 the first desktop prototype.
 
-**Current evidence.** Local tests cover recovery formats, verified saves and
-provider identity. The network tests use loopback TCP and isolated virtual
-hosts on Linux. Full recovery on a replacement computer and durable revocation
-at a running provider still require the LAN trial.
+**Current evidence.** Local tests cover recovery formats and verified saves.
+Loopback TCP tests cover provider identity and single-use authorization to
+read the catalog. The identity test also runs on isolated virtual hosts on
+Linux. Full recovery on a replacement computer and durable revocation at a
+running provider still require the LAN trial.
 
 ## Scope and contracts
 
@@ -105,7 +106,8 @@ block, a changed catalog signature and a receipt checked against an altered
 manifest all fail their respective checks. [Object and catalog](../../internal/conformance/snapshot_test.go) · [Recovery and reads](../../internal/conformance/recovery_test.go) · [Receipt](../../internal/conformance/receipt_test.go)
 
 A mathematically valid signature from an old key is part of the reference
-example. Rejecting its read after revocation requires a running provider.
+example. M1-03 also requires a provider that can acknowledge a revocation
+and enforce it after a restart.
 
 The Go entry point `WithRecoveryPackage` authenticates the package locally
 and checks its fields before handing control to the owner's recovery code.
@@ -122,9 +124,7 @@ same recovery package for both attempts. The provider whose key is pinned
 in the package receives one catalog `READ_BEGIN` and returns a challenge on
 the same stream. The other provider receives a TLS handshake attempt and
 zero catalog requests. With a separate package that pins its own key, this
-second provider receives one request at that same address. The trial ends
-at the challenge. Completing the read will require a signed proof and a
-provider decision before any catalog bytes can be released.
+second provider receives one request at that same address.
 [Provider identity test](../../internal/conformance/provider_identity_test.go)
 
 The Linux trial repeats these cases with separate network stacks for the
@@ -138,6 +138,17 @@ with its own package. The counts include the frame header. [Observed run](https:
 On Linux with the Go modules cached, iproute2 and permission to create network
 namespaces with sudo, run `bash scripts/test-provider-netns.sh` from the repository
 root. [Isolated network test](../../internal/conformance/provider_netns_linux_test.go) · [Test runner](../../scripts/test-provider-netns.sh)
+
+The catalog authorization test uses the same provider and replacement identities
+across two loopback TCP connections. The provider holds the current grant and
+the sealed catalog in memory. On the first connection the replacement signs
+the provider's challenge. The grant permits the read, and the replacement
+receives the exact 250-byte catalog for `hive.txt`. On the second connection
+the provider issues a new challenge for the same catalog. Submitting the
+first 64-byte signature again yields `DENIED` and **zero catalog bytes**.
+The error frame is counted separately from catalog data. The client verifies
+the signed catalog locally to learn which encrypted object to request next.
+[Catalog authorization test](../../internal/conformance/catalog_proof_test.go)
 
 The Go reader verifies the signed catalog, authenticates each encrypted block
 and checks the object's total length and SHA-256 digest. It stages plaintext
