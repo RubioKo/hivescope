@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 9 -->
+<!-- docs-pair: readiness; revision: 10 -->
 
 [English](readiness.md) | [Español](../es/readiness.md) | [Index](README.md)
 
@@ -110,8 +110,7 @@ The Go reader verifies the signed catalog, authenticates each encrypted block
 and checks the object's total length and SHA-256 digest. It stages plaintext
 in a temporary file in the caller's private directory. Only a complete,
 verified object becomes readable. Closing the reader removes its temporary
-file. Abrupt process termination can leave that plaintext file in the private
-directory. Cleanup after a crash is still pending. [Catalog reader](../../internal/storageformat/catalog.go) · [Object reader](../../internal/storageformat/object.go)
+file. [Catalog reader](../../internal/storageformat/catalog.go) · [Object reader](../../internal/storageformat/object.go)
 
 The three [published fixtures](file-catalog.md) recover byte for byte offline.
 `empty.bin` authenticates one empty block. `hive.txt` yields five bytes.
@@ -119,9 +118,33 @@ The three [published fixtures](file-catalog.md) recover byte for byte offline.
 altered or truncated, the caller receives an error before it can read any
 plaintext. M1-02 still requires recovery over the LAN on a clean replacement.
 
-The next local step is to publish the verified file atomically at a destination
-chosen by the owner. Test that a failure before publication preserves any
-existing file and that recovery is reported only after the required flushes.
+### Save at a chosen destination
+
+The local Go API `SaveObject` targets private directories on Linux filesystems
+that support the required rename and flush operations and on local NTFS on Windows.
+The caller chooses the destination independently of the catalog's display name.
+Create-only mode leaves an existing file intact, including one created during
+verification. Replacement requires an explicit choice. The reader verifies
+the object in a temporary file in the destination directory, flushes the file,
+then publishes it with a single rename. [Local save tests](../../internal/conformance/publication_test.go)
+
+The interruption test stops a child process after it has flushed the verified
+temporary file and immediately before the rename. Reopening the destination
+returns the exact original bytes. A process killed at this point can leave
+the private temporary plaintext file behind. The test exercises process
+termination. Physical power loss still requires separate filesystem trials.
+[Process interruption and directory flush tests](../../internal/storageformat/publish_test.go)
+
+Successful publication requires a final directory flush. The local Windows
+NTFS trial completed that flush. [Linux directory synchronization](https://man7.org/linux/man-pages/man2/fsync.2.html) · [Windows filesystem flush semantics](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/0de7dc40-9627-437e-a4df-c4696cdc3d02)
+
+If the flush fails after the rename, the
+API returns `ErrPublicationUncertain`. The complete new file
+may already be visible. The next step is to reconcile that outcome before a
+retry. Recover the same authenticated snapshot independently and compare the
+destination byte for byte. If they match, flush the file and directory before
+confirming. If they differ, keep the destination and request a new path.
+[Recovery after an uncertain publication](file-catalog.md)
 
 Automatic discovery and matching belong to milestone 2. Three-provider
 redundancy and repair, desktop GUI and mobile access, private compute and

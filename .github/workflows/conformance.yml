@@ -11,8 +11,16 @@ permissions:
 
 jobs:
   conformance:
-    name: Offline Go reference vectors
-    runs-on: ubuntu-latest
+    name: ${{ matrix.check }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            check: Offline Go reference vectors
+          - os: windows-latest
+            check: Offline Go tests on Windows
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 5
     env:
       GOTOOLCHAIN: go1.27.4
@@ -22,6 +30,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Prepare the pinned toolchain and dependencies
+        shell: bash
         run: |
           go version
           go mod download
