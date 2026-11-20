@@ -1,17 +1,20 @@
-<!-- docs-pair: index; revision: 2 -->
+<!-- docs-pair: index; revision: 4 -->
 
 [English](README.md) | [Español](../es/README.md) | [Project home](../../README.md)
 
 # HiveScope documentation
 
-This is a design baseline, not an implementation manual. Protocol names and
-contracts below describe intended behavior; there is no running service yet.
+HiveScope is in design. Start with the [roadmap](roadmap.md) for the first
+encrypted recovery test and the milestones for automatic resource allocation,
+private computing and hosting. [Offer my computer](resource-offers.md) follows
+one request from the person asking for resources to the machine lending them.
 
 ## Design
 
 - [Vision and boundaries](vision.md)
+- [Offer my computer](resource-offers.md)
 - [Architecture and interfaces](architecture.md)
-- [Readiness for the first prototype](readiness.md)
+- [First recovery test and open design decisions](readiness.md)
 - [Encrypted storage and maintenance](storage.md)
 - [Folder synchronization](synchronization.md)
 - [Security and threat model](security.md)

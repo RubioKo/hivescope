@@ -1,57 +1,83 @@
-<!-- docs-pair: vision; revision: 1 -->
+<!-- docs-pair: vision; revision: 6 -->
 
 [English](vision.md) | [Español](../es/vision.md) | [Index](README.md)
 
 # Vision and boundaries
 
-HiveScope aims to make privately controlled, community-operated storage possible
-without depending on a central storage provider. Participants exchange explicitly
-limited resources while keeping ownership of their files and keys.
+HiveScope is designing an open network where anyone can request storage or computing
+capacity. People may participate solely as requesters. A volunteer decides which
+resources to lend and how much of their computer they need to keep available for
+themselves. Their computers would find each other and agree on work automatically.
 
-## First useful service
+## What a person could do
 
-Synchronize a private folder between the owner's authorized devices. Approved
-community providers retain encrypted fragments and help restore availability.
-An approved provider does not automatically become a reader of the folder.
+**Keep a recoverable copy.** A student chooses the folder with their thesis, notes
+and photos. Their computer encrypts file names and contents before transfer. The
+student chooses which of their own devices may read that folder. After the laptop
+fails, the first prototype must recover a sample file from a reachable provider on
+a clean replacement device with a valid recovery credential. A later milestone
+will test repair across independent hosts and preserve both versions when offline
+edits conflict. [Storage and repair](storage.md) · [Folder synchronization](synchronization.md)
 
-The initial network uses bilateral agreements. Each provider decides whom to
-serve, for how much physical capacity, for how long and at which transfer limits.
-There is no network-wide balance, token, blockchain or universal exchange rate.
-Approval is a local decision rather than an account in a central registry.
+**Use a private computer session.** A creator requests CPU and RAM, then installs the
+tools of their choice inside their environment. They might build a project, render
+a scene or run their own model. The proposed confidential virtual machine protects
+the workload while it runs. Before releasing session keys, the requester's device
+must verify the environment and bind those keys to that session. A GPU workload
+also requires evidence for the GPU and its connection to the protected environment.
+When the protection cannot be verified, the request waits or the person cancels.
+Private inputs and keys stay with the requester. A host can still observe
+operational information such as session duration or traffic volume and can go offline.
+[Security model](security.md)
 
-Some community nodes are expected to be regularly online. Offline editing remains
-possible, but remote recovery needs enough reachable fragments and metadata.
-The alpha will not advertise a durability or availability SLA.
+**Host a service with a community.** A gaming group could request hosting for its
+world across volunteers' schedules. Project Zomboid is a suggested example. One
+active host accepts changes. A compatible standby could start from the last verified
+save after a handoff. The trial would record how long players take to reconnect,
+what progress they lose and the latency from their actual connections. A club
+calendar or another persistent service would need its own state recovery test.
+[Roadmap](roadmap.md)
 
-## Participant control
+## What happens between the computers
 
-Sharing is opt-in. A participant must configure the storage directory, quota,
-upload/download limits and schedule before accepting data. The design includes
-manual pause and battery-aware pause. Detecting games or video calls is later work.
-Departing providers should allow migration during their agreement's remaining
-term; abrupt failures are still part of the threat and reliability model.
+A host sets a profile once, choosing disk, CPU, RAM, GPU or network bandwidth and
+setting a schedule and limits. For example, Luis may lend 20 GB of disk in the
+evening while keeping all computing capacity for himself. Ana can ask for a copy
+without adding Luis as a contact. Replaceable community directories would carry
+expiring service announcements. File names, session contents and keys remain
+outside those announcements.
 
-## Meaning of free
+The requester finds candidates and connects to a host. The host checks its local
+profile, physical capacity and existing commitments, then accepts a reservation
+with an expiry. If the final space is contested, only one reservation can succeed.
+A retry returns the state of the same request. A pause stops new reservations.
+Existing storage follows its retention and migration agreement. A compute session
+must report the last confirmed save when interrupted, so its owner can see what work
+survived. [Offer my computer](resource-offers.md) · [Architecture](architecture.md)
 
-The goal is no mandatory service fee. Hardware, electricity, connectivity,
-maintenance and relay traffic still have costs paid by participants or donors.
-An offer of disk space does not guarantee access to scarce GPU capacity.
-The project does not promise unlimited storage, bandwidth or inference.
+## Participation and cost
 
-## Later community AI
+The goal is access without a required rental fee. People may ask for help regardless of
+the hardware they contribute. The pilot will rely on voluntary capacity and local
+quotas, without required credits, balances or cryptocurrency. Participants or donors
+bear the cost of hardware, electricity, maintenance, connectivity and relay traffic.
+When capacity is unavailable, the requester can see why and choose to wait or cancel.
 
-Start with existing open models executed in full by capable providers, routing
-requests among them under separate compute agreements. Evaluate distributed
-inference across model partitions after measuring that service. Model training
-requires an additional data, licensing, evaluation and compute plan.
+## How the project will test its promises
 
-Storage encryption does not make inference private: a remote compute provider
-may see the inputs it processes. Model licenses must be evaluated individually;
-open weights are not automatically an open-source license.
+1. Start with an encrypted file, a single provider and recovery on a new device.
+   Test a valid recovery credential and the same credential after a confirmed
+   revocation and provider restart. Record this result separately from redundancy.
+2. Exercise automatic reservations with unfamiliar peers before expanding the
+   storage trial to two data fragments and one parity fragment, repairs and
+   synchronization. Test directory failure, a host pausing and a lost reply.
+3. Test the desktop node on Windows, Linux and macOS. A four-core PC with 8 GB of
+   RAM is the reference for measuring resource use during storage, including pause
+   latency. Measure directory and relay demand separately. Phones and tablets
+   will first be evaluated as clients for access and recovery.
+4. Trial general-purpose CPU and RAM sessions on hardware that can prove the
+   required protection. Later trials will cover a verified GPU path, then persistent
+   hosting with a compatible standby and a recoverable saved state.
 
-## Outside the first implementation
-
-Public download links, multi-user editing, mobile clients, transparent cloud-only
-files, global credits, permissionless admission, model training and anonymous
-networking are outside the first storage implementation. The initial architecture
-targets Windows, Linux and macOS with a Go daemon and CLI; a GUI follows later.
+The repository publishes the design, its assumptions and acceptance criteria.
+Implementation and measured results belong to subsequent milestones. [Roadmap](roadmap.md)

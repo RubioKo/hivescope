@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 2 -->
+<!-- docs-pair: readiness; revision: 3 -->
 
 [English](../en/readiness.md) | [Español](readiness.md) | [Índice](README.md)
 
@@ -11,18 +11,21 @@ implementar cada parte hay que cerrar su contrato, descrito abajo. Las comprobac
 actuales verifican documentación. La fiabilidad, la interoperabilidad y la
 recuperación se comprobarán con software en funcionamiento.
 
-## Primera carga y recuperación manual
+## Primera recuperación desde un proveedor de almacenamiento
 
 **Alcance propuesto para el hito 1.** Utilizar un equipo del propietario, un proveedor
-de almacenamiento aprobado y una conexión directa en LAN. Un tercer perfil de dispositivo,
+de almacenamiento con dirección conocida en la LAN y una conexión directa. Un tercer perfil de dispositivo,
 limpio, representa al propietario tras perder su equipo. Un único proveedor conserva
 un objeto cifrado completo y un catálogo mínimo autenticado que permite localizarlo.
 Si se pierde ese proveedor, los datos de la demostración quedan inaccesibles. La
-distribución entre tres proveedores y el estado `protected` corresponden al hito 2.
+distribución entre tres proveedores y el estado `protected` corresponden al hito 3.
 
-1. El propietario verifica la huella del proveedor y ambos aceptan un acuerdo.
+1. Los pares se autentican. El proveedor contrasta la solicitud con su perfil
+   local y reserva capacidad mediante un acuerdo de almacenamiento. El cliente
+   registra la identidad del proveedor para recuperar la copia. Para el ensayo
+   se proporciona directamente la dirección del proveedor.
 2. El propietario cifra un archivo sintético y sube el contenido y el catálogo.
-   El proveedor reserva espacio, persiste los bytes y confirma la operación.
+   El proveedor utiliza la reserva, persiste los bytes y confirma la operación.
 3. El propietario exporta un paquete de recuperación protegido con contraseña.
    Se apaga el equipo original y se empieza con una base de datos vacía y una
    identidad de dispositivo nueva.
@@ -43,7 +46,7 @@ autoridad administrativa.
 | --- | --- |
 | Propietario | Al establecer el acuerdo, ambas partes fijan la clave pública de la autoridad de carpeta. El propietario usa la privada para firmar la autorización inicial de recuperación y sus posteriores sustituciones o revocaciones. Guarda esa clave administrativa fuera del paquete de recuperación. |
 | Proveedor | Guarda la autorización firmada con los identificadores opacos de carpeta y acuerdo, su propia identidad, la clave pública de recuperación, el alcance de lectura y la generación. Conserva de forma persistente la generación más alta aceptada y su estado activo o revocado. |
-| Equipo de reemplazo | Crea su propia identidad de dispositivo. La contraseña desbloquea el paquete localmente. El paquete contiene la clave de firma de recuperación, la referencia de la autorización con su generación, el material para descifrar la carpeta y verificar el catálogo, el localizador opaco del catálogo y el contacto y la huella del proveedor aprobado. |
+| Equipo de reemplazo | Crea su propia identidad de dispositivo. La contraseña desbloquea el paquete localmente. El paquete contiene la clave de firma de recuperación, la referencia de la autorización con su generación, el material para descifrar la carpeta y verificar el catálogo, el localizador opaco del catálogo, los datos de conexión del proveedor y la huella fijada en el acuerdo. |
 
 1. El equipo nuevo verifica la huella del proveedor en una conexión libp2p
    autenticada. El proveedor puede emitir un reto a este nuevo par antes de
@@ -114,13 +117,13 @@ y resultado observado cuando exista una implementación que permita ejecutarlos.
 
 ## Qué puede esperar
 
-En el hito 2 se evaluarán el coste de las comprobaciones, los umbrales de reparación
-ante desconexiones reales y el comportamiento al perder proveedores con el perfil
-2 + 1. El hito 3 probará conflictos sin conexión y nombres de archivo entre plataformas.
-La alfa cerrada medirá conectividad doméstica, tráfico de relay, uso de disco e
-impacto en batería en Windows, Linux y macOS. Acotar el ensayo inicial a una LAN
-permite conservar esos objetivos de plataforma. La futura IA tiene su propio
-diseño de cómputo y privacidad.
+El hito 2 incorpora asignación automática mediante directorios reemplazables y
+prueba reservas concurrentes y reintentos entre equipos que se encuentran por primera vez.
+El hito 3 prueba la reparación 2+1, el coste de las comprobaciones, los conflictos
+sin conexión y la portabilidad de nombres. La alfa de escritorio medirá la conectividad
+doméstica, el tráfico de relay, el uso de disco y el impacto en batería en Windows,
+Linux y macOS. El cómputo privado de propósito general y el alojamiento persistente
+tienen criterios propios en la [hoja de ruta](roadmap.md).
 
 **Siguiente contribución.** Especificar el formato versionado del paquete de
 recuperación y los bytes que se firman en la solicitud mediante ejemplos

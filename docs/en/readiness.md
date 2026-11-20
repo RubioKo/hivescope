@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 2 -->
+<!-- docs-pair: readiness; revision: 3 -->
 
 [English](readiness.md) | [Español](../es/readiness.md) | [Index](README.md)
 
@@ -10,18 +10,20 @@ Contributors can start specifying the secure core now. Implementing each part
 requires settling the corresponding contract below. The current CI checks
 documentation. Reliability, interoperability and recovery require running software.
 
-## The first manual round trip
+## First recovery from one storage provider
 
-**Proposed scope for milestone 1.** Use one owner's device, one approved storage
-provider and a direct LAN connection. A third, clean device profile represents
+**Proposed scope for milestone 1.** Use one owner's device, one storage provider
+at a known LAN address and a direct connection. A third, clean device profile represents
 the owner after losing the original device. A single provider keeps a complete
 encrypted object and a minimal authenticated catalog that points to it. Losing
 that provider makes this demonstration unavailable. The three-provider placement
-policy and the `protected` state belong to milestone 2.
+policy and the `protected` state belong to milestone 3.
 
-1. The owner verifies the provider's fingerprint and both accept an agreement.
+1. The peers authenticate each other. The provider checks the request against its
+   local resource profile and reserves capacity under a storage agreement. The client
+   records the provider's identity for recovery. The test supplies its address directly.
 2. The owner encrypts a synthetic file and uploads it and the catalog. The
-   provider reserves capacity, persists the bytes and acknowledges the operation.
+   provider uses the reservation, persists the bytes and acknowledges the operation.
 3. The owner exports a password-protected recovery package. Switch off the original
    device and start with an empty local database and a fresh device identity.
 4. Using only the package, its password and the reachable provider, recover the
@@ -40,7 +42,7 @@ copy after losing a device while keeping administrative authority separate.
 | --- | --- |
 | Owner | At agreement setup, both parties pin the folder authority's public key. The owner uses its private key to sign the initial recovery grant and later replacements or revocations. The owner keeps that administrative key separately from the recovery package. |
 | Provider | Stores the signed grant with the opaque folder and agreement IDs, provider identity, recovery public key, read scope and generation. Persists the highest accepted generation and its active or revoked status. |
-| Replacement device | Creates its own device identity. The password unlocks the package locally. It contains the recovery signing key and grant reference (including its generation), folder decryption and catalog verification material, opaque catalog locator and approved provider contact and fingerprint. |
+| Replacement device | Creates its own device identity. The password unlocks the package locally. It contains the recovery signing key and grant reference (including its generation), folder decryption and catalog verification material, an opaque catalog locator, and the storage provider's connection details and pinned fingerprint. |
 
 1. The new device checks the provider fingerprint on an authenticated libp2p
    connection. The provider can challenge this new peer before granting any read.
@@ -108,12 +110,12 @@ observed outcome when the first implementation can run them.
 
 ## What can wait
 
-Milestone 2 will determine the audit cost, repair thresholds under real churn and
-behavior when providers fail under the 2 + 1 profile. Milestone 3 will test
-offline conflicts and filename portability. The closed alpha will measure home
-network connectivity, relay bandwidth, disk use and battery impact across Windows,
-Linux and macOS. Keeping the direct LAN experiment small leaves those platform
-targets in place. The later AI service has its own compute and privacy design.
+Milestone 2 adds automatic placement using replaceable directories and tests
+concurrent reservations and retries between previously unknown peers. Milestone 3
+tests 2+1 repair, audit costs, offline conflicts and filename portability. The
+desktop alpha will measure home connectivity, relay bandwidth, disk use and battery
+impact on Windows, Linux and macOS. General-purpose private computing and persistent
+hosting have separate acceptance criteria in the [roadmap](roadmap.md).
 
 **Next contribution.** Specify the versioned recovery package and signed request
 bytes with synthetic examples. Use the valid and revoked cases to check that

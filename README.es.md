@@ -1,70 +1,119 @@
-<!-- docs-pair: home; revision: 1 -->
+<!-- docs-pair: home; revision: 8 -->
 
 [English](README.md) | Español
 
-![HiveScope — almacenamiento descentralizado, código abierto y comunidad. En fase de diseño; buscamos colaboradores.](assets/banner.es.svg)
+![HiveScope — almacenamiento comunitario de código abierto. En fase de diseño. Buscamos colaboradores.](assets/banner.es.svg)
 
 # HiveScope
 
-HiveScope es un proyecto de código abierto que está diseñando una red comunitaria
-de recursos entre pares. Su primer servicio sincronizará carpetas privadas entre
-tus dispositivos utilizando almacenamiento cifrado aportado por pares aprobados.
+HiveScope es un proyecto de código abierto para compartir almacenamiento y potencia de
+cómputo entre personas de todo el mundo. Si necesitas proteger una carpeta, ejecutar
+tu propio software o mantener un servidor para tu comunidad, la aplicación buscará
+equipos que puedan ayudarte. Si quieres prestar recursos, eliges qué compartes, cuánto
+y cuándo. Las máquinas se encargan de coordinarlo.
 
-Cada participante controla lo que comparte: capacidad de disco, límites de
-transferencia y horarios. El diseño inicial utiliza acuerdos entre pares en lugar
-de un coordinador central o un libro mayor global de créditos. La IA alojada por
-la comunidad es una dirección posterior, comenzando con modelos abiertos
-existentes ejecutados por voluntarios con equipos capaces.
+**Estamos diseñando HiveScope.** El primer prototipo estará dedicado a guardar y
+recuperar archivos cifrados desde una computadora. El cómputo privado de propósito
+general y el alojamiento de servicios forman parte de la hoja de ruta.
+[Visión del proyecto](docs/es/vision.md) · [Hoja de ruta](docs/es/roadmap.md)
 
-**Estado: diseño y documentación.** Todavía no hay un daemon de almacenamiento,
-cliente de sincronización, instalador ni servicio de IA que puedas ejecutar.
-Windows, Linux y macOS son plataformas objetivo; no indican disponibilidad actual
-de software.
+## ¿Para qué podrías usar HiveScope?
 
-## Cómo empezar
+- **Proteger los archivos que elijas.** Guarda copias de carpetas con fotos, documentos,
+  música, código fuente u otros trabajos. Tú conservas las claves y eliges cuáles de
+  tus dispositivos pueden leer cada carpeta. La sincronización llegará después de la recuperación.
+- **Ejecutar tu propio software.** Solicita CPU y memoria para un entorno privado que
+  tú controlas. Podrías instalar herramientas, compilar un proyecto, renderizar una
+  escena o ejecutar un modelo. Tu dispositivo solo entregará las claves de la sesión
+  tras verificar el entorno remoto, incluida cualquier GPU que se utilice. Si la
+  verificación falla o falta un anfitrión compatible, las claves seguirán en tu equipo.
+  Podrás esperar o cancelar. [Modelo de seguridad](docs/es/security.md)
+- **Alojar un servicio para tu comunidad.** Un grupo de jugadores podría mantener un
+  mundo compartido aprovechando los horarios de sus voluntarios. Solo un anfitrión
+  aceptaría cambios a la vez. Un relevo compatible podría continuar desde un guardado
+  verificado. Project Zomboid es un posible ensayo. Antes de anunciar una expectativa
+  de disponibilidad se medirán la latencia de los jugadores, las interrupciones y el
+  progreso perdido. [Prueba de alojamiento](docs/es/roadmap.md)
 
-- Conocer el proyecto: [visión y límites](docs/es/vision.md).
-- Explorar el sistema: [arquitectura](docs/es/architecture.md).
-- Encontrar trabajo útil: [hoja de ruta y criterios de aceptación](docs/es/roadmap.md).
-- Proponer un cambio: [guía de contribución](docs/es/contributing.md).
-- Hacer una pregunta: [Issues de GitHub](https://github.com/RubioKo/hivescope/issues).
+## ¿Qué pasa cuando solicitas u ofreces recursos?
 
-## Documentación esencial
+Puedes participar solo para solicitar recursos. Eliges lo que necesitas y tu equipo
+buscará anfitriones compatibles en directorios comunitarios. Quien presta recursos
+configura un perfil una sola vez. Por ejemplo, Luis podría ofrecer 20 GB de disco por
+las tardes y reservar su GPU para él. Su computadora comprobaría el horario, el espacio
+libre y los compromisos vigentes antes de aceptar una reserva. Ana y Luis podrían usar
+el servicio sin conocerse.
 
-- [Índice de documentación](docs/es/README.md)
-- [Almacenamiento y mantenimiento](docs/es/storage.md)
-- [Sincronización de carpetas](docs/es/synchronization.md)
-- [Seguridad y modelo de amenazas](docs/es/security.md)
-- [Gobernanza](docs/es/governance.md)
-- [Código de conducta](docs/es/code-of-conduct.md)
-- [Licencia y atribución](docs/es/licensing.md)
+Luis podría pausar las nuevas reservas. Las copias existentes seguirían sus acuerdos de
+retención. Si faltara capacidad, Ana vería por qué su solicitud está pendiente.
+Reintentar la misma solicitud mantendría su estado sin reservar dos veces el espacio.
+La participación será voluntaria. El objetivo es acceder a los servicios sin una cuota
+obligatoria de alquiler. Los participantes o donantes asumirían los costes del equipo,
+la electricidad, la conexión y el tráfico de los relays. [Ofrecer mi equipo](docs/es/resource-offers.md)
 
-## Encuentra tu función
+## Cómo recuperaría Ana una carpeta privada
 
-- **Desarrollo:** revisar la arquitectura y proponer una tarea de implementación acotada.
-- **Investigación de seguridad:** estudiar límites de confianza, recuperación de
-  claves y casos de fallo.
-- **Operación de nodos:** ayudar a diseñar pruebas realistas de disponibilidad y
-  límites de recursos.
-- **Documentación o traducción:** mejorar el inglés y el español o
-  [proponer otro idioma](docs/es/translations.md).
-- **Mantenimiento:** seguir el proceso de revisión y decisiones de la gobernanza.
-- **Contribución asistida por IA:** leer [AGENTS.md](AGENTS.md) y la
-  [guía opcional de ECC](docs/es/ai-assisted-development.md).
+### Ana elige qué equipos pueden leer sus archivos
 
-Las contribuciones sin herramientas de IA son igualmente bienvenidas. No se
-requiere ninguna suscripción ni instalación de ECC.
+![Ana señala una foto familiar que aparece en su portátil junto a un documento y la onda de una grabación.](assets/story/hivescope-story.jpg)
 
-## Comunicación y ayuda
+Ana autoriza a su portátil y a su computadora de escritorio a leer `Estudios`, donde
+guarda el borrador de su tesis, una foto y una entrevista grabada. Para
+`Documentos personales` autoriza solo el portátil. Cada elección se aplica a todos los
+archivos de esa carpeta.
 
-Utiliza [Issues](https://github.com/RubioKo/hivescope/issues) para preguntas
-públicas, propuestas de diseño y problemas documentales. Se aceptan inglés y
-español. Para informes de seguridad sensibles, sigue [SECURITY.md](SECURITY.md).
-En esta etapa no existe un servicio de soporte de producción ni garantía de
-disponibilidad.
+### El equipo de Luis guarda la copia cifrada
 
-## Licencia
+![Luis ajusta un control debajo de dos filas de bloques de colores que representan datos cifrados en su pantalla.](assets/story/encrypted-storage.jpg)
 
-El material nuevo utiliza **AGPL-3.0-only**; consulta [LICENSE](LICENSE).
-Los banners animados adaptados conservan su licencia **MIT** y atribución;
-consulta los [avisos de terceros](THIRD_PARTY_NOTICES.md).
+La computadora de Ana cifra el contenido y los nombres antes de enviar la copia. El
+perfil de almacenamiento de Luis admite la transferencia automáticamente. Luis puede
+observar su tamaño y el momento en que ocurre. Ana conserva el control de las claves
+que abren sus archivos.
+
+### Ana recupera su trabajo en otra computadora
+
+![Ana sostiene una memoria USB junto al portátil cerrado. La foto, el documento y la grabación vuelven a aparecer en un monitor de escritorio.](assets/story/recovering-files.jpg)
+
+Con el portátil original apagado, Ana usa su contraseña para abrir el paquete de
+recuperación que guardó aparte. En la primera prueba prevista, un proveedor accesible
+comprueba su credencial de recuperación y el equipo nuevo restaura un archivo de
+prueba idéntico byte por byte. Más adelante, cada bloque cifrado se distribuiría entre
+tres proveedores para que dos fragmentos válidos puedan reconstruirlo.
+[Diseño de recuperación](docs/es/architecture.md) · [Almacenamiento y reparación](docs/es/storage.md)
+
+## Desarrollo y dispositivos
+
+La primera entrega prevista es una herramienta de línea de comandos para computadoras.
+Go es la primera opción para el nodo. La referencia para medir memoria, CPU, velocidad
+de recuperación y tiempo de respuesta al pausar será un PC de cuatro núcleos y 8 GB
+de RAM. Las sesiones confidenciales requerirán ensayos separados con hardware compatible.
+La alfa de escritorio se probará en Windows, Linux y macOS e incorporará una
+interfaz gráfica tras medir el servicio en segundo plano. Los celulares y tabletas
+se evaluarán primero para acceso y recuperación.
+[Arquitectura](docs/es/architecture.md) · [Índice de documentación](docs/es/README.md)
+
+## Cómo contribuir
+
+- **Revisa un caso de fallo.** ¿Qué debería ver una persona si un proveedor de almacenamiento
+  se desconecta a mitad de la recuperación? Describe el comportamiento esperado con archivos
+  de ejemplo. [Proponer un caso](https://github.com/RubioKo/hivescope/issues/new?template=proposal.yml)
+- **Diseña una prueba de alojamiento en casa.** Describe el equipo, el horario y el ancho
+  de banda que podría prestar una persona, o cómo un grupo comprobaría que puede seguir
+  jugando en su mundo después de un relevo. [Abrir una propuesta en Issues](https://github.com/RubioKo/hivescope/issues)
+- **Mejora la documentación.** Mantenemos las versiones en inglés y español en paralelo.
+  Puedes aclarar una explicación, revisar una traducción o ayudar a incorporar otro idioma.
+  [Guía de traducción](docs/es/translations.md)
+
+Crea una rama de trabajo a partir de `development` y dirige tu pull request a
+`development`. Los hallazgos de seguridad sensibles cuentan con un canal privado de
+reporte. [Guía de contribución](docs/es/contributing.md) · [Informes de seguridad](SECURITY.md) · [Gobernanza](docs/es/governance.md) · [Código de conducta](docs/es/code-of-conduct.md)
+
+Las instrucciones para colaboradores y las herramientas opcionales de asistencia tienen
+su propia documentación. [Instrucciones para colaboradores](AGENTS.md) · [Guía opcional de IA y ECC](docs/es/ai-assisted-development.md)
+
+## Licencia y atribución
+
+El material nuevo de HiveScope utiliza la licencia **AGPL-3.0-only**. Los banners
+animados, adaptados del diseño original de RubioKo, conservan su licencia **MIT** y su
+atribución. [Licencia del proyecto](LICENSE) · [Guía de licencias](docs/es/licensing.md) · [Avisos de terceros](THIRD_PARTY_NOTICES.md)

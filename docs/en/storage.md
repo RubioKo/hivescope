@@ -1,26 +1,29 @@
-<!-- docs-pair: storage; revision: 1 -->
+<!-- docs-pair: storage; revision: 2 -->
 
 [English](storage.md) | [Español](../es/storage.md) | [Index](README.md)
 
 # Encrypted storage and maintenance
 
-This is the proposed alpha storage policy. Values are design defaults to validate,
-not measurements or guarantees from a deployed network.
+Milestone 1 will store one complete encrypted object with one provider. Recovery
+on a replacement device must reproduce the original bytes. A verified copy at
+that stage depends on the continuing availability of that provider. The following
+redundancy and repair policy applies from milestone 3. Its parameters need validation.
 
 ## File protection
 
 - Split a stable file version into blocks of at most 4 MiB.
-- Encrypt each block with AES-256-GCM using the Go standard library. Use a fresh
+- Use the candidate Go implementation's standard AES-256-GCM library. Use a fresh
   key for each immutable file version and unique nonces for every block under
   that key. Bind version and block position as authenticated associated data.
 - Apply Reed–Solomon to the ciphertext, including the information needed for
   authenticated decryption, using an existing library such as `klauspost/reedsolomon`.
-- The initial profile is two data fragments plus one parity fragment per block.
+- The first redundancy profile is two data fragments plus one parity fragment per block.
   Any two valid fragments reconstruct the encrypted block. Corrupt fragments
   count as unavailable; parity alone does not authenticate content.
-- Store the three fragments on three distinct approved providers. Separate
-  operator and household failure domains through explicit operator information;
-  three peer identities alone do not prove independence.
+- Place the three fragments on distinct providers selected under the node's
+  resource policy. For controlled trials, confirm separate operators and
+  households. In an open network multiple peer identities can belong to one
+  operator, so report the evidence available for independent placement.
 
 This consumes about 1.5 times the encrypted content, plus padding, metadata and
 retained versions. The original plaintext copies on the owner's devices are
@@ -35,7 +38,7 @@ encrypted references needed to retrieve the data. Catalog versions and owner
 authorization records are replicated on all three selected metadata providers.
 Readers retain the newest verified state they have seen to detect older replays.
 
-A version is `pending` until its placements and metadata are acknowledged. It is
+Under the redundancy profile a version is `pending` until its placements and metadata are acknowledged. It is
 `protected` with all three valid placements and metadata confirmations, `degraded`
 when only two remain available, and `unavailable` when fewer than two can be read.
 These are per-block requirements: the whole file needs every block and its catalog.
@@ -46,9 +49,11 @@ will remain available forever. Capacity shortages leave edits pending and visibl
 
 ## Agreements and physical capacity
 
-Each mutually accepted agreement specifies parties, physical byte quota, permitted
-operations, expiry and upload/download limits. There is no automatic credit reward
-for advertised free capacity. Reciprocity is negotiated, not globally enforced.
+Anyone may request storage without offering hardware or earning credits.
+Compatible nodes accept an agreement automatically under the host's local
+profile. It records both parties, physical byte quota, permitted operations,
+expiry and transfer limits. An expiring directory advertisement only helps find
+the host. The host checks real space and commitments before making a reservation.
 
 Default validity is 30 days. Attempt renewal daily while reachable. A seven-day
 grace period follows expiry; an offline client does not silently renew its lease.
@@ -57,18 +62,21 @@ providers may garbage-collect it afterwards. Loss of every owner's device beyond
 that horizon can therefore cause data loss even with a recovery export.
 
 Quota accounting includes live data, retained versions, metadata, incoming
-reservations and temporary bytes. Repeated requests must not double-charge.
-Keep a configurable free-disk safety reserve. Reducing a quota stops new writes
-and requests migration; it does not immediately erase valid obligations.
+reservations and temporary bytes. Charge a request once across retries. Reserve
+atomically so competing requests cannot consume the same bytes. Keep a configurable
+margin of free space on the offered volume. Pausing stops new reservations.
+Reducing a quota stops new writes and requests migration. Existing data follows
+its retention agreement even if the host stops advertising.
 
 ## Health checks and repair
 
 - Check reachability every five minutes. Three consecutive failures mark a
   provider as suspect and trigger repair evaluation if redundancy is reduced.
 - Start repair without a fixed 48-hour wait when only two valid fragments remain.
-  A replacement must be approved and have an applicable agreement and free quota.
+  A replacement must meet the local placement policy and confirm an agreement
+  with free quota before it receives data.
 - The owner can delegate bounded read/reconstruct/write authority over encrypted
-  fragments to an approved repair worker, without disclosing decryption keys.
+  fragments to an explicitly delegated repair worker without disclosing decryption keys.
   It does not grant folder editing, agreement signing or unrestricted deletion.
 - Workers reconstruct ciphertext, validate signed digests and obtain replacement
   receipts. Receipt announcements are eventually reconciled by authorized devices.

@@ -1,61 +1,90 @@
-<!-- docs-pair: vision; revision: 1 -->
+<!-- docs-pair: vision; revision: 6 -->
 
-[English](../en/vision.md) | [Español](vision.md) | [Índice](README.md)
+[English](../en/vision.md) | Español | [Índice](README.md)
 
 # Visión y límites
 
-HiveScope busca permitir almacenamiento privado operado por la comunidad sin
-depender de un proveedor central. Los participantes intercambian recursos con
-límites explícitos y mantienen el control de sus archivos y claves.
+HiveScope está diseñando una red abierta donde cualquier persona pueda solicitar
+almacenamiento o cómputo. Se podrá participar solo para solicitar recursos. Quien
+presta un equipo decide qué recursos ofrece y cuánta capacidad necesita reservar
+para su propio uso. Las máquinas se encontrarían y acordarían el trabajo automáticamente.
 
-## Primer servicio útil
+## Qué podría hacer una persona
 
-Sincronizar una carpeta privada entre los dispositivos autorizados de su dueño.
-Los proveedores comunitarios aprobados conservan fragmentos cifrados y ayudan a
-recuperar disponibilidad. Aprobar a un proveedor no lo convierte automáticamente
-en lector de la carpeta.
+**Conservar una copia recuperable.** Una estudiante elige la carpeta de su tesis,
+con apuntes y fotografías. Su computadora cifra los nombres y el contenido antes de
+transferirlos. La estudiante decide cuáles de sus dispositivos pueden leer esa carpeta.
+Tras un fallo del portátil, el primer prototipo deberá recuperar un archivo de prueba
+desde un proveedor accesible en un equipo de reemplazo limpio con una credencial de
+recuperación válida. Un hito posterior probará la reparación entre anfitriones
+independientes y conservará ambas versiones cuando haya ediciones incompatibles sin
+conexión. [Almacenamiento y reparación](storage.md) · [Sincronización de carpetas](synchronization.md)
 
-La red inicial utiliza acuerdos bilaterales. Cada proveedor decide a quién presta
-servicio, cuánta capacidad física concede, durante cuánto tiempo y con qué límites
-de transferencia. No hay saldo global, token, blockchain ni tipo de cambio universal.
-La aprobación es una decisión local, no una cuenta en un registro central.
+**Utilizar una sesión privada de cómputo.** Una creadora solicita CPU y RAM e instala
+las herramientas que elija dentro de su entorno. Podría compilar un proyecto, renderizar
+una escena o ejecutar su propio modelo. La máquina virtual confidencial propuesta
+protegería el trabajo durante su ejecución. Antes de entregar las claves de sesión,
+el dispositivo solicitante deberá verificar el entorno y vincular las claves a esa
+sesión. Un trabajo que utilice GPU necesitará además pruebas sobre la GPU y su conexión
+con el entorno protegido. Si la protección no se puede verificar, la solicitud seguirá
+en espera o la persona podrá cancelarla. Las entradas privadas y las claves
+se quedarán con quien solicita. El anfitrión aún podrá observar información
+operativa, como la duración de la sesión o el volumen de tráfico, y podrá desconectarse.
+[Modelo de seguridad](security.md)
 
-Se espera que algunos nodos comunitarios estén conectados habitualmente. Es posible
-editar sin conexión, pero la recuperación remota necesita suficientes fragmentos
-y metadatos accesibles. La alfa no anunciará un SLA de durabilidad o disponibilidad.
+**Alojar un servicio con la comunidad.** Un grupo de jugadores podría solicitar
+alojamiento para su mundo aprovechando los horarios de los voluntarios. Project Zomboid
+es un ejemplo propuesto. Un único anfitrión activo acepta cambios. Tras un relevo, un
+equipo compatible podría iniciar el mundo desde el último guardado verificado. El ensayo
+mediría cuánto tardan los jugadores en volver a conectarse, qué progreso pierden y la
+latencia desde sus conexiones reales. El calendario de una asociación u otro servicio
+persistente necesitarían su propia prueba de recuperación de estado. [Hoja de ruta](roadmap.md)
 
-## Control del participante
+## Qué ocurre entre las máquinas
 
-Compartir requiere aceptación explícita. Cada participante configura el directorio
-de almacenamiento, la cuota, los límites de subida y bajada y el horario antes de
-aceptar datos. El diseño incluye pausa manual y pausa por batería. Detectar
-videojuegos o videollamadas queda para después.
-Los proveedores que se retiren deberían permitir la migración durante la vigencia
-restante del acuerdo; los fallos abruptos también forman parte del modelo de amenazas
-y fiabilidad.
+Quien presta el equipo configura un perfil una sola vez, elige disco, CPU, RAM, GPU o
+ancho de banda y fija horario y límites. Por ejemplo, Luis podría prestar 20 GB de disco
+por las tardes y reservar toda la capacidad de cómputo para sí mismo. Ana podría pedir
+una copia sin agregar a Luis como contacto. Los directorios comunitarios reemplazables
+distribuirían anuncios de servicios con vencimiento. Los nombres de archivos, el
+contenido de las sesiones y las claves quedarían fuera de esos anuncios.
 
-## Qué significa gratuito
+El equipo solicitante encuentra candidatos y se conecta a un anfitrión. Este comprueba
+su perfil local, la capacidad física y los compromisos vigentes antes de aceptar una
+reserva con vencimiento. Si varias solicitudes compiten por el último espacio, solo una
+reserva puede obtenerlo. Un reintento devuelve el estado de la misma solicitud. Una
+pausa detiene las reservas nuevas. Los datos almacenados siguen su acuerdo de retención
+y migración. Si se interrumpe una sesión de cómputo, se deberá indicar el último
+guardado confirmado para que su titular sepa qué trabajo se conservó.
+[Ofrecer mi equipo](resource-offers.md) · [Arquitectura](architecture.md)
 
-El objetivo es no exigir una tarifa de servicio. El hardware, la electricidad,
-la conexión, el mantenimiento y el tráfico de relay siguen teniendo costes
-asumidos por participantes o donantes. Ofrecer disco no garantiza acceso a una
-GPU escasa. El proyecto no promete almacenamiento, tráfico ni inferencia ilimitados.
+## Participación y costes
 
-## IA comunitaria posterior
+El objetivo es acceder sin una cuota de alquiler obligatoria. Cada persona podrá pedir
+ayuda con independencia del hardware que aporte. El piloto dependerá de la capacidad
+voluntaria y de cuotas locales, sin créditos, saldos ni criptomonedas obligatorios.
+Los participantes o donantes asumirán los costes del equipo, la electricidad, el
+mantenimiento, la conexión y el tráfico de los relays. Si faltan recursos, quien los
+solicita verá el motivo y podrá esperar o cancelar.
 
-Comenzar con modelos abiertos existentes ejecutados completos por proveedores
-capaces, repartiendo solicitudes mediante acuerdos de cómputo independientes.
-Evaluar la inferencia repartida por partes del modelo después de medir ese servicio.
-Entrenar modelos requiere un plan adicional de datos, licencias, evaluación y cómputo.
+## Cómo se comprobará lo propuesto
 
-El cifrado de almacenamiento no hace privada la inferencia: un proveedor remoto
-puede ver las entradas que procesa. Las licencias de los modelos deben evaluarse
-individualmente; disponer de pesos abiertos no implica una licencia de código abierto.
+1. Empezar con un archivo cifrado, un solo proveedor y la recuperación en un equipo
+   nuevo. Probar una credencial válida y volver a probarla tras confirmar su revocación
+   y reiniciar el proveedor. Registrar este resultado por separado de la redundancia.
+2. Ensayar las reservas automáticas entre equipos que se encuentran por primera vez
+   antes de ampliar el almacenamiento a dos fragmentos de datos y uno de paridad,
+   reparación y sincronización. Probar la caída de un directorio, la pausa de un
+   anfitrión y la pérdida de una respuesta.
+3. Probar el nodo de escritorio en Windows, Linux y macOS. Un PC de cuatro núcleos
+   y 8 GB de RAM será la referencia para medir el consumo durante el almacenamiento
+   y el tiempo de respuesta al pausar. Medir por separado la demanda de los directorios
+   y relays. Los celulares y tabletas se evaluarán primero como clientes de acceso y
+   recuperación.
+4. Probar sesiones de CPU y RAM de propósito general con hardware que pueda demostrar
+   la protección requerida. Los ensayos posteriores cubrirán sesiones que puedan
+   verificar la GPU y después el alojamiento persistente con un relevo compatible y
+   un estado guardado recuperable.
 
-## Fuera de la primera implementación
-
-Los enlaces públicos, la edición multiusuario, los clientes móviles, los archivos
-transparentes solo en la nube, los créditos globales, el ingreso sin aprobación,
-el entrenamiento de modelos y la navegación anónima quedan fuera de la primera
-implementación. La arquitectura apunta a Windows, Linux y macOS con daemon Go y CLI;
-la interfaz gráfica llegará después.
+El repositorio publica el diseño, sus supuestos y los criterios de aceptación.
+La implementación y las mediciones corresponden a hitos posteriores. [Hoja de ruta](roadmap.md)

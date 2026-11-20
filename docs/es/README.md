@@ -1,18 +1,20 @@
-<!-- docs-pair: index; revision: 2 -->
+<!-- docs-pair: index; revision: 4 -->
 
 [English](../en/README.md) | [Español](README.md) | [Inicio del proyecto](../../README.es.md)
 
 # Documentación de HiveScope
 
-Esta es una base de diseño, no un manual de implementación. Los nombres de
-protocolos y contratos describen el comportamiento previsto; todavía no hay un
-servicio en funcionamiento.
+HiveScope está en diseño. La [hoja de ruta](roadmap.md) presenta la primera
+prueba de recuperación cifrada y los hitos de asignación automática de recursos,
+cómputo privado y alojamiento. [Ofrecer mi equipo](resource-offers.md) sigue
+una solicitud desde la persona que necesita recursos hasta la máquina que los presta.
 
 ## Diseño
 
 - [Visión y límites](vision.md)
+- [Ofrecer mi equipo](resource-offers.md)
 - [Arquitectura e interfaces](architecture.md)
-- [Preparación del primer prototipo](readiness.md)
+- [Primera prueba de recuperación y decisiones pendientes](readiness.md)
 - [Almacenamiento cifrado y mantenimiento](storage.md)
 - [Sincronización de carpetas](synchronization.md)
 - [Seguridad y modelo de amenazas](security.md)

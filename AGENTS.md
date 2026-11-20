@@ -8,10 +8,18 @@ Spanish guidance: [contribution guide](docs/es/contributing.md) and
 
 ## Current scope
 
-HiveScope is in design and documentation. Do not invent a working daemon,
-installer, API, benchmark, security audit or AI service. Target architecture:
-Go daemon, approved P2P providers, private folders across the owner's devices,
-bilateral quotas, encrypted storage and a later community AI service.
+HiveScope is in design and documentation. Use the bilingual roadmap to
+distinguish proposals from shipped features and measured results. The first
+prototype targets recovery of one encrypted file on a replacement device.
+Go is the first candidate for the desktop node.
+
+An open network lets people request resources without contributing hardware.
+Community directories advertise services. Nodes authenticate one another and
+admit reservations under the host's local profile. Only the folder owner
+authorizes readers. In a future general-purpose computing session the requester
+chooses the software. Release session keys only after the client verifies
+the required execution environment, including a GPU when used. If verification
+fails, the request waits and the requester keeps the keys.
 
 ## Before changing anything
 
