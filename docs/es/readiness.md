@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 14 -->
+<!-- docs-pair: readiness; revision: 15 -->
 
 [English](../en/readiness.md) | [Español](readiness.md) | [Índice](README.md)
 
@@ -12,11 +12,11 @@ definen el primer prototipo de escritorio.
 
 **Resultados actuales.** Las pruebas locales cubren los formatos de recuperación
 y el guardado de archivos verificados. Las pruebas TCP en la interfaz de bucle
-local comprueban la identidad del proveedor y la autorización de un solo uso
-para leer el catálogo. La prueba de identidad también se ejecuta en equipos
-virtuales aislados en Linux. Recuperar un archivo en un equipo de reemplazo
-y comprobar que el proveedor mantiene la revocación tras reiniciar siguen
-siendo objetivos del ensayo en red local.
+local comprueban la identidad del proveedor y las firmas de un solo uso para
+leer por separado el catálogo y su objeto cifrado. La prueba de identidad
+también se ejecuta en equipos virtuales aislados en Linux. Recuperar un archivo
+en un equipo de reemplazo y comprobar que el proveedor mantiene la revocación
+tras reiniciar siguen siendo objetivos del ensayo en red local.
 
 ## Alcance y contratos
 
@@ -162,6 +162,16 @@ mismo catálogo. Reenviar la primera firma de 64 bytes devuelve `DENIED` y
 y los datos del catálogo. El cliente verifica el catálogo firmado en su equipo
 para identificar el objeto cifrado que deberá solicitar después.
 [Prueba de autorización del catálogo](../../internal/conformance/catalog_proof_test.go)
+
+Para recuperar `hive.txt`, el cliente busca el localizador del objeto en el
+catálogo verificado y vuelve a conectarse al proveedor cuya identidad figura
+en el paquete. Reutilizar la firma del catálogo para leer el objeto devuelve
+`DENIED` y **cero bytes del objeto**. Si firma un reto nuevo para el objeto
+con el permiso vigente, recibe los 21 bytes cifrados. El lector local verifica
+y entrega los cinco bytes originales, `48 69 76 65 0a`. La prueba de bucle
+local también recupera `empty.bin` y `edge.bin` (4 MiB + 1 byte). El
+proveedor parte de las muestras de prueba ya cargadas.
+[Prueba de recuperación del objeto](../../internal/conformance/object_read_test.go)
 
 El lector en Go verifica el catálogo firmado, autentica cada bloque cifrado
 y comprueba la longitud total y el resumen SHA-256 del objeto. Guarda el

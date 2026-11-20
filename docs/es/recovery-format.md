@@ -1,4 +1,4 @@
-<!-- docs-pair: recovery-format; revision: 5 -->
+<!-- docs-pair: recovery-format; revision: 6 -->
 
 [English](../en/recovery-format.md) | [Español](recovery-format.md) | [Índice](README.md)
 
@@ -9,11 +9,11 @@ original de Ana está apagada. Ana conserva su paquete de recuperación y su con
 y puede conectarse al proveedor que guardó su archivo cifrado. Con el paquete, el
 equipo nuevo identifica al proveedor, demuestra su derecho a leer y descifra el resultado
 localmente. El proveedor puede aceptar o rechazar cada lectura por separado.
-Las pruebas en Go cubren el desbloqueo local y la lectura autenticada del catálogo
-mediante TCP en la interfaz de bucle local. El equipo de reemplazo firma un reto
-nuevo con la clave de recuperación. Reutilizar esa firma en una segunda conexión
-devuelve `DENIED` y cero bytes del catálogo. Recuperar el archivo también exige
-una lectura autorizada independiente de su objeto cifrado. [Primera prueba de recuperación](readiness.md)
+Las pruebas en Go cubren el desbloqueo local y dos lecturas autorizadas mediante
+TCP en la interfaz de bucle local. El equipo de reemplazo verifica el catálogo y
+firma un reto nuevo para el objeto que este identifica. Reutilizar la firma del
+catálogo para pedir cualquiera de los dos en una conexión nueva devuelve
+`DENIED` y cero bytes del elemento solicitado. [Primera prueba de recuperación](readiness.md)
 
 ## Qué conserva Ana
 
@@ -143,8 +143,8 @@ las dos mitades de la firma de 64 bytes. Se firman directamente los 196 bytes.
 El hash permite comprobar su codificación. Las cuatro firmas son matemáticamente
 válidas, incluidas las dos que el proveedor debe rechazar en el caso B.
 Los valores se comprobaron con las claves públicas de prueba del RFC y sus
-correspondientes vectores. Para completar los casos A y B también hace falta
-leer el objeto y comprobar que el proveedor mantiene la revocación al reiniciar.
+correspondientes vectores. La prueba completa en la LAN aún requiere un equipo
+de reemplazo con un perfil limpio y un proveedor que mantenga la revocación al reiniciar.
 
 ```text
 [11]

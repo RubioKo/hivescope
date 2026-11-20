@@ -59,7 +59,7 @@ type shortWriter struct{}
 func (shortWriter) Write(p []byte) (int, error) { return len(p) - 1, nil }
 
 func TestIncompleteCatalogRequest(t *testing.T) {
-	if err := writeCatalogRead(shortWriter{}, &storageformat.RecoveryPackage{}); err != io.ErrShortWrite {
+	if err := writeFrame(shortWriter{}, readBegin, catalogRequest(&storageformat.RecoveryPackage{})); err != io.ErrShortWrite {
 		t.Fatalf("truncated catalog request returned %v", err)
 	}
 }

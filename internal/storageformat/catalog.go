@@ -29,6 +29,9 @@ type CatalogContext struct {
 type Snapshot struct {
 	catalogSignature [ed25519.SignatureSize]byte
 	folderID         [16]byte
+	agreementID      [16]byte
+	catalogLocator   [32]byte
+	catalogVerifyKey [ed25519.PublicKeySize]byte
 	versionID        [16]byte
 	versionKey       [32]byte
 	objectLocator    [32]byte
@@ -46,6 +49,13 @@ func (s *Snapshot) Size() uint64 { return s.size }
 
 // ObjectLocator identifies the sealed object named in the catalog.
 func (s *Snapshot) ObjectLocator() [32]byte { return s.objectLocator }
+
+// FromCatalog reports whether this snapshot was verified for this signed scope.
+// An uninitialized snapshot cannot identify an object for a network request.
+func (s *Snapshot) FromCatalog(ctx CatalogContext) bool {
+	return s != nil && s.name != "" && s.folderID == ctx.FolderID && s.agreementID == ctx.AgreementID &&
+		s.catalogLocator == ctx.CatalogLocator && s.catalogVerifyKey == ctx.CatalogVerifyKey
+}
 
 // OpenCatalog verifies a complete HSC1 catalog before exposing its entry.
 // The end of src must coincide with the end of the signature.
@@ -107,6 +117,9 @@ func OpenCatalog(src io.Reader, ctx CatalogContext) (*Snapshot, error) {
 	return &Snapshot{
 		catalogSignature: [ed25519.SignatureSize]byte(signature),
 		folderID:         ctx.FolderID,
+		agreementID:      ctx.AgreementID,
+		catalogLocator:   ctx.CatalogLocator,
+		catalogVerifyKey: ctx.CatalogVerifyKey,
 		versionID:        [16]byte(entry[:16]),
 		objectLocator:    [32]byte(entry[16:48]),
 		versionKey:       [32]byte(entry[48:80]),

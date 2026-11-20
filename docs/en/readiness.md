@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 14 -->
+<!-- docs-pair: readiness; revision: 15 -->
 
 [English](readiness.md) | [Español](../es/readiness.md) | [Index](README.md)
 
@@ -11,10 +11,10 @@ after it has acknowledged revocation and restarted? These two outcomes define
 the first desktop prototype.
 
 **Current evidence.** Local tests cover recovery formats and verified saves.
-Loopback TCP tests cover provider identity and single-use authorization to
-read the catalog. The identity test also runs on isolated virtual hosts on
-Linux. Full recovery on a replacement computer and durable revocation at a
-running provider still require the LAN trial.
+Loopback TCP tests cover provider identity and separate single-use proofs
+for reading the catalog and its encrypted object. The identity test also runs
+on isolated virtual hosts on Linux. Full recovery on a replacement computer
+and durable revocation at a running provider still require the LAN trial.
 
 ## Scope and contracts
 
@@ -149,6 +149,15 @@ first 64-byte signature again yields `DENIED` and **zero catalog bytes**.
 The error frame is counted separately from catalog data. The client verifies
 the signed catalog locally to learn which encrypted object to request next.
 [Catalog authorization test](../../internal/conformance/catalog_proof_test.go)
+
+To recover `hive.txt`, the client uses the object locator from the verified
+catalog and connects to the pinned provider again. Replaying the catalog
+signature on this object read yields `DENIED` and **zero object bytes**.
+Signing a fresh object challenge under the current grant returns the 21-byte
+encrypted object. The verified local reader yields exactly the five original
+bytes, `48 69 76 65 0a`. The loopback test also recovers `empty.bin` and
+`edge.bin` (4 MiB + 1 byte). The provider starts with these test items
+already provisioned. [Object recovery test](../../internal/conformance/object_read_test.go)
 
 The Go reader verifies the signed catalog, authenticates each encrypted block
 and checks the object's total length and SHA-256 digest. It stages plaintext
