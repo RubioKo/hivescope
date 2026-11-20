@@ -1,4 +1,4 @@
-<!-- docs-pair: recovery-format; revision: 3 -->
+<!-- docs-pair: recovery-format; revision: 4 -->
 
 [English](recovery-format.md) | [Español](../es/recovery-format.md) | [Index](README.md)
 
@@ -8,9 +8,10 @@
 She has her recovery package, its passphrase and access to the provider that
 stored her encrypted file. The package lets her new computer identify that
 provider, prove its right to read and decrypt the result locally. The provider
-can confirm or deny each read independently. The Go reader opens the package
-locally. The peer connection and read decisions below describe the planned
-CLI and provider. [First recovery trial](readiness.md)
+can confirm or deny each read independently. Go tests cover local unlock
+and a catalog request to a provider authenticated over loopback TCP. The
+read authorization and file transfer below describe the planned CLI and
+provider. [First recovery trial](readiness.md)
 
 ## What Ana keeps
 

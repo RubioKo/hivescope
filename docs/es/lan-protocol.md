@@ -1,4 +1,4 @@
-<!-- docs-pair: lan-protocol; revision: 1 -->
+<!-- docs-pair: lan-protocol; revision: 2 -->
 
 [English](../en/lan-protocol.md) | [Español](lan-protocol.md) | [Índice](README.md)
 
@@ -8,7 +8,9 @@ Este es el diseño v1 para guardar un archivo cifrado en un proveedor. El
 equipo original sube el objeto y su catálogo bajo una misma reserva. El
 equipo de reemplazo presenta una prueba distinta para leer cada elemento.
 La reserva, el recibo y la prueba de recuperación conservan su significado
-al reconectar. El intercambio está pendiente de implementación.
+al reconectar. El primer paso del cliente inicia la lectura del catálogo y
+recibe su reto. Los demás intercambios describen el cliente y el proveedor
+previstos.
 [Prueba de recuperación](readiness.md)
 
 ## Conexión y tramas
@@ -21,6 +23,16 @@ en bytes, con la clave fijada. Negocia el protocolo exacto de flujo
 incompatible termina el intento antes de enviar datos de aplicación. Cada
 flujo bidireccional lleva un intercambio. Varios flujos pueden compartir la
 conexión autenticada. [TLS de libp2p](https://github.com/libp2p/specs/blob/master/tls/tls.md) · [yamux](https://github.com/libp2p/specs/blob/master/yamux/README.md)
+
+Para leer el catálogo, el equipo de reemplazo se conecta a la dirección del
+paquete desbloqueado con su propia identidad de dispositivo. Entrega a libp2p
+el identificador de par derivado de la clave Ed25519 fijada y comprueba la
+clave remota autenticada en esa conexión. Solo entonces abre el flujo de
+almacenamiento y envía `READ_BEGIN` para el catálogo. Si otro equipo ocupa la
+misma dirección, puede recibir el intento de conexión TCP. Si presenta otra
+clave, la negociación termina antes de enviarle el localizador del catálogo.
+El proveedor que acredita la clave responde con un `CHALLENGE` de 32 bytes en
+ese flujo. Después debe comprobar `PROOF` para autorizar la lectura.
 
 Cada trama empieza con cuatro bytes enteros sin signo en orden de red que
 indican la longitud del mensaje Protobuf que sigue (2–65.542 bytes). Se

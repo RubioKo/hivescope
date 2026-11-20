@@ -36,6 +36,23 @@ El lector utiliza el módulo `filippo.io/edwards25519` v1.2.0 para validar las
 claves públicas del paquete de recuperación. El módulo conserva la licencia
 BSD-3-Clause y el aviso de copyright de The Go Authors (2009). [Fuente y licencia del módulo](https://github.com/FiloSottile/edwards25519/blob/v1.2.0/LICENSE)
 
+## Provider authentication / Autenticación del proveedor
+
+The client uses go-libp2p for the authenticated connection, go-multiaddr for
+the endpoint and go-multistream for storage protocol negotiation. Their MIT
+license notices are linked below. go-libp2p uses go-yamux for multiplexing
+under MPL-2.0.
+
+El cliente usa go-libp2p para la conexión autenticada, go-multiaddr para la
+dirección de red y go-multistream para negociar el protocolo de almacenamiento.
+Sus avisos de licencia MIT se enlazan a continuación. go-libp2p utiliza
+go-yamux para multiplexar los flujos, bajo la licencia MPL-2.0.
+
+- [go-libp2p v0.52.0](https://github.com/libp2p/go-libp2p/blob/v0.52.0/LICENSE)
+- [go-multiaddr v0.16.1](https://github.com/multiformats/go-multiaddr/blob/v0.16.1/LICENSE)
+- [go-multistream v0.6.1](https://github.com/multiformats/go-multistream/blob/v0.6.1/LICENSE)
+- [go-yamux v5.1.0](https://github.com/libp2p/go-yamux/blob/v5.1.0/LICENSE)
+
 ## ECC reference / Referencia a ECC
 
 [ECC](https://github.com/affaan-m/ECC) is an external, MIT-licensed reference for

@@ -1,4 +1,4 @@
-<!-- docs-pair: home; revision: 15 -->
+<!-- docs-pair: home; revision: 16 -->
 
 [English](README.md) | Español
 
@@ -15,7 +15,10 @@ y cuándo. Las máquinas se encargan de coordinarlo.
 **HiveScope ya puede restaurar un archivo cifrado de forma local.** El lector
 desbloquea primero el paquete de recuperación en tu equipo. Una contraseña
 incorrecta detiene la recuperación antes de contactar a un proveedor o abrir el
-destino. Tú eliges dónde guardar y si quieres reemplazar un archivo existente.
+destino. Antes de solicitar el catálogo, el cliente compara la identidad
+autenticada del proveedor con la clave pública de tu paquete. Si otro equipo ocupa
+esa dirección y presenta una clave distinta, la recuperación se detiene ahí.
+Tú eliges dónde guardar y si quieres reemplazar un archivo existente.
 El lector verifica el archivo entero antes de guardarlo. Si el resultado es
 incierto, puede reabrir el destino y compararlo byte por byte con la misma
 versión verificada.

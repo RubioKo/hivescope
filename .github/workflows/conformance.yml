@@ -39,3 +39,6 @@ jobs:
         env:
           GOPROXY: 'off'
         run: go test -mod=readonly -count=1 -v ./...
+      - name: Verify catalog reads across isolated network hosts
+        if: runner.os == 'Linux'
+        run: bash scripts/test-provider-netns.sh

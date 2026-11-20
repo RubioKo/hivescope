@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 12 -->
+<!-- docs-pair: readiness; revision: 13 -->
 
 [English](readiness.md) | [Español](../es/readiness.md) | [Index](README.md)
 
@@ -10,11 +10,10 @@ that holds the encrypted copy? Can that same provider refuse the same package
 after it has acknowledged revocation and restarted? These two outcomes define
 the first desktop prototype.
 
-**Documentary status.** The LAN trial has a bilingual design, public synthetic
-reference values and an acceptance procedure. The project has yet to run a
-HiveScope client or provider. A documentation check covers the documents and
-links. Only observations from a running build can establish a recovery, a
-revocation or durability on a particular filesystem.
+**Current evidence.** Local tests cover recovery formats, verified saves and
+provider identity. The network tests use loopback TCP and isolated virtual
+hosts on Linux. Full recovery on a replacement computer and durable revocation
+at a running provider still require the LAN trial.
 
 ## Scope and contracts
 
@@ -69,8 +68,10 @@ independent copy of anything valuable throughout the trial.
 
 Use synthetic inputs throughout. The identifiers below let a contributor record
 each result against a build. At commit `990e836`, M1-01 passed in memory
-with the five-byte fixture and Go 1.27.4 on Windows amd64. M1-02 through
-M1-10 await a running node.
+with the five-byte fixture and Go 1.27.4 on Windows amd64. The M1-04 checks
+below cover package rejection and a provider identity mismatch at the same endpoint.
+The full acceptance procedure still needs a replacement device and a running
+storage provider.
 
 | ID | Trial | Evidence to retain |
 | --- | --- | --- |
@@ -92,7 +93,7 @@ the claim. Use synthetic identifiers in reports. Keep passphrases, keys, export
 contents, private paths and identifying logs out of the evidence. One successful
 read exercises one snapshot. Repeat on each platform before claiming support.
 
-## Reproduce the offline results
+## Reproduce the local results
 
 From the repository root with Go 1.26 or later, run `go mod download` once,
 then `go test -mod=readonly -count=1 ./...`. The tests use synthetic data.
@@ -113,9 +114,28 @@ ciphertext from an in-memory provider and saves the five bytes of `hive.txt`.
 A wrong passphrase and a damaged tag return the same authentication error.
 In both cases the test counts zero provider reads and zero calls to save the
 destination. Its original five bytes, `keep\n`, survive and the restore state
-directory stays empty. This covers local package authentication
-in M1-04. Testing a remote peer with the wrong identity still requires a LAN
-connection. [Package reader](../../internal/storageformat/recovery.go) · [Recovery entry point tests](../../internal/conformance/recovery_reader_test.go)
+directory stays empty. [Package reader](../../internal/storageformat/recovery.go) · [Recovery entry point tests](../../internal/conformance/recovery_reader_test.go)
+
+In the M1-04 identity test, two providers with different Ed25519 keys take
+turns at the same IPv4 loopback address and TCP port. The client unlocks the
+same recovery package for both attempts. The provider whose key is pinned
+in the package receives one catalog `READ_BEGIN` and returns a challenge on
+the same stream. The other provider receives a TLS handshake attempt and
+zero catalog requests. With a separate package that pins its own key, this
+second provider receives one request at that same address. The trial ends
+at the challenge. Completing the read will require a signed proof and a
+provider decision before any catalog bytes can be released.
+[Provider identity test](../../internal/conformance/provider_identity_test.go)
+
+The Linux trial repeats these cases with separate network stacks for the
+requester and the two virtual providers. Each provider listens at the fixture's
+`192.0.2.10:4001`. Changing the route in the requester directs the original
+package's next connection to the other host. A must receive one 81-byte frame.
+B must receive zero application bytes with A's package and one 81-byte frame
+with its own package. The byte counts include the frame header.
+On Linux with the Go modules cached, iproute2 and permission to create network
+namespaces with sudo, run `bash scripts/test-provider-netns.sh` from the repository
+root. [Isolated network test](../../internal/conformance/provider_netns_linux_test.go) · [Test runner](../../scripts/test-provider-netns.sh)
 
 The Go reader verifies the signed catalog, authenticates each encrypted block
 and checks the object's total length and SHA-256 digest. It stages plaintext

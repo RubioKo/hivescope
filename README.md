@@ -1,4 +1,4 @@
-<!-- docs-pair: home; revision: 15 -->
+<!-- docs-pair: home; revision: 16 -->
 
 English | [Español](README.es.md)
 
@@ -13,7 +13,10 @@ resources, you choose what to share, how much and when. The computers coordinate
 
 **HiveScope can restore an encrypted file locally.** The reader first unlocks
 your recovery package on your device. A wrong passphrase stops recovery before
-it contacts a provider or opens the destination. You choose where to save and
+it contacts a provider or opens the destination. Before requesting the catalog,
+the client checks the provider's authenticated identity against the public key
+in your package. If another machine takes that address and presents a different
+key, the client stops there. You choose where to save and
 whether to replace an existing file. The reader checks the entire file first. If a
 save is uncertain, the reader can reopen the destination and compare it byte for
 byte with the same verified version. A match can confirm the save. If you edited the

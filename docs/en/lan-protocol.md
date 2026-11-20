@@ -1,4 +1,4 @@
-<!-- docs-pair: lan-protocol; revision: 1 -->
+<!-- docs-pair: lan-protocol; revision: 2 -->
 
 [English](lan-protocol.md) | [Español](../es/lan-protocol.md) | [Index](README.md)
 
@@ -7,8 +7,9 @@
 This is the v1 design for one encrypted file on one provider. The original
 device uploads the object and its catalog under one reservation. A replacement
 reads each item under a separate proof. The reservation, receipt and recovery
-proof have the same meaning across reconnects. No node has implemented this
-exchange yet. [Recovery trial](readiness.md)
+proof have the same meaning across reconnects. The first client step opens
+a catalog read and receives its challenge. The remaining exchanges describe
+the planned provider and client. [Recovery trial](readiness.md)
 
 ## Connection and framing
 
@@ -19,6 +20,15 @@ Negotiate the exact stream protocol `/hivescope/storage/1.0.0`. A failed pin
 or unsupported version ends the attempt before sending application data.
 One bidirectional stream carries one exchange. Separate streams may share
 the authenticated connection. [libp2p TLS](https://github.com/libp2p/specs/blob/master/tls/tls.md) · [yamux](https://github.com/libp2p/specs/blob/master/yamux/README.md)
+
+For a catalog read, the replacement dials the address in the unlocked package
+using its own device identity. It gives libp2p the peer ID derived from the
+pinned Ed25519 key and checks the authenticated remote key on that connection.
+Only then does it open the storage stream and send a catalog `READ_BEGIN`.
+Another machine at the same address can receive a TCP connection attempt.
+Presenting a different key ends the handshake before the catalog locator is
+sent. A matching provider replies on that stream with a 32-byte `CHALLENGE`.
+The subsequent `PROOF` is what the provider must check to authorize a read.
 
 Each frame starts with a four-byte unsigned big-endian length of the
 following Protobuf message (2–65,542 bytes). Check it before allocation.
