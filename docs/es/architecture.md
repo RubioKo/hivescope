@@ -1,11 +1,12 @@
-<!-- docs-pair: architecture; revision: 6 -->
+<!-- docs-pair: architecture; revision: 7 -->
 
 [English](../en/architecture.md) | [Español](architecture.md) | [Índice](README.md)
 
 # Arquitectura e interfaces
 
 El nodo de escritorio propuesto tiene un servicio en segundo plano y una CLI.
-Go es el primer lenguaje que se evaluará. El repositorio contiene el diseño.
+Go es el primer lenguaje que se evaluará. Las pruebas locales en Go comprueban
+los primeros formatos de almacenamiento.
 
 ## Componentes
 

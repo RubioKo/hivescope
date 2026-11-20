@@ -8,7 +8,7 @@ Spanish guidance: [contribution guide](docs/es/contributing.md) and
 
 ## Current scope
 
-HiveScope is in design and documentation. Use the bilingual roadmap to
+HiveScope has a documented design and offline Go conformance tests. Use the bilingual roadmap to
 distinguish proposals from shipped features and measured results. The first
 prototype targets recovery of one encrypted file on a replacement device.
 Go is the first candidate for the desktop node.
@@ -43,6 +43,8 @@ fails, the request waits and the requester keeps the keys.
 ## Verification and review
 
 - Run `npm ci` and `npm run check` for documentation changes.
+- Run `go test -mod=readonly ./...` for Go changes. Keep public reference
+  keys and deterministic nonces confined to test code.
 - Review banners at full and narrow widths, with reduced motion enabled and
   disabled, after changing SVGs.
 - When implementation begins, add meaningful tests for changed behavior and

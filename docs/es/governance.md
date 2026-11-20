@@ -1,4 +1,4 @@
-<!-- docs-pair: governance; revision: 3 -->
+<!-- docs-pair: governance; revision: 4 -->
 
 [English](../en/governance.md) | [Español](governance.md) | [Índice](README.md)
 
@@ -43,8 +43,8 @@ Los mantenedores documentan los cambios administrativos que afecten a los
 colaboradores. La comprobación documental revisa Markdown, enlaces locales
 y pares de idiomas.
 
-Dependabot revisa las dependencias de npm y las acciones de GitHub cada semana
-y puede abrir PR de seguridad entre revisiones programadas. El repositorio
+La configuración semanal de Dependabot cubre los módulos Go, npm y las acciones de GitHub.
+Dependabot puede abrir PR de seguridad entre revisiones programadas. El repositorio
 exige fijar las acciones al SHA completo de un commit y permite dos acciones
 externas, `actions/checkout` y `actions/setup-node`. Para añadir otra, explica
 en un PR la necesidad y los permisos que requiere para que el mantenedor pueda

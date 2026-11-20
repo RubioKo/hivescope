@@ -1,0 +1,32 @@
+name: Storage format conformance
+
+on:
+  push:
+    branches: [main, development]
+  pull_request:
+    branches: [main, development]
+
+permissions:
+  contents: read
+
+jobs:
+  conformance:
+    name: Offline Go reference vectors
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GOTOOLCHAIN: go1.27.4
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Prepare the pinned toolchain and dependencies
+        run: |
+          go version
+          go mod download
+          go mod verify
+      - name: Run the offline vectors
+        env:
+          GOPROXY: 'off'
+        run: go test -mod=readonly -count=1 -v ./...

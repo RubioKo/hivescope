@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 7 -->
+<!-- docs-pair: readiness; revision: 8 -->
 
 [English](../en/readiness.md) | [Español](readiness.md) | [Índice](README.md)
 
@@ -73,8 +73,9 @@ archivo valioso durante el ensayo.
 ## Registro de aceptación de la primera implementación
 
 Todos los ensayos usan datos sintéticos. Los identificadores permiten asociar
-cada resultado con la versión del prototipo que lo produjo. Todas las filas
-están pendientes de ejecución.
+cada resultado con la versión que lo produjo. M1-01 pasó en memoria con Go
+1.27.4 sobre Windows amd64 y la muestra de cinco bytes. Los casos M1-02 a
+M1-10 quedan pendientes de ejecutar con un nodo en funcionamiento.
 
 | ID | Ensayo | Evidencia que registrar |
 | --- | --- | --- |
@@ -98,13 +99,23 @@ exportaciones, rutas privadas y registros identificativos quedan fuera de la
 evidencia. Una lectura correcta comprueba una sola versión. Repetir en cada
 plataforma antes de anunciar compatibilidad.
 
-## Paso a la implementación
+## Cómo reproducir el primer resultado
 
-La primera tarea de código será una **prueba local de conformidad en Go** con
-la muestra de cinco bytes. Así se puede detectar una diferencia de formato
-antes de introducir red o disco. El siguiente recorrido ejecutable utilizará
-la misma muestra, el proveedor y un perfil de reemplazo limpio. La implementación
-empezará en un cambio independiente.
+Desde la raíz del repositorio, con Go 1.26 o posterior, ejecutar una vez
+`go mod download` y después `go test -mod=readonly -count=1 ./...`. Las
+pruebas usan datos sintéticos en memoria. Tras preparar las dependencias,
+también pasan con el proxy de módulos desactivado. Reproducen el paquete
+de recuperación de 255 bytes, los cuatro ejemplos de lectura firmada, el
+objeto de 21 bytes, el catálogo firmado de 250 bytes y el recibo de 132
+bytes. El contenido recuperado es `48 69 76 65 0a`. La contraseña incorrecta,
+el bloque sustituido, la firma de catálogo alterada y el recibo contrastado con
+un manifiesto modificado fallan sus respectivas comprobaciones. [Objeto y catálogo](../../internal/conformance/snapshot_test.go) · [Recuperación y lecturas](../../internal/conformance/recovery_test.go) · [Recibo](../../internal/conformance/receipt_test.go)
+
+El ejemplo incluye una firma válida hecha con una clave antigua. Para
+demostrar que esa clave pierde el acceso tras la revocación hace falta ejecutar
+al proveedor. El siguiente paso es usar la misma muestra con un lector de
+formato reutilizable y probarlo con los ejemplos de archivo vacío y de varios
+bloques antes de la recuperación en LAN.
 
 El descubrimiento y la asignación automáticos corresponden al hito 2. La
 redundancia y reparación con tres proveedores, la interfaz de escritorio y el

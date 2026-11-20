@@ -1,4 +1,4 @@
-<!-- docs-pair: governance; revision: 3 -->
+<!-- docs-pair: governance; revision: 4 -->
 
 [English](governance.md) | [Español](../es/governance.md) | [Index](README.md)
 
@@ -41,7 +41,7 @@ bring the fix back into ongoing work. Maintainers document administrative
 changes that affect contributors. The documentation check covers Markdown,
 local links and language pairs.
 
-Dependabot checks npm dependencies and GitHub Actions weekly and can open
+The weekly Dependabot configuration covers Go modules, npm and GitHub Actions. Dependabot can open
 security update PRs between scheduled checks. The repository requires actions
 to use full commit SHAs and allows two external actions, `actions/checkout`
 and `actions/setup-node`. To add another, explain the need and requested
