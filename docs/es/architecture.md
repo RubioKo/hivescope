@@ -1,4 +1,4 @@
-<!-- docs-pair: architecture; revision: 1 -->
+<!-- docs-pair: architecture; revision: 2 -->
 
 [English](../en/architecture.md) | [Español](architecture.md) | [Índice](README.md)
 
@@ -87,11 +87,14 @@ transfieren los secretos mediante un canal autenticado. Revocar un equipo inicia
 una época nueva y rota las claves para versiones futuras; no permite retirar
 texto o claves que ese equipo ya conoció.
 
-La recuperación requiere una exportación cifrada con secretos de carpeta,
-material de autoridad, localizadores de catálogo y contactos aprobados. Importarla
-incorpora una nueva identidad de dispositivo. No hay restablecimiento central de
-contraseñas. La protección local y el formato de exportación deben especificarse
-y revisarse en el hito del núcleo seguro.
+En el hito 1, la exportación cifrada permite a un dispositivo con identidad nueva
+recuperar una carpeta mediante un permiso de lectura limitado. El propietario
+custodia por separado la clave de firma administrativa. La [decisión sobre la
+primera lectura](readiness.md) describe qué verifica el proveedor y cómo afecta
+la revocación a una exportación antigua. La incorporación permanente del equipo
+requiere una autorización independiente. No hay restablecimiento central de
+contraseñas. La protección local y el formato de exportación siguen pendientes
+de especificación y revisión en el hito del núcleo seguro.
 
 ## Servicio posterior de IA
 

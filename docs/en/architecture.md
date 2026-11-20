@@ -1,4 +1,4 @@
-<!-- docs-pair: architecture; revision: 1 -->
+<!-- docs-pair: architecture; revision: 2 -->
 
 [English](architecture.md) | [Español](../es/architecture.md) | [Index](README.md)
 
@@ -84,10 +84,13 @@ folder secrets over an authenticated channel. Revoking a device starts a new
 authorization epoch and rotates keys for future versions; it cannot retract
 plaintext or keys already learned by that device.
 
-Recovery requires an encrypted export containing folder secrets, authority
-material, catalog locators and approved contacts. Its import enrolls a new device
-identity. There is no central password reset. Local secret protection and the
-export format must be specified and reviewed in the secure-core milestone.
+In milestone 1, the encrypted export lets a fresh device identity recover a
+folder through a scoped read grant. The owner keeps the administrative signing
+key separately. The [first-read decision](readiness.md) describes what the
+provider checks and how revocation affects an old export. Persistent device
+enrollment requires separate authorization. There is no central password reset.
+Local secret protection and the export format still require specification and
+review in the secure-core milestone.
 
 ## Later AI service
 

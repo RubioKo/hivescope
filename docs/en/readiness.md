@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 1 -->
+<!-- docs-pair: readiness; revision: 2 -->
 
 [English](readiness.md) | [Español](../es/readiness.md) | [Index](README.md)
 
@@ -28,20 +28,57 @@ policy and the `protected` state belong to milestone 2.
    file. Compare every byte with an independent test fixture. Record which
    credential authorized retrieval and which local information was required.
 
-Restoring the folder keys solves decryption. The provider must also recognize
-the replacement device's authority to read under the agreement. This is the first
-design question to resolve because its answer affects enrollment, the agreement,
-the catalog lookup and the export format.
+## How a replacement device earns its first read
 
-## Four decisions to settle
+**Design decision for review.** The provider accepts proof of possession of a
+recovery signing key that the owner registered for one folder and one storage
+agreement. Its only permission is to fetch that folder's encrypted catalog and
+the encrypted objects covered by the agreement. This lets the owner recover a
+copy after losing a device while keeping administrative authority separate.
 
-Each row is open. Contributors can propose the listed artifact in English and
-Spanish. The maintainer records the chosen behavior, rationale, accepted example
-and failure example in a reviewed PR before that component is implemented.
+| Who | What they hold and do |
+| --- | --- |
+| Owner | At agreement setup, both parties pin the folder authority's public key. The owner uses its private key to sign the initial recovery grant and later replacements or revocations. The owner keeps that administrative key separately from the recovery package. |
+| Provider | Stores the signed grant with the opaque folder and agreement IDs, provider identity, recovery public key, read scope and generation. Persists the highest accepted generation and its active or revoked status. |
+| Replacement device | Creates its own device identity. The password unlocks the package locally. It contains the recovery signing key and grant reference (including its generation), folder decryption and catalog verification material, opaque catalog locator and approved provider contact and fingerprint. |
+
+1. The new device checks the provider fingerprint on an authenticated libp2p
+   connection. The provider can challenge this new peer before granting any read.
+   [libp2p peer authentication](https://github.com/libp2p/specs/blob/master/tls/tls.md)
+2. For each catalog or object read, the provider issues a fresh, short-lived,
+   single-use challenge on that connection. The device signs it with the recovery
+   key, binding the recovery-read operation, both peer identities, agreement,
+   folder, grant generation and requested opaque locator. The password and
+   private keys stay on the device.
+3. Before sending bytes the provider consumes the challenge once, checks the
+   signature against its stored active key, matches the request to that connection
+   and grant, and checks the requested item and the agreement's read window.
+   Existing data is readable during the [agreement's grace period](storage.md).
+   Missing authorization state, a stale grant or an out-of-scope request is denied.
+   A successful read grants no write, renewal or device-enrollment rights.
+4. The device verifies and decrypts the catalog, then requests its encrypted
+   object under the same checks. It authenticates the recovered contents before
+   replacing the destination. An old export and a single provider cannot
+   establish that the catalog is the latest version.
+
+The provider verifies grant records with the folder authority pinned at setup.
+It accepts changes only at a higher generation for the same scope. To revoke,
+the owner signs a record marking the grant revoked.
+The provider acknowledges it after persisting the change and invalidating
+outstanding challenges for the old grant. Restart discards outstanding challenges
+and retains the revocation. A replacement grant uses a new key and requires a
+new export. Anyone with the old package and password can use it until the
+provider learns of revocation. Revoking one device identity alone does not revoke
+the recovery key. Previously delivered bytes and keys remain with their holder.
+
+## Decisions still needed for implementation
+
+The first-read rule above settles part of decision 1. The remaining work in
+each row needs a reviewed specification in English and Spanish.
 
 | Order | Design question | Evidence needed to start that component |
 | --- | --- | --- |
-| 1. Identity and recovery | Who holds the folder authority? What can each device or provider do? How does a recovered device prove access, discover a catalog and handle a stale export or revoked credentials? | A role/operation table and a recovery walkthrough naming the signer, verifier, required secrets, local unlock method on each target OS and limits of freshness. Include a denied operation. |
+| 1. Identity and recovery | How are local secrets unlocked and the separate administrative key kept recoverable? | Specify custody and local unlock on each target OS. Use the scoped first-read grant and revocation cases above as constraints. |
 | 2. File and catalog format | How are version keys generated, wrapped and recovered? Which bytes bind a block to its version, position and length? What happens to the nonce and ciphertext after a restart? | A versioned byte layout for the encrypted object, catalog and recovery package, plus synthetic input/output vectors for an empty file and a multi-block file. Include a mismatched block and a wrong password. |
 | 3. Transfer protocol | How do peers reserve, send, resume, acknowledge and retrieve an object? What precisely gets signed? How does a peer distinguish a retry from a new request? | A versioned message table with required fields, signed bytes, frame sizes, concurrency and time limits, error responses, retry rules and agreement validity during transfer. Include an acknowledged upload whose reply is lost. |
 | 4. Disk and restart behavior | At which point may a provider acknowledge durable storage? How do two reservations share the last free bytes? How does restart reconcile the fragment directory with SQLite? | A state table covering reservation, temporary file, verified bytes, durable index and acknowledgment. For each interruption, document what survives, what is charged and how orphaned bytes or reservations are reclaimed. |
@@ -66,7 +103,8 @@ observed outcome when the first implementation can run them.
 | Interrupt between writing the file and updating the index | Restart settles or releases the reservation. Every acknowledged object is readable after restart. |
 | Two concurrent uploads compete for capacity sufficient for one | At most one completes. Physical usage including temporary files stays inside the agreed limits. |
 | Supply a corrupted block, an unapproved reader or a wrong recovery password | Each case reports failure and preserves any existing destination file. |
-| Restore on a clean device with the original offline | The recovered file matches the fixture. The operator can identify the agreement, catalog and recovery material used. |
+| Valid grant. With the original device offline and an empty replacement profile, use only the package, password and reachable provider. | The new identity receives the catalog and object after proving possession. The recovered file matches the independent fixture byte for byte. |
+| Revoked grant. Starting from the same fixture, have the provider acknowledge the owner's revocation, restart it, and leave the original device offline. Retry from a clean profile with the old package and password. | Even a correct signature on a fresh challenge with the old key yields zero catalog or object bytes. Check both locators independently. The existing destination file stays intact. |
 
 ## What can wait
 
@@ -77,6 +115,6 @@ network connectivity, relay bandwidth, disk use and battery impact across Window
 Linux and macOS. Keeping the direct LAN experiment small leaves those platform
 targets in place. The later AI service has its own compute and privacy design.
 
-**Next contribution.** Trace a replacement device's first read in decision 1,
-including the provider's reason for accepting or denying it. Once agreed, use
-that example as the input for the file format and transfer specifications.
+**Next contribution.** Specify the versioned recovery package and signed request
+bytes with synthetic examples. Use the valid and revoked cases to check that
+independent implementations agree on exactly what the provider verifies.
