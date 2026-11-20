@@ -1,4 +1,4 @@
-<!-- docs-pair: resource-offers; revision: 3 -->
+<!-- docs-pair: resource-offers; revision: 4 -->
 
 [English](../en/resource-offers.md) | Español | [Índice](README.md)
 
@@ -77,9 +77,9 @@ de anunciar una recuperación. [Almacenamiento y reparación](storage.md)
 
 ## Cómo comprobar el diseño
 
-- Mostrar ambas opciones a alguien que descubre el proyecto. Preguntarle qué
-  puede solicitar o prestar, quién elige el software y los límites, y qué ocurre
-  cuando falta hardware compatible.
+- Contrastar las opciones de solicitar y ofrecer con el perfil local. Quien solicita
+  elige el software, el anfitrión fija los límites físicos y las claves permanecen
+  con el solicitante mientras falta hardware compatible.
 - Empezar con los recursos desactivados. Activar un perfil que solo ofrece disco,
   solicitar CPU y después solicitar disco fuera de horario. Comprobar que ninguna
   petición ocupa capacidad.

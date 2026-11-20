@@ -1,4 +1,4 @@
-<!-- docs-pair: security; revision: 3 -->
+<!-- docs-pair: security; revision: 4 -->
 
 [English](../en/security.md) | [Español](security.md) | [Índice](README.md)
 
@@ -44,6 +44,15 @@ y autorizar cada operación.
 - Conservar las épocas de autorización y las últimas versiones verificadas para
   limitar retrocesos. Un paquete y un proveedor desactualizados pueden ocultar
   una versión más reciente. Una revocación confirmada debe sobrevivir al reinicio del proveedor.
+
+En el primer ensayo en LAN, el operador comprueba las huellas de las claves
+públicas al incorporar los equipos. Un recibo acredita qué firmó ese
+proveedor. Por sí solo no permite saber si conserva todos los bytes o si ha
+restaurado una imagen anterior de todo el disco. Un perfil del dueño
+desbloqueado y comprometido puede exponer los datos en claro que procesa.
+El ensayo define qué deberá ocurrir ante la pérdida de un equipo, un permiso
+revocado, una copia dañada y un proveedor inaccesible. Queda por comprobarlo
+con el prototipo. [Custodia de claves](identity-custody.md) · [Criterios de aceptación](readiness.md)
 
 ## Qué puede proteger el almacenamiento
 

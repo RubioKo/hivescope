@@ -1,4 +1,4 @@
-<!-- docs-pair: storage; revision: 2 -->
+<!-- docs-pair: storage; revision: 3 -->
 
 [English](storage.md) | [Español](../es/storage.md) | [Index](README.md)
 
@@ -55,8 +55,10 @@ profile. It records both parties, physical byte quota, permitted operations,
 expiry and transfer limits. An expiring directory advertisement only helps find
 the host. The host checks real space and commitments before making a reservation.
 
-Default validity is 30 days. Attempt renewal daily while reachable. A seven-day
-grace period follows expiry; an offline client does not silently renew its lease.
+The first LAN trial provisions a fixed 30-day agreement locally and tests a
+seven-day read grace period after expiry. Its wire protocol has no renewal
+operation. The open-network design adds automatic negotiation and a daily
+renewal attempt while reachable. An offline client cannot renew its lease.
 New writes need a valid agreement. Existing data remains readable during grace;
 providers may garbage-collect it afterwards. Loss of every owner's device beyond
 that horizon can therefore cause data loss even with a recovery export.
@@ -65,8 +67,10 @@ Quota accounting includes live data, retained versions, metadata, incoming
 reservations and temporary bytes. Charge a request once across retries. Reserve
 atomically so competing requests cannot consume the same bytes. Keep a configurable
 margin of free space on the offered volume. Pausing stops new reservations.
-Reducing a quota stops new writes and requests migration. Existing data follows
-its retention agreement even if the host stops advertising.
+When a reduced quota leaves insufficient capacity, stop new writes. Keep
+existing data under its retention agreement even if the host stops advertising.
+Migration needs replacement providers in the later redundancy milestone.
+[First provider's capacity and persistence rules](provider-persistence.md)
 
 ## Health checks and repair
 
