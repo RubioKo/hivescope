@@ -1,4 +1,4 @@
-<!-- docs-pair: index; revision: 1 -->
+<!-- docs-pair: index; revision: 2 -->
 
 [English](../en/README.md) | [Español](README.md) | [Inicio del proyecto](../../README.es.md)
 
@@ -11,6 +11,7 @@ servicio en funcionamiento.
 ## Diseño
 
 - [Visión y límites](vision.md)
+- [Ofrecer mi equipo](resource-offers.md)
 - [Arquitectura e interfaces](architecture.md)
 - [Almacenamiento cifrado y mantenimiento](storage.md)
 - [Sincronización de carpetas](synchronization.md)

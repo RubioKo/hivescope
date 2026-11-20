@@ -1,4 +1,4 @@
-<!-- docs-pair: architecture; revision: 1 -->
+<!-- docs-pair: architecture; revision: 2 -->
 
 [English](architecture.md) | [Español](../es/architecture.md) | [Index](README.md)
 
@@ -93,8 +93,14 @@ export format must be specified and reviewed in the secure-core milestone.
 
 Reuse identity, transport, resource limits and agreement concepts while isolating
 the compute runtime from storage. Do not permit arbitrary peer-supplied programs.
-Start with approved model runtimes and complete models on capable providers.
-Compute quotas, output integrity and query privacy need their own design review.
+Private recordings, including unclassified files, would be transcribed on the
+owner's device with a local model. If it cannot run the task, the client would
+report that outcome and offer a local retry.
+
+The proposed remote service would take a public item identifier from an approved
+catalog and run a complete model in an approved runtime. The worker would fetch
+the public item independently. Compute quotas and output integrity still need
+review. [Transcription privacy decision](security.md#proposed-decision-on-transcription)
 
 ## References
 
