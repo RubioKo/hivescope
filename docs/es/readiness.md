@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 8 -->
+<!-- docs-pair: readiness; revision: 9 -->
 
 [English](../en/readiness.md) | [Español](readiness.md) | [Índice](README.md)
 
@@ -73,9 +73,10 @@ archivo valioso durante el ensayo.
 ## Registro de aceptación de la primera implementación
 
 Todos los ensayos usan datos sintéticos. Los identificadores permiten asociar
-cada resultado con la versión que lo produjo. M1-01 pasó en memoria con Go
-1.27.4 sobre Windows amd64 y la muestra de cinco bytes. Los casos M1-02 a
-M1-10 quedan pendientes de ejecutar con un nodo en funcionamiento.
+cada resultado con la versión que lo produjo. En el commit `990e836`,
+M1-01 pasó en memoria con la muestra de cinco bytes y Go 1.27.4 sobre Windows
+amd64. Los casos M1-02 a M1-10 quedan pendientes de ejecutar con un nodo en
+funcionamiento.
 
 | ID | Ensayo | Evidencia que registrar |
 | --- | --- | --- |
@@ -99,11 +100,11 @@ exportaciones, rutas privadas y registros identificativos quedan fuera de la
 evidencia. Una lectura correcta comprueba una sola versión. Repetir en cada
 plataforma antes de anunciar compatibilidad.
 
-## Cómo reproducir el primer resultado
+## Cómo reproducir los resultados locales
 
 Desde la raíz del repositorio, con Go 1.26 o posterior, ejecutar una vez
 `go mod download` y después `go test -mod=readonly -count=1 ./...`. Las
-pruebas usan datos sintéticos en memoria. Tras preparar las dependencias,
+pruebas usan datos sintéticos. Tras preparar las dependencias,
 también pasan con el proxy de módulos desactivado. Reproducen el paquete
 de recuperación de 255 bytes, los cuatro ejemplos de lectura firmada, el
 objeto de 21 bytes, el catálogo firmado de 250 bytes y el recibo de 132
@@ -113,9 +114,27 @@ un manifiesto modificado fallan sus respectivas comprobaciones. [Objeto y catál
 
 El ejemplo incluye una firma válida hecha con una clave antigua. Para
 demostrar que esa clave pierde el acceso tras la revocación hace falta ejecutar
-al proveedor. El siguiente paso es usar la misma muestra con un lector de
-formato reutilizable y probarlo con los ejemplos de archivo vacío y de varios
-bloques antes de la recuperación en LAN.
+al proveedor.
+
+El lector en Go verifica el catálogo firmado, autentica cada bloque cifrado
+y comprueba la longitud total y el resumen SHA-256 del objeto. Guarda el
+contenido descifrado en un archivo temporal dentro del directorio privado que
+indica el cliente. Solo permite leer el objeto completo y verificado. Al cerrar
+el lector se elimina su archivo temporal. Si el proceso termina de forma
+abrupta, ese archivo puede quedar en claro en el directorio privado. La
+limpieza tras un cierre inesperado sigue pendiente. [Lector de catálogo](../../internal/storageformat/catalog.go) · [Lector de objetos](../../internal/storageformat/object.go)
+
+Las tres [muestras publicadas](file-catalog.md) se recuperan byte por byte sin
+red. En `empty.bin` se autentica un bloque vacío. De `hive.txt` se recuperan
+cinco bytes. De `edge.bin` se recuperan 4 MiB y un byte más en el segundo
+bloque. Si ese bloque llega alterado o truncado, el cliente recibe un error
+antes de poder leer el contenido. M1-02 aún requiere recuperar los archivos
+por la LAN en un equipo de reemplazo con un perfil limpio.
+
+El siguiente paso local es publicar de forma atómica el archivo verificado en
+el destino que elija el propietario. Se comprobará que un fallo anterior a la
+publicación conserva cualquier archivo previo y que solo se informa de la
+recuperación tras completar las sincronizaciones necesarias.
 
 El descubrimiento y la asignación automáticos corresponden al hito 2. La
 redundancia y reparación con tres proveedores, la interfaz de escritorio y el

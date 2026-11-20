@@ -1,4 +1,4 @@
-<!-- docs-pair: home; revision: 11 -->
+<!-- docs-pair: home; revision: 12 -->
 
 English | [Español](README.es.md)
 
@@ -11,8 +11,9 @@ world. If you need to protect a folder, run your own software or keep a server o
 for your community, the app will look for computers that can help. If you want to lend
 resources, you choose what to share, how much and when. The computers coordinate the work.
 
-**The first storage test runs offline.** With a five-byte sample, the Go tests
-reproduce the published encrypted formats and recover the original contents in memory.
+**HiveScope has an offline reader for encrypted files.** It recovers the exact contents
+of an empty file, a five-byte file and a file of 4 MiB + 1 byte in the published tests.
+That last byte starts a second block. The reader verifies both before returning the file.
 Recovery on a replacement computer and revocation at a running provider are the
 goals of the first desktop prototype. Private computing and service hosting come later.
 [First prototype and test results](docs/en/readiness.md) · [Project vision](docs/en/vision.md) · [Roadmap](docs/en/roadmap.md)
