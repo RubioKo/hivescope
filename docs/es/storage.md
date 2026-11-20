@@ -1,4 +1,4 @@
-<!-- docs-pair: storage; revision: 2 -->
+<!-- docs-pair: storage; revision: 3 -->
 
 [English](../en/storage.md) | [Español](storage.md) | [Índice](README.md)
 
@@ -60,9 +60,11 @@ permitidas, vencimiento y límites de transferencia. El anuncio con vencimiento
 en un directorio permite encontrar al anfitrión. Este comprueba espacio real y
 compromisos existentes antes de hacer una reserva.
 
-La vigencia inicial es de 30 días. Se intenta renovar diariamente cuando haya
-conexión. Tras el vencimiento hay siete días de gracia; un cliente desconectado
-no renueva automáticamente. Las escrituras nuevas requieren acuerdo vigente.
+En el primer ensayo en LAN se configura localmente un acuerdo fijo de 30 días,
+con siete días de gracia para leer tras su vencimiento. Su protocolo carece de
+una operación de renovación. El diseño de red abierta incorpora la negociación
+automática y un intento diario de renovación mientras haya conexión. Un cliente
+desconectado no puede renovar. Las escrituras nuevas requieren acuerdo vigente.
 Los datos existentes siguen siendo legibles durante la gracia; después el proveedor
 puede eliminarlos. Perder todos los equipos propios durante más tiempo puede
 causar pérdida de datos incluso conservando una exportación de recuperación.
@@ -71,9 +73,11 @@ La cuota incluye datos, versiones retenidas, metadatos, reservas entrantes y
 temporales. Contabilizar una sola vez cada solicitud aunque se reintente.
 Reservar de forma atómica para que dos solicitudes no consuman los mismos bytes.
 Mantener un margen configurable de espacio libre en el volumen ofrecido. Pausar
-detiene las reservas nuevas. Reducir una cuota detiene las escrituras nuevas y
-solicita migración. Los datos existentes conservan su acuerdo de retención
-incluso si el anfitrión deja de anunciarse.
+detiene las reservas nuevas. Si una cuota reducida deja espacio insuficiente,
+se detienen las escrituras nuevas. Los datos existentes conservan su acuerdo de
+retención incluso si el anfitrión deja de anunciarse. La migración requiere
+proveedores de reemplazo en el hito posterior de redundancia.
+[Capacidad y persistencia del primer proveedor](provider-persistence.md)
 
 ## Comprobaciones y reparación
 

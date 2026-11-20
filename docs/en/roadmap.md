@@ -1,4 +1,4 @@
-<!-- docs-pair: roadmap; revision: 4 -->
+<!-- docs-pair: roadmap; revision: 6 -->
 
 [English](roadmap.md) | [Español](../es/roadmap.md) | [Index](README.md)
 
@@ -14,26 +14,25 @@ Publish the vision, resource profiles, architecture, threat model and roadmap in
 English and Spanish. Preserve the language selector, illustrated story,
 contribution routes and private security reporting in both project READMEs.
 
-**Acceptance.** Ask someone new to HiveScope what they can request, what they
-can lend, who controls software inside a session, who sets physical limits and
-what happens if a suitable protected host cannot be found. Record gaps in the
-explanation and revise both versions. [Offer my computer](resource-offers.md)
+**Documentary acceptance.** The two READMEs explain what a person can request
+or lend, who controls a session, who sets physical limits and where the keys
+stay if a suitable host is unavailable. The first storage trial has a linked
+design and observable pass criteria. [Offer my computer](resource-offers.md) · [First prototype design](readiness.md)
 
 ## Milestone 1 — First recoverable copy
 
 Start with a desktop CLI, one synthetic file, one storage provider on a LAN and
-a clean replacement device. Specify the protocol messages, resource limits,
-key and nonce handling, local secret protection and recovery package before
-implementing them. The draft recovery design records how a replacement proves
-its right to read and how a provider remembers revocation.
-[Recovery design PR](https://github.com/RubioKo/hivescope/pull/1)
+a clean replacement device. The design specifies the wire protocol, resource
+limits, keys and nonces, recovery package and durable revocation. The first
+implementation will compare offline reference bytes, then exercise storage and
+retrieval on the LAN. [Trial procedure and acceptance record](readiness.md)
 
 **Acceptance.** Turn off the original device. Using the saved recovery package,
 its password and a reachable provider, recover the file byte for byte. Revoke
 the recovery credential, wait for the provider's confirmation, restart the
 provider and retry with the old package. Both catalog and object reads must
 return zero bytes. Also test interrupted transfers, a wrong password and corrupt
-data. A failed recovery must preserve an existing destination file. One provider
+data. A failed verification must preserve an existing destination file. One provider
 establishes a verified copy with a single point of failure.
 
 ## Milestone 2 — Automatic allocation on an open network

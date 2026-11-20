@@ -1,4 +1,4 @@
-<!-- docs-pair: home; revision: 9 -->
+<!-- docs-pair: home; revision: 10 -->
 
 English | [Español](README.es.md)
 
@@ -11,9 +11,10 @@ world. If you need to protect a folder, run your own software or keep a server o
 for your community, the app will look for computers that can help. If you want to lend
 resources, you choose what to share, how much and when. The computers coordinate the work.
 
-**HiveScope is in design.** The first desktop prototype will focus on storing and
-recovering encrypted files. Private general-purpose computing and service hosting are
-later milestones. [Project vision](docs/en/vision.md) · [Roadmap](docs/en/roadmap.md)
+**HiveScope is in design.** The first prototype will test whether a replacement
+computer can recover one encrypted file and whether revoking its credential prevents another read.
+Implementation and device trials are ahead. Private computing and service hosting
+are later milestones. [First prototype design](docs/en/readiness.md) · [Project vision](docs/en/vision.md) · [Roadmap](docs/en/roadmap.md)
 
 ![A world map connects three scenes. A traveler opens a private folder on a phone, a creator works on a laptop and a volunteer offers resources from a desktop.](assets/story/worldwide-network.jpg)
 
