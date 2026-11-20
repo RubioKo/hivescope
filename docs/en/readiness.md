@@ -130,9 +130,11 @@ provider decision before any catalog bytes can be released.
 The Linux trial repeats these cases with separate network stacks for the
 requester and the two virtual providers. Each provider listens at the fixture's
 `192.0.2.10:4001`. Changing the route in the requester directs the original
-package's next connection to the other host. A must receive one 81-byte frame.
-B must receive zero application bytes with A's package and one 81-byte frame
-with its own package. The byte counts include the frame header.
+package's next connection to the other host. At commit `5f41330`, both
+providers recorded a TLS attempt. A received one 81-byte catalog request.
+B received zero application bytes with A's package and one 81-byte request
+with its own package. The counts include the frame header. [Observed run](https://github.com/RubioKo/hivescope/actions/runs/44822400007/job/136586322550)
+
 On Linux with the Go modules cached, iproute2 and permission to create network
 namespaces with sudo, run `bash scripts/test-provider-netns.sh` from the repository
 root. [Isolated network test](../../internal/conformance/provider_netns_linux_test.go) · [Test runner](../../scripts/test-provider-netns.sh)

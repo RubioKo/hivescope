@@ -142,9 +142,11 @@ comprobar una prueba firmada y autorizar el envío de los bytes del catálogo.
 El ensayo en Linux repite los tres casos con pilas de red independientes para
 el cliente y los dos proveedores virtuales. Cada proveedor escucha en la dirección
 de la muestra, `192.0.2.10:4001`. Al cambiar la ruta en el cliente, la siguiente
-conexión con el paquete original llega al otro equipo. A debe recibir una trama
-de 81 bytes. B debe recibir cero bytes de aplicación con el paquete de A y una
-trama de 81 bytes con su propio paquete. El recuento incluye la cabecera de la trama.
+conexión con el paquete original llega al otro equipo. En el commit `5f41330`,
+ambos proveedores registraron un intento TLS. A recibió una solicitud de catálogo
+de 81 bytes. B recibió cero bytes de aplicación con el paquete de A y una solicitud
+de 81 bytes con su propio paquete. El recuento incluye la cabecera de la trama. [Ejecución verificada](https://github.com/RubioKo/hivescope/actions/runs/44822400007/job/136586322550)
+
 En Linux, con los módulos Go en caché, iproute2 y permiso para crear espacios de
 nombres de red con sudo, ejecuta `bash scripts/test-provider-netns.sh` desde la raíz
 del repositorio. [Prueba de red aislada](../../internal/conformance/provider_netns_linux_test.go) · [Script del ensayo](../../scripts/test-provider-netns.sh)
