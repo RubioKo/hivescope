@@ -1,4 +1,4 @@
-<!-- docs-pair: roadmap; revision: 1 -->
+<!-- docs-pair: roadmap; revision: 2 -->
 
 [English](roadmap.md) | [Español](../es/roadmap.md) | [Index](README.md)
 
@@ -15,6 +15,8 @@ executable. Useful first contributions include reviewing failure scenarios,
 clarifying specifications, documenting test hardware and improving translations.
 
 ## Milestone 1: secure core
+
+Review the [prototype scope, open decisions and planned failure cases](readiness.md).
 
 Specify exact protocol messages, resource limits, nonce/key derivation, local
 secret protection, enrollment and recovery-export format before implementing them.

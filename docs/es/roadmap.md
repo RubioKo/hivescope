@@ -1,4 +1,4 @@
-<!-- docs-pair: roadmap; revision: 1 -->
+<!-- docs-pair: roadmap; revision: 2 -->
 
 [English](../en/roadmap.md) | [Español](roadmap.md) | [Índice](README.md)
 
@@ -15,6 +15,8 @@ ejecutable. Las primeras contribuciones útiles incluyen revisar fallos, aclarar
 especificaciones, documentar hardware de prueba y mejorar traducciones.
 
 ## Hito 1: núcleo seguro
+
+Consultar el [alcance del prototipo, decisiones abiertas y casos de fallo previstos](readiness.md).
 
 Especificar mensajes, límites, derivación de claves y nonces, protección local,
 incorporación y formato de recuperación antes de implementarlos. Desarrollar
