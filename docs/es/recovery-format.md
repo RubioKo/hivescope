@@ -1,4 +1,4 @@
-<!-- docs-pair: recovery-format; revision: 3 -->
+<!-- docs-pair: recovery-format; revision: 4 -->
 
 [English](../en/recovery-format.md) | [Español](recovery-format.md) | [Índice](README.md)
 
@@ -9,9 +9,10 @@ original de Ana está apagada. Ana conserva su paquete de recuperación y su con
 y puede conectarse al proveedor que guardó su archivo cifrado. Con el paquete, el
 equipo nuevo identifica al proveedor, demuestra su derecho a leer y descifra el resultado
 localmente. El proveedor puede aceptar o rechazar cada lectura por separado. El
-lector en Go abre el paquete localmente. La conexión entre pares y las decisiones
-de lectura descritas aquí corresponden al diseño de la futura herramienta de
-línea de comandos y del proveedor. [Primera prueba de recuperación](readiness.md)
+lector en Go se prueba con un desbloqueo local y una solicitud de catálogo
+a un proveedor autenticado mediante TCP en la interfaz de bucle local. La
+autorización de lectura y la transferencia del archivo descritas aquí corresponden
+al diseño del futuro cliente de línea de comandos y del proveedor. [Primera prueba de recuperación](readiness.md)
 
 ## Qué conserva Ana
 

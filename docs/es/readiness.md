@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 12 -->
+<!-- docs-pair: readiness; revision: 13 -->
 
 [English](../en/readiness.md) | [Español](readiness.md) | [Índice](README.md)
 
@@ -10,12 +10,11 @@ que guarda la copia cifrada? ¿Puede ese mismo proveedor rechazar el mismo
 paquete después de confirmar una revocación y reiniciarse? Estos dos resultados
 definen el primer prototipo de escritorio.
 
-**Estado de la fase documental.** El ensayo en red local tiene un diseño
-bilingüe, valores de referencia sintéticos y un procedimiento de aceptación.
-Aún queda por ejecutar el primer cliente y proveedor de HiveScope. La
-comprobación documental revisa los documentos y sus enlaces. Solo una ejecución
-del prototipo permitirá acreditar una recuperación, una revocación o la
-persistencia en un sistema de archivos concreto.
+**Resultados actuales.** Las pruebas locales cubren los formatos de recuperación,
+el guardado de archivos verificados y la identidad del proveedor. Las pruebas
+de red usan TCP en la interfaz de bucle local y equipos virtuales aislados en
+Linux. Recuperar un archivo en un equipo de reemplazo y comprobar que un proveedor mantiene la
+revocación tras reiniciar siguen siendo objetivos del ensayo en red local.
 
 ## Alcance y contratos
 
@@ -75,8 +74,10 @@ archivo valioso durante el ensayo.
 Todos los ensayos usan datos sintéticos. Los identificadores permiten asociar
 cada resultado con la versión que lo produjo. En el commit `990e836`,
 M1-01 pasó en memoria con la muestra de cinco bytes y Go 1.27.4 sobre Windows
-amd64. Los casos M1-02 a M1-10 quedan pendientes de ejecutar con un nodo en
-funcionamiento.
+amd64. Las pruebas de M1-04 descritas más adelante cubren el rechazo del
+paquete y la discrepancia de identidad del proveedor en la misma dirección y
+puerto. El procedimiento completo requiere todavía un equipo de reemplazo y
+un proveedor de almacenamiento en funcionamiento.
 
 | ID | Ensayo | Evidencia que registrar |
 | --- | --- | --- |
@@ -124,8 +125,31 @@ de `hive.txt`. Una contraseña incorrecta y una etiqueta dañada producen el mis
 error de autenticación. En ambos casos la prueba registra cero lecturas del
 proveedor y cero llamadas para guardar en el destino. Se conservan sus cinco
 bytes originales, `keep\n`, y el directorio de estado sigue vacío. Esto comprueba
-la autenticación local del paquete en M1-04. Probar un equipo remoto que presente otra identidad
-requiere todavía una conexión en la LAN. [Lector del paquete](../../internal/storageformat/recovery.go) · [Pruebas del inicio de la recuperación](../../internal/conformance/recovery_reader_test.go)
+la autenticación local del paquete en M1-04. [Lector del paquete](../../internal/storageformat/recovery.go) · [Pruebas del inicio de la recuperación](../../internal/conformance/recovery_reader_test.go)
+
+En la prueba de identidad de M1-04, dos proveedores con claves Ed25519
+distintas se turnan en la misma dirección IPv4 de bucle local y el mismo
+puerto TCP. El cliente desbloquea el mismo paquete de recuperación para
+ambos intentos. El proveedor cuya clave figura en el paquete recibe una
+solicitud `READ_BEGIN` para el catálogo y devuelve un reto en ese flujo.
+El otro proveedor recibe un intento de negociación TLS y cero solicitudes
+de catálogo. Con otro paquete que contiene su propia clave pública, este
+segundo proveedor recibe una solicitud en esa misma dirección. La prueba
+termina al recibir el reto. Para completar la lectura, el proveedor deberá
+comprobar una prueba firmada y autorizar el envío de los bytes del catálogo.
+[Prueba de identidad del proveedor](../../internal/conformance/provider_identity_test.go)
+
+El ensayo en Linux repite los tres casos con pilas de red independientes para
+el cliente y los dos proveedores virtuales. Cada proveedor escucha en la dirección
+de la muestra, `192.0.2.10:4001`. Al cambiar la ruta en el cliente, la siguiente
+conexión con el paquete original llega al otro equipo. En el commit `5f41330`,
+ambos proveedores registraron un intento TLS. A recibió una solicitud de catálogo
+de 81 bytes. B recibió cero bytes de aplicación con el paquete de A y una solicitud
+de 81 bytes con su propio paquete. El recuento incluye la cabecera de la trama. [Ejecución verificada](https://github.com/RubioKo/hivescope/actions/runs/44822400007/job/136586322550)
+
+En Linux, con los módulos Go en caché, iproute2 y permiso para crear espacios de
+nombres de red con sudo, ejecuta `bash scripts/test-provider-netns.sh` desde la raíz
+del repositorio. [Prueba de red aislada](../../internal/conformance/provider_netns_linux_test.go) · [Script del ensayo](../../scripts/test-provider-netns.sh)
 
 El lector en Go verifica el catálogo firmado, autentica cada bloque cifrado
 y comprueba la longitud total y el resumen SHA-256 del objeto. Guarda el
