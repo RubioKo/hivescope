@@ -1,4 +1,4 @@
-<!-- docs-pair: file-catalog; revision: 2 -->
+<!-- docs-pair: file-catalog; revision: 3 -->
 
 [English](file-catalog.md) | [Español](../es/file-catalog.md) | [Index](README.md)
 
@@ -94,6 +94,23 @@ byte for byte. If they match, flush the destination and parent before confirming
 If recovery is unavailable, keep the outcome uncertain. If the bytes differ,
 leave the destination intact and ask for a new one. Record an
 interrupted restore separately from a failed authentication. [Provider and filesystem assumptions](provider-persistence.md)
+
+For a restore that can be checked after restart, the caller supplies a private
+state directory dedicated to that restore. Before publication, save an opaque
+record that binds the exact signed catalog to the chosen absolute destination.
+The record contains neither the path nor any keys or file contents. On reopening,
+the caller supplies that directory, the original recovery context and the same
+destination. Check the binding before comparing the file. Keep the record for
+repeated checks until the caller discards it. Use a fresh state directory for
+each attempt, separate from the destination's parent.
+
+The local file named `restore-v1` holds 32 bytes from HKDF-SHA-256. Its input
+key is the authenticated version key, its salt is the verified catalog signature
+and its `info` is `HiveScope/local-publication/v1`, one zero byte and the absolute
+destination path in the platform's Go string representation. The client creates
+this record exclusively and flushes the file and directory before the rename.
+Its presence identifies the intended restore. Confirmation also requires a
+fresh comparison and both destination flushes. [HKDF](https://www.rfc-editor.org/rfc/rfc5869)
 
 ## Three reproducible catalog entries
 

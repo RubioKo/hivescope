@@ -1,4 +1,4 @@
-<!-- docs-pair: home; revision: 13 -->
+<!-- docs-pair: home; revision: 14 -->
 
 English | [Español](README.es.md)
 
@@ -12,9 +12,11 @@ for your community, the app will look for computers that can help. If you want t
 resources, you choose what to share, how much and when. The computers coordinate the work.
 
 **HiveScope can restore an encrypted file locally.** You choose the destination and
-whether to replace an existing file. The reader checks the entire file first. In the
-interruption test, stopping the process just before replacement leaves the original
-file intact. The offline examples cover an empty file, five bytes and 4 MiB + 1 byte.
+whether to replace an existing file. The reader checks the entire file first. If a
+save is uncertain, the reader can reopen the destination and compare it byte for
+byte with the same verified version. A match can confirm the save. If you edited the
+file in the meantime, your changes are preserved. The offline examples cover an empty
+file, five bytes and 4 MiB + 1 byte.
 Recovery on a replacement computer and revocation at a running provider are the
 goals of the first desktop prototype. Private computing and service hosting come later.
 [First prototype and test results](docs/en/readiness.md) · [Project vision](docs/en/vision.md) · [Roadmap](docs/en/roadmap.md)

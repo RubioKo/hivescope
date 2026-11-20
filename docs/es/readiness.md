@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 10 -->
+<!-- docs-pair: readiness; revision: 11 -->
 
 [English](../en/readiness.md) | [Español](readiness.md) | [Índice](README.md)
 
@@ -152,13 +152,30 @@ requiere pruebas independientes en el sistema de archivos.
 Confirmar el guardado requiere sincronizar el directorio. La prueba local en
 Windows con NTFS completó esa sincronización. [Sincronización de directorios en Linux](https://man7.org/linux/man-pages/man2/fsync.2.html) · [Sincronización del sistema de archivos en Windows](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/0de7dc40-9627-437e-a4df-c4696cdc3d02)
 
-Si la sincronización del directorio falla después del reemplazo,
-la API devuelve `ErrPublicationUncertain`. El nuevo
-archivo completo puede estar ya visible. El siguiente paso es resolver esa
-incertidumbre antes de reintentar. Recuperar por separado la misma versión
-autenticada y comparar el destino byte por byte. Si coincide, sincronizar el
-archivo y su directorio antes de confirmar. Si difiere, conservar el destino
-y pedir otra ruta. [Recuperación tras un guardado incierto](file-catalog.md)
+### Comprobar un guardado incierto tras reiniciar
+
+Si la sincronización del directorio falla después del cambio de nombre, la API
+devuelve `ErrPublicationUncertain`. El archivo nuevo puede estar ya visible y
+completo. Para poder comprobarlo más adelante, llama a `SaveRecoverableObject`
+con un directorio de estado privado dedicado a esa recuperación. Conserva ese
+directorio y el acceso al paquete de recuperación original y al destino elegido.
+Un guardado anterior sin registro carece del vínculo necesario para comprobarlo.
+[Registro de la recuperación](file-catalog.md)
+
+Tras reiniciar, abre el catálogo firmado original y llama a `ReopenPublication`
+con su objeto cifrado, el destino elegido y el directorio de estado. El lector
+vuelve a verificar el objeto en otro archivo temporal privado y lo compara byte
+por byte con el destino existente. Si coinciden, confirma el guardado tras
+sincronizar el archivo de destino y su directorio. Si los bytes difieren,
+`ErrDestinationDiffers` indica al cliente que conserve el archivo y pida un
+destino nuevo. Si el objeto está inaccesible o falla una sincronización, el
+guardado sigue incierto. El cliente de escritorio deberá invocar esta API local
+de Go al reabrir una recuperación.
+
+En la prueba de cinco bytes ya terminó el proceso que guardó el archivo. Al
+reabrirlo se confirma `Hive\n`. Si una edición local cambia solo el último byte
+por `!`, la misma comprobación detecta la diferencia y conserva los cinco bytes
+de `Hive!`. [Reinicio tras un fallo de sincronización](../../internal/storageformat/publish_test.go) · [Pruebas de reapertura](../../internal/conformance/reconciliation_test.go)
 
 El descubrimiento y la asignación automáticos corresponden al hito 2. La
 redundancia y reparación con tres proveedores, la interfaz de escritorio y el

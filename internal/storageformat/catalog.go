@@ -27,13 +27,14 @@ type CatalogContext struct {
 
 // Snapshot describes one file version authenticated by OpenCatalog.
 type Snapshot struct {
-	folderID      [16]byte
-	versionID     [16]byte
-	versionKey    [32]byte
-	objectLocator [32]byte
-	objectDigest  [sha256.Size]byte
-	size          uint64
-	name          string
+	catalogSignature [ed25519.SignatureSize]byte
+	folderID         [16]byte
+	versionID        [16]byte
+	versionKey       [32]byte
+	objectLocator    [32]byte
+	objectDigest     [sha256.Size]byte
+	size             uint64
+	name             string
 }
 
 // Name returns display text. Escape control characters when presenting it
@@ -104,12 +105,13 @@ func OpenCatalog(src io.Reader, ctx CatalogContext) (*Snapshot, error) {
 		return nil, errors.New("invalid catalog display name")
 	}
 	return &Snapshot{
-		folderID:      ctx.FolderID,
-		versionID:     [16]byte(entry[:16]),
-		objectLocator: [32]byte(entry[16:48]),
-		versionKey:    [32]byte(entry[48:80]),
-		size:          size,
-		name:          string(name),
-		objectDigest:  [sha256.Size]byte(entry[90+nameLen:]),
+		catalogSignature: [ed25519.SignatureSize]byte(signature),
+		folderID:         ctx.FolderID,
+		versionID:        [16]byte(entry[:16]),
+		objectLocator:    [32]byte(entry[16:48]),
+		versionKey:       [32]byte(entry[48:80]),
+		size:             size,
+		name:             string(name),
+		objectDigest:     [sha256.Size]byte(entry[90+nameLen:]),
 	}, nil
 }
