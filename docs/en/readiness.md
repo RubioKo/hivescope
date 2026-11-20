@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 8 -->
+<!-- docs-pair: readiness; revision: 9 -->
 
 [English](readiness.md) | [Español](../es/readiness.md) | [Index](README.md)
 
@@ -68,8 +68,9 @@ independent copy of anything valuable throughout the trial.
 ## Acceptance record for the first implementation
 
 Use synthetic inputs throughout. The identifiers below let a contributor record
-each result against a build. M1-01 passed in memory with Go 1.27.4 on Windows
-amd64 using the five-byte fixture. M1-02 through M1-10 await a running node.
+each result against a build. At commit `990e836`, M1-01 passed in memory
+with the five-byte fixture and Go 1.27.4 on Windows amd64. M1-02 through
+M1-10 await a running node.
 
 | ID | Trial | Evidence to retain |
 | --- | --- | --- |
@@ -91,11 +92,11 @@ the claim. Use synthetic identifiers in reports. Keep passphrases, keys, export
 contents, private paths and identifying logs out of the evidence. One successful
 read exercises one snapshot. Repeat on each platform before claiming support.
 
-## Reproduce the first result
+## Reproduce the offline results
 
 From the repository root with Go 1.26 or later, run `go mod download` once,
-then `go test -mod=readonly -count=1 ./...`. The tests use synthetic data in
-memory. The test run also passes with the module proxy disabled after setup.
+then `go test -mod=readonly -count=1 ./...`. The tests use synthetic data.
+The test run also passes with the module proxy disabled after setup.
 It reproduces the 255-byte recovery package, all four signed read examples,
 the 21-byte object, the 250-byte signed catalog and the 132-byte receipt.
 The restored bytes are `48 69 76 65 0a`. A wrong passphrase, a substituted
@@ -104,8 +105,23 @@ manifest all fail their respective checks. [Object and catalog](../../internal/c
 
 A mathematically valid signature from an old key is part of the reference
 example. Rejecting its read after revocation requires a running provider.
-The next step is to use the same fixture in a reusable storage-format reader
-and exercise it with the empty and multiblock examples before LAN recovery.
+
+The Go reader verifies the signed catalog, authenticates each encrypted block
+and checks the object's total length and SHA-256 digest. It stages plaintext
+in a temporary file in the caller's private directory. Only a complete,
+verified object becomes readable. Closing the reader removes its temporary
+file. Abrupt process termination can leave that plaintext file in the private
+directory. Cleanup after a crash is still pending. [Catalog reader](../../internal/storageformat/catalog.go) · [Object reader](../../internal/storageformat/object.go)
+
+The three [published fixtures](file-catalog.md) recover byte for byte offline.
+`empty.bin` authenticates one empty block. `hive.txt` yields five bytes.
+`edge.bin` yields 4 MiB plus one byte from the second block. If that block is
+altered or truncated, the caller receives an error before it can read any
+plaintext. M1-02 still requires recovery over the LAN on a clean replacement.
+
+The next local step is to publish the verified file atomically at a destination
+chosen by the owner. Test that a failure before publication preserves any
+existing file and that recovery is reported only after the required flushes.
 
 Automatic discovery and matching belong to milestone 2. Three-provider
 redundancy and repair, desktop GUI and mobile access, private compute and

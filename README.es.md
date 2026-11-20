@@ -1,4 +1,4 @@
-<!-- docs-pair: home; revision: 11 -->
+<!-- docs-pair: home; revision: 12 -->
 
 [English](README.md) | Español
 
@@ -12,10 +12,11 @@ tu propio software o mantener un servidor para tu comunidad, la aplicación busc
 equipos que puedan ayudarte. Si quieres prestar recursos, eliges qué compartes, cuánto
 y cuándo. Las máquinas se encargan de coordinarlo.
 
-**La primera prueba de almacenamiento funciona sin red.** Con una muestra de cinco
-bytes, las pruebas en Go reproducen los formatos cifrados publicados y recuperan
-el contenido original en memoria. El primer prototipo deberá lograrlo en otra
-computadora y demostrar que un proveedor rechaza una credencial revocada.
+**HiveScope ya tiene un lector local de archivos cifrados.** En las pruebas publicadas
+recupera byte por byte un archivo vacío, uno de cinco bytes y otro de 4 MiB + 1 byte.
+Ese último byte inicia un segundo bloque. El lector verifica ambos antes de entregar
+el archivo. El primer prototipo deberá lograrlo en otra computadora y demostrar
+que un proveedor rechaza una credencial revocada.
 El cómputo privado y el alojamiento de servicios vendrán después.
 [Primer prototipo y resultados](docs/es/readiness.md) · [Visión del proyecto](docs/es/vision.md) · [Hoja de ruta](docs/es/roadmap.md)
 
