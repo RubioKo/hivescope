@@ -1,4 +1,4 @@
-<!-- docs-pair: home; revision: 14 -->
+<!-- docs-pair: home; revision: 15 -->
 
 English | [Español](README.es.md)
 
@@ -11,7 +11,9 @@ world. If you need to protect a folder, run your own software or keep a server o
 for your community, the app will look for computers that can help. If you want to lend
 resources, you choose what to share, how much and when. The computers coordinate the work.
 
-**HiveScope can restore an encrypted file locally.** You choose the destination and
+**HiveScope can restore an encrypted file locally.** The reader first unlocks
+your recovery package on your device. A wrong passphrase stops recovery before
+it contacts a provider or opens the destination. You choose where to save and
 whether to replace an existing file. The reader checks the entire file first. If a
 save is uncertain, the reader can reopen the destination and compare it byte for
 byte with the same verified version. A match can confirm the save. If you edited the

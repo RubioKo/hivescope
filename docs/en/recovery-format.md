@@ -1,4 +1,4 @@
-<!-- docs-pair: recovery-format; revision: 2 -->
+<!-- docs-pair: recovery-format; revision: 3 -->
 
 [English](recovery-format.md) | [Español](../es/recovery-format.md) | [Index](README.md)
 
@@ -8,8 +8,9 @@
 She has her recovery package, its passphrase and access to the provider that
 stored her encrypted file. The package lets her new computer identify that
 provider, prove its right to read and decrypt the result locally. The provider
-can confirm or deny each read independently. These are design examples for a
-future CLI. [First recovery trial](readiness.md)
+can confirm or deny each read independently. The Go reader opens the package
+locally. The peer connection and read decisions below describe the planned
+CLI and provider. [First recovery trial](readiness.md)
 
 ## What Ana keeps
 
@@ -54,6 +55,13 @@ endpoint cannot substitute a different identity. This first profile uses
 Ed25519 peer identities and direct TCP/IPv4. Reject generation zero, port
 zero or malformed keys before connecting. The file's version key is sealed
 inside the signed catalog. [File catalog and block verification](file-catalog.md) · [Peer authentication](https://github.com/libp2p/specs/blob/master/tls/tls.md)
+
+After authenticating the payload, validate both pinned Ed25519 public keys.
+Decode each as a point on Edwards25519 and require its canonical encoding to
+match the original 32 bytes. Reject a point whose product by the cofactor
+eight is the identity. The recovery seed and symmetric folder read key are
+each 32 opaque bytes. The Go reader uses `SetBytes`, `Bytes` and
+`MultByCofactor` for the public-key checks. [Ed25519 point decoding](https://www.rfc-editor.org/rfc/rfc8032#section-5.1.3) · [Go point operations](https://pkg.go.dev/filippo.io/edwards25519@v1.2.0#Point)
 
 ## What the replacement signs
 

@@ -1,4 +1,4 @@
-<!-- docs-pair: home; revision: 14 -->
+<!-- docs-pair: home; revision: 15 -->
 
 [English](README.md) | Español
 
@@ -12,10 +12,13 @@ tu propio software o mantener un servidor para tu comunidad, la aplicación busc
 equipos que puedan ayudarte. Si quieres prestar recursos, eliges qué compartes, cuánto
 y cuándo. Las máquinas se encargan de coordinarlo.
 
-**HiveScope ya puede restaurar un archivo cifrado de forma local.** Tú eliges el
-destino y si quieres reemplazar un archivo existente. El lector verifica el archivo
-entero antes de guardarlo. Si el resultado es incierto, el lector puede reabrir
-el destino y compararlo byte por byte con la misma versión verificada.
+**HiveScope ya puede restaurar un archivo cifrado de forma local.** El lector
+desbloquea primero el paquete de recuperación en tu equipo. Una contraseña
+incorrecta detiene la recuperación antes de contactar a un proveedor o abrir el
+destino. Tú eliges dónde guardar y si quieres reemplazar un archivo existente.
+El lector verifica el archivo entero antes de guardarlo. Si el resultado es
+incierto, puede reabrir el destino y compararlo byte por byte con la misma
+versión verificada.
 La coincidencia permite confirmar el guardado. Si entretanto editaste el archivo,
 se conservan tus cambios. Los ejemplos locales cubren un archivo vacío, uno de cinco
 bytes y otro de 4 MiB + 1 byte.

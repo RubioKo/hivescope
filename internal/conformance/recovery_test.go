@@ -29,9 +29,19 @@ func recoveryFixtureAEAD(t *testing.T, passphrase string, salt []byte) cipher.AE
 	return fixtureGCM(t, key)
 }
 
-func TestRecoveryPackage(t *testing.T) {
+type recoveryExample struct {
+	header, payload []byte
+	aead            cipher.AEAD
+}
+
+func recoveryFixture(t *testing.T, passphrase string, variant byte) recoveryExample {
+	t.Helper()
 	salt := mustHex(t, "000102030405060708090a0b0c0d0e0f")
 	nonce := mustHex(t, "101112131415161718191a1b")
+	// Variant zero is the published example. Give each deliberately
+	// different authenticated payload its own synthetic salt and nonce.
+	salt[0] ^= variant
+	nonce[0] ^= variant
 	header := append([]byte("HSRP\x01"), salt...)
 	header = append(header, nonce...)
 	payload := append(repeated(0xa1, 16), repeated(0xb2, 16)...)
@@ -44,20 +54,27 @@ func TestRecoveryPackage(t *testing.T) {
 	payload = append(payload, mustHex(t, readFixtureCatalogPublic)...)
 	payload = append(payload, repeated(0xc3, 32)...)
 
-	gcm := recoveryFixtureAEAD(t, "HiveScope fixture 1", salt)
-	sealed := gcm.Seal(nil, nonce, payload, header)
-	export := append(header, sealed...)
-	if len(header) != 33 || len(payload) != 206 || len(export) != 255 {
+	return recoveryExample{header, payload, recoveryFixtureAEAD(t, passphrase, salt)}
+}
+
+func (f recoveryExample) seal() []byte {
+	return f.aead.Seal(bytes.Clone(f.header), f.header[21:33], f.payload, f.header)
+}
+
+func TestRecoveryPackage(t *testing.T) {
+	f := recoveryFixture(t, "HiveScope fixture 1", 0)
+	export := f.seal()
+	if len(f.header) != 33 || len(f.payload) != 206 || len(export) != 255 {
 		t.Fatalf("header/payload/export lengths = %d/%d/%d, want 33/206/255",
-			len(header), len(payload), len(export))
+			len(f.header), len(f.payload), len(export))
 	}
 	requireDigest(t, export, "943561b2a66368c9f780b44fab56aa89a1d46c57b20a7d3b73b39dc090d548b4")
 	if !bytes.HasSuffix(export, mustHex(t, "954c1dd1d641d7aab3ecdf664d56ef7d")) {
 		t.Fatal("recovery package authentication tag differs from published value")
 	}
 
-	opened, err := gcm.Open(nil, export[21:33], export[33:], export[:33])
-	if err != nil || !bytes.Equal(opened, payload) {
+	opened, err := f.aead.Open(nil, export[21:33], export[33:], export[:33])
+	if err != nil || !bytes.Equal(opened, f.payload) {
 		t.Fatalf("recovery package did not reproduce the fixture payload (error: %v)", err)
 	}
 	wrongKey := recoveryFixtureAEAD(t, "wrong fixture passphrase", export[5:21])

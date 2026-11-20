@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 11 -->
+<!-- docs-pair: readiness; revision: 12 -->
 
 [English](../en/readiness.md) | [Español](readiness.md) | [Índice](README.md)
 
@@ -115,6 +115,17 @@ un manifiesto modificado fallan sus respectivas comprobaciones. [Objeto y catál
 El ejemplo incluye una firma válida hecha con una clave antigua. Para
 demostrar que esa clave pierde el acceso tras la revocación hace falta ejecutar
 al proveedor.
+
+La función de Go `WithRecoveryPackage` autentica el paquete en el equipo y
+comprueba sus campos antes de pasar el control al código de recuperación del
+propietario. Con la contraseña correcta, la prueba local lee el catálogo firmado
+y el objeto cifrado de un proveedor simulado en memoria y guarda los cinco bytes
+de `hive.txt`. Una contraseña incorrecta y una etiqueta dañada producen el mismo
+error de autenticación. En ambos casos la prueba registra cero lecturas del
+proveedor y cero llamadas para guardar en el destino. Se conservan sus cinco
+bytes originales, `keep\n`, y el directorio de estado sigue vacío. Esto comprueba
+la autenticación local del paquete en M1-04. Probar un equipo remoto que presente otra identidad
+requiere todavía una conexión en la LAN. [Lector del paquete](../../internal/storageformat/recovery.go) · [Pruebas del inicio de la recuperación](../../internal/conformance/recovery_reader_test.go)
 
 El lector en Go verifica el catálogo firmado, autentica cada bloque cifrado
 y comprueba la longitud total y el resumen SHA-256 del objeto. Guarda el
