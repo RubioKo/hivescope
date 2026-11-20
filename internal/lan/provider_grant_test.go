@@ -127,15 +127,16 @@ func TestCatalogReadDenialBoundaries(t *testing.T) {
 		{"unknown locator", func(_ *CatalogProvider, r []byte) { r[41]++ }, 2},
 		{"closed grace", func(p *CatalogProvider, _ []byte) { p.agreement.Expiry = now.Add(-8 * 24 * time.Hour) }, 2},
 		{"missing grant", func(p *CatalogProvider, _ []byte) { p.recovery = [32]byte{} }, 2},
-		{"damaged committed item", func(p *CatalogProvider, _ []byte) { p.sealed = nil }, 7},
+		{"damaged committed item", func(p *CatalogProvider, _ []byte) { p.catalog.Sealed = nil }, 7},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			r := bytes.Clone(request)
 			tc.alter(p, r)
-			t.Cleanup(func() { p.agreement, p.recovery, p.sealed = a, recovery, sealed })
+			t.Cleanup(func() { p.agreement, p.recovery, p.catalog.Sealed = a, recovery, sealed })
 			proof := ed25519.Sign(signer, readTranscript(provider, replacement, r, nonce))
 			var reply bytes.Buffer
-			if err := p.releaseCatalog(&reply, r, nonce, replacement, proof, 7, now.Add(time.Minute)); err != nil {
+			send := func(op byte, payload []byte) error { return writeFrame(&reply, op, payload) }
+			if err := p.releaseRead(send, r, nonce, replacement, proof, 7, now.Add(time.Minute)); err != nil {
 				t.Fatal(err)
 			}
 			want := []byte{0, 0, 0, 5, 8, 0x7f, 0x12, 1, tc.code}
@@ -146,7 +147,8 @@ func TestCatalogReadDenialBoundaries(t *testing.T) {
 	}
 	proof := ed25519.Sign(signer, readTranscript(provider, replacement, request, nonce))
 	var reply bytes.Buffer
-	if err := p.releaseCatalog(&reply, request, nonce, replacement, proof, 7, now); err != nil ||
+	send := func(op byte, payload []byte) error { return writeFrame(&reply, op, payload) }
+	if err := p.releaseRead(send, request, nonce, replacement, proof, 7, now); err != nil ||
 		!bytes.Equal(reply.Bytes(), []byte{0, 0, 0, 5, 8, 0x7f, 0x12, 1, 2}) {
 		t.Fatal("expired challenge released data")
 	}

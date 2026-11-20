@@ -1,4 +1,4 @@
-<!-- docs-pair: home; revision: 17 -->
+<!-- docs-pair: home; revision: 18 -->
 
 [English](README.md) | Español
 
@@ -18,9 +18,11 @@ incorrecta detiene la recuperación antes de contactar a un proveedor o abrir el
 destino. Antes de solicitar el catálogo, el cliente compara la identidad
 autenticada del proveedor con la clave pública de tu paquete. Si otro equipo ocupa
 esa dirección y presenta una clave distinta, la recuperación se detiene ahí.
-En una prueba de bucle local, el proveedor entrega el catálogo cifrado tras
-comprobar la firma del reto y el permiso de lectura vigente. Reutilizar esa
-firma en otra sesión devuelve cero bytes del catálogo.
+En una prueba en una sola computadora, el cliente lee el catálogo, localiza
+el archivo cifrado y firma un reto nuevo para descargarlo. Reutilizar la firma
+del catálogo para la descarga devuelve cero bytes del archivo. Con la firma
+correcta, el cliente recupera los cinco bytes originales de `hive.txt`.
+
 Tú eliges dónde guardar y si quieres reemplazar un archivo existente.
 El lector verifica el archivo entero antes de guardarlo. Si el resultado es
 incierto, puede reabrir el destino y compararlo byte por byte con la misma
@@ -29,7 +31,7 @@ La coincidencia permite confirmar el guardado. Si entretanto editaste el archivo
 se conservan tus cambios. Los ejemplos locales cubren un archivo vacío, uno de cinco
 bytes y otro de 4 MiB + 1 byte.
 El primer prototipo deberá lograrlo en otra computadora y demostrar
-que un proveedor rechaza una credencial revocada.
+que el proveedor sigue rechazando una credencial revocada después de reiniciarse.
 El cómputo privado y el alojamiento de servicios vendrán después.
 [Primer prototipo y resultados](docs/es/readiness.md) · [Visión del proyecto](docs/es/vision.md) · [Hoja de ruta](docs/es/roadmap.md)
 

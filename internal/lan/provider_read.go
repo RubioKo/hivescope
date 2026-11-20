@@ -19,9 +19,14 @@ import (
 	ms "github.com/multiformats/go-multistream"
 )
 
-// ServeCatalog takes ownership of an accepted TCP socket. Each negotiated
+// ServeCatalog retains the original catalog provider entry point.
+func (p *ReadProvider) ServeCatalog(ctx context.Context, socket net.Conn, identity crypto.PrivKey) error {
+	return p.ServeRead(ctx, socket, identity)
+}
+
+// ServeRead takes ownership of an accepted TCP socket. Each negotiated
 // stream gets its own request, authenticated replacement identity and nonce.
-func (p *CatalogProvider) ServeCatalog(ctx context.Context, socket net.Conn, identity crypto.PrivKey) error {
+func (p *ReadProvider) ServeRead(ctx context.Context, socket net.Conn, identity crypto.PrivKey) error {
 	defer socket.Close()
 	if identity == nil || identity.Type() != crypto.Ed25519 {
 		return errors.New("provider requires its enrolled Ed25519 identity")
@@ -35,7 +40,7 @@ func (p *CatalogProvider) ServeCatalog(ctx context.Context, socket net.Conn, ide
 	stop := context.AfterFunc(connCtx, func() { socket.Close() })
 	defer stop()
 	mux := *yamux.DefaultTransport
-	mux.MaxIncomingStreams = 1 // one active catalog read on this trial connection
+	mux.MaxIncomingStreams = 1 // one active read on this trial connection
 	up, err := newLANUpgrader(identity, &mux)
 	if err != nil {
 		return err
@@ -88,7 +93,7 @@ func (p *CatalogProvider) ServeCatalog(ctx context.Context, socket net.Conn, ide
 	}
 }
 
-func (p *CatalogProvider) serveStream(stream network.MuxedStream, replacement [32]byte, negotiationDeadline time.Time) error {
+func (p *ReadProvider) serveStream(stream network.MuxedStream, replacement [32]byte, negotiationDeadline time.Time) error {
 	defer stream.Close()
 	if err := stream.SetDeadline(negotiationDeadline); err != nil {
 		return err
@@ -106,16 +111,16 @@ func (p *CatalogProvider) serveStream(stream network.MuxedStream, replacement [3
 		stream.Reset()
 		return err
 	}
-	if op != readBegin || len(request) != 73 || request[0] != catalogKind || binary.BigEndian.Uint64(request[33:41]) == 0 {
+	if op != readBegin || len(request) != 73 || (request[0] != catalogKind && request[0] != objectKind) || binary.BigEndian.Uint64(request[33:41]) == 0 {
 		return writeFrame(stream, errorOp, []byte{1})
 	}
 	// Only this goroutine ever sees this outstanding challenge. It reads
 	// exactly one proof and checks for EOF; every exit destroys the challenge.
 	var nonce [32]byte
 	rand.Read(nonce[:])
-	p.mu.Lock()
+	p.mu.RLock()
 	issuedGeneration := p.generation
-	p.mu.Unlock()
+	p.mu.RUnlock()
 	deadline := time.Now().Add(60 * time.Second)
 	if err := writeFrame(stream, challengeOp, nonce[:]); err != nil {
 		return err
@@ -138,29 +143,76 @@ func (p *CatalogProvider) serveStream(stream network.MuxedStream, replacement [3
 	if !validProofFrame {
 		return writeFrame(stream, errorOp, []byte{1})
 	}
-	return p.releaseCatalog(stream, request, nonce, replacement, proof, issuedGeneration, deadline)
+	send := func(op byte, payload []byte) error {
+		if err := stream.SetWriteDeadline(time.Now().Add(30 * time.Second)); err != nil {
+			return err
+		}
+		return writeFrame(stream, op, payload)
+	}
+	return p.releaseRead(send, request, nonce, replacement, proof, issuedGeneration, deadline)
 }
 
-func (p *CatalogProvider) releaseCatalog(w io.Writer, request []byte, nonce, replacement [32]byte, proof []byte, issuedGeneration uint64, deadline time.Time) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+func (p *ReadProvider) authorizedItem(request []byte, nonce, replacement [32]byte, proof []byte, issuedGeneration uint64, deadline time.Time) ([]byte, byte) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
 	now := time.Now()
 	a := p.agreement
 	if !now.Before(deadline) || !a.readable(now) || p.recovery == [32]byte{} || p.generation != issuedGeneration ||
 		p.generation != binary.BigEndian.Uint64(request[33:41]) || a.FolderID != [16]byte(request[1:17]) ||
 		a.AgreementID != [16]byte(request[17:33]) ||
-		!ed25519.Verify(p.recovery[:], readTranscript(a.ProviderKey, replacement, request, nonce), proof) ||
-		p.locator != [32]byte(request[41:73]) {
-		return writeFrame(w, errorOp, []byte{2})
+		!ed25519.Verify(p.recovery[:], readTranscript(a.ProviderKey, replacement, request, nonce), proof) {
+		return nil, 2
 	}
-	if len(p.sealed) == 0 {
-		return writeFrame(w, errorOp, []byte{7})
+	var item *CommittedItem
+	switch request[0] {
+	case catalogKind:
+		item = &p.catalog
+	case objectKind:
+		item = p.object
 	}
-	if err := writeFrame(w, readSizeOp, binary.BigEndian.AppendUint64(nil, uint64(len(p.sealed)))); err != nil {
+	if item == nil || item.Locator != [32]byte(request[41:73]) {
+		return nil, 2
+	}
+	// Locally detected damage makes the committed pair unavailable. Reveal
+	// its condition only after authenticating the read and checking membership.
+	if p.catalog.Sealed == nil || (p.object != nil && p.object.Sealed == nil) {
+		return nil, 7
+	}
+	return item.Sealed, 0
+}
+
+func (p *ReadProvider) releaseRead(send func(byte, []byte) error, request []byte, nonce, replacement [32]byte, proof []byte, issuedGeneration uint64, deadline time.Time) error {
+	sealed, code := p.authorizedItem(request, nonce, replacement, proof, issuedGeneration, deadline)
+	if code != 0 {
+		return send(errorOp, []byte{code})
+	}
+	// A grant change can run between any two frames, including after PROOF
+	// but before READ_SIZE. A pending writer has priority over new read locks.
+	sendCurrent := func(op byte, payload []byte) error {
+		p.mu.RLock()
+		defer p.mu.RUnlock()
+		if p.generation != issuedGeneration || !p.agreement.readable(time.Now()) {
+			return ErrReadDenied
+		}
+		return send(op, payload)
+	}
+	err := sendItem(sendCurrent, sealed)
+	if err == ErrReadDenied {
+		return send(errorOp, []byte{2})
+	}
+	return err
+}
+
+func sendItem(send func(byte, []byte) error, sealed []byte) error {
+	if err := send(readSizeOp, binary.BigEndian.AppendUint64(nil, uint64(len(sealed)))); err != nil {
 		return err
 	}
-	if err := writeFrame(w, dataOp, p.sealed); err != nil {
-		return err
+	for len(sealed) > 0 {
+		n := min(maxDataPayload, len(sealed))
+		if err := send(dataOp, sealed[:n]); err != nil {
+			return err
+		}
+		sealed = sealed[n:]
 	}
-	return writeFrame(w, endOp, nil)
+	return send(endOp, nil)
 }

@@ -1,4 +1,4 @@
-<!-- docs-pair: lan-protocol; revision: 3 -->
+<!-- docs-pair: lan-protocol; revision: 4 -->
 
 [English](../en/lan-protocol.md) | [Español](lan-protocol.md) | [Índice](README.md)
 
@@ -8,10 +8,11 @@ Este es el diseño v1 para guardar un archivo cifrado en un proveedor. El
 equipo original sube el objeto y su catálogo bajo una misma reserva. El
 equipo de reemplazo presenta una prueba distinta para leer cada elemento.
 La reserva, el recibo y la prueba de recuperación conservan su significado
-al reconectar. La lectura del catálogo en Go usa TCP en la interfaz de
-bucle local. El proveedor conserva en memoria el permiso vigente y el
-catálogo cifrado y firmado. La lectura de objetos, las subidas y el registro
-persistente de cambios de permiso quedan para etapas posteriores.
+al reconectar. En la prueba en Go con TCP de bucle local, el proveedor parte
+del permiso vigente, el catálogo firmado y cifrado y el objeto cifrado en
+memoria. El cliente verifica el catálogo antes de conectarse de nuevo y firmar
+otro reto para leer el objeto. Las subidas y el registro persistente de
+cambios de permiso quedan para etapas posteriores.
 [Prueba de recuperación](readiness.md)
 
 ## Conexión y tramas

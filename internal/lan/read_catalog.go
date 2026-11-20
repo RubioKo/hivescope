@@ -26,27 +26,12 @@ const (
 // ReadCatalog uses the unlocked package to authorize one catalog read on a
 // pinned connection. Only a complete, locally verified catalog yields a snapshot.
 func ReadCatalog(ctx context.Context, pkg *storageformat.RecoveryPackage, device crypto.PrivKey) (*storageformat.Snapshot, error) {
+	if pkg == nil {
+		return nil, errors.New("missing unlocked recovery package")
+	}
 	var snapshot *storageformat.Snapshot
-	err := WithCatalogChallenge(ctx, pkg, device, func(challenge [32]byte, stream network.MuxedStream) error {
-		// The handshake proved possession of device and matched the provider
-		// pin. Only the nonce comes from the peer; all other fields are local.
-		raw, err := device.GetPublic().Raw()
-		if err != nil || len(raw) != ed25519.PublicKeySize {
-			return errors.New("invalid authenticated replacement identity")
-		}
-		key := ed25519.NewKeyFromSeed(pkg.RecoverySeed[:])
-		defer clear(key)
-		proof := ed25519.Sign(key, readTranscript(pkg.ProviderKey, [32]byte(raw), catalogRequest(pkg), challenge))
-		if err := writeFrame(stream, proofOp, proof); err != nil {
-			return fmt.Errorf("send catalog proof: %w", err)
-		}
-		if err := stream.CloseWrite(); err != nil {
-			return err
-		}
-		if err := stream.SetReadDeadline(time.Now().Add(30 * time.Second)); err != nil {
-			return err
-		}
-		sealed, err := receiveCatalog(stream)
+	err := withAuthorizedRead(ctx, pkg, device, catalogRequest(pkg), func(r io.Reader) error {
+		sealed, err := receiveCatalog(r)
 		if err != nil {
 			return fmt.Errorf("receive catalog: %w", err)
 		}
@@ -59,6 +44,39 @@ func ReadCatalog(ctx context.Context, pkg *storageformat.RecoveryPackage, device
 	return snapshot, nil
 }
 
+// Network progress renews the idle timeout. The enclosing connection still
+// enforces the overall exchange deadline, including on a trickling response.
+type idleReadStream struct{ network.MuxedStream }
+
+func (s idleReadStream) Read(p []byte) (int, error) {
+	if err := s.SetReadDeadline(time.Now().Add(30 * time.Second)); err != nil {
+		return 0, err
+	}
+	return s.MuxedStream.Read(p)
+}
+
+func withAuthorizedRead(ctx context.Context, pkg *storageformat.RecoveryPackage, device crypto.PrivKey,
+	request []byte, receive func(io.Reader) error) error {
+	return withReadChallenge(ctx, pkg, device, request, func(challenge [32]byte, stream network.MuxedStream) error {
+		// The handshake proved possession of device and matched the provider
+		// pin. Only the nonce comes from the peer; all other fields are local.
+		raw, err := device.GetPublic().Raw()
+		if err != nil || len(raw) != ed25519.PublicKeySize {
+			return errors.New("invalid authenticated replacement identity")
+		}
+		key := ed25519.NewKeyFromSeed(pkg.RecoverySeed[:])
+		defer clear(key)
+		proof := ed25519.Sign(key, readTranscript(pkg.ProviderKey, [32]byte(raw), request, challenge))
+		if err := writeFrame(stream, proofOp, proof); err != nil {
+			return fmt.Errorf("send read proof: %w", err)
+		}
+		if err := stream.CloseWrite(); err != nil {
+			return err
+		}
+		return receive(idleReadStream{stream})
+	})
+}
+
 // request is the exact READ_BEGIN payload: K followed by scope, generation
 // and locator. The v1 transcript inserts both authenticated keys after K.
 func readTranscript(provider, replacement [32]byte, request []byte, challenge [32]byte) []byte {
@@ -66,40 +84,34 @@ func readTranscript(provider, replacement [32]byte, request []byte, challenge [3
 		provider[:], replacement[:], request[1:], challenge[:])
 }
 
-func receiveCatalog(r io.Reader) ([]byte, error) {
+func readSealedSize(r io.Reader) (uint64, error) {
 	op, sizeField, err := readFrame(r, 8)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	if op == errorOp {
 		if err := expectEOF(r); err != nil {
-			return nil, err
+			return 0, err
 		}
-		return nil, providerError(sizeField)
+		return 0, providerError(sizeField)
 	}
 	if op != readSizeOp || len(sizeField) != 8 {
-		return nil, errors.New("expected catalog READ_SIZE")
+		return 0, errors.New("expected READ_SIZE")
 	}
-	size := binary.BigEndian.Uint64(sizeField)
+	return binary.BigEndian.Uint64(sizeField), nil
+}
+
+func receiveCatalog(r io.Reader) ([]byte, error) {
+	size, err := readSealedSize(r)
+	if err != nil {
+		return nil, err
+	}
 	if size < catalogMinSize || size > catalogMaxSize {
 		return nil, errors.New("catalog size outside v1 limits")
 	}
-	// A complete v1 catalog fits in a single DATA frame.
-	op, sealed, err := readFrame(r, int(size))
+	// At most 497 bytes. Never return a partial catalog on error.
+	sealed, err := io.ReadAll(&sealedItemReader{wire: r, remaining: size})
 	if err != nil {
-		return nil, err
-	}
-	if op != dataOp || len(sealed) != int(size) {
-		return nil, errors.New("catalog DATA differs from declared size")
-	}
-	op, _, err = readFrame(r, 0)
-	if err != nil {
-		return nil, err
-	}
-	if op != endOp {
-		return nil, errors.New("expected catalog END")
-	}
-	if err := expectEOF(r); err != nil {
 		return nil, err
 	}
 	return sealed, nil

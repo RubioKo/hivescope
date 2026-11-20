@@ -1,4 +1,4 @@
-<!-- docs-pair: recovery-format; revision: 5 -->
+<!-- docs-pair: recovery-format; revision: 6 -->
 
 [English](recovery-format.md) | [Español](../es/recovery-format.md) | [Index](README.md)
 
@@ -9,10 +9,10 @@ She has her recovery package, its passphrase and access to the provider that
 stored her encrypted file. The package lets her new computer identify that
 provider, prove its right to read and decrypt the result locally. The provider
 can confirm or deny each read independently. Go tests cover local unlock and
-an authenticated catalog read over loopback TCP. The replacement signs a fresh
-challenge using the recovery key. Reusing that signature on a second connection
-yields `DENIED` and zero catalog bytes. Recovering the file also requires
-a separate authorized read of its encrypted object. [First recovery trial](readiness.md)
+two authorized reads over loopback TCP. The replacement verifies the catalog,
+then signs a fresh challenge for the object named in it. Reusing the catalog
+signature to request either item on a new connection yields `DENIED` and zero
+item bytes. [First recovery trial](readiness.md)
 
 ## What Ana keeps
 
@@ -130,8 +130,8 @@ SHA-256 of the 196 signed bytes, followed by the 64-byte signature split over
 two lines. Sign the 196 bytes directly. The hash is a check on the encoding.
 All four signatures verify mathematically, including the two that the provider
 must refuse in case B. The values were checked using the published test keys.
-The complete cases A and B also require an object read and a provider that
-enforces revocation after restart.
+The full LAN trial still requires a clean replacement device and a provider
+that enforces revocation after restart.
 
 ```text
 [11]

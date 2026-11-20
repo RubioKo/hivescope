@@ -26,27 +26,47 @@ func (a CatalogAgreement) readable(now time.Time) bool {
 	return !now.Before(a.Start) && now.Before(a.Expiry.Add(7*24*time.Hour))
 }
 
-// CommittedCatalog refers to a catalog in the provider's local committed index.
+// CommittedItem refers to sealed bytes in the provider's local committed index.
 // Digest is the expected SHA-256 from that index, independent of Sealed.
-type CommittedCatalog struct {
+type CommittedItem struct {
 	Locator, Digest [32]byte
 	Sealed          []byte
 }
 
-// CatalogProvider serves the prototype's single committed catalog. Grant state
+type CommittedCatalog = CommittedItem
+type CommittedObject = CommittedItem
+
+// An invalid committed item keeps its membership but cannot be served.
+func (item CommittedItem) owned(minSize, maxSize int) CommittedItem {
+	if len(item.Sealed) < minSize || len(item.Sealed) > maxSize {
+		item.Sealed = nil
+		return item
+	}
+	item.Sealed = bytes.Clone(item.Sealed)
+	if sha256.Sum256(item.Sealed) != item.Digest {
+		item.Sealed = nil
+	}
+	return item
+}
+
+// ReadProvider serves the prototype's single committed pair. Grant state
 // is process-local. A restarted provider needs an independently trusted source
 // for its latest signed record before it may serve reads.
-type CatalogProvider struct {
+type ReadProvider struct {
 	agreement CatalogAgreement
-	locator   [32]byte
-	sealed    []byte
+	catalog   CommittedCatalog
+	object    *CommittedObject // absent on catalog-only providers
 
-	mu         sync.Mutex // serializes grant changes and queuing authorized data
+	mu         sync.RWMutex // a grant change excludes writes of individual frames
 	record     [198]byte
 	generation uint64
 	recovery   [32]byte // zero for missing or revoked grant
 }
 
+type CatalogProvider = ReadProvider
+
+// NewCatalogProvider provisions only a catalog. An object request still
+// receives a fresh challenge and cannot disclose object membership.
 func NewCatalogProvider(agreement CatalogAgreement, catalog CommittedCatalog) (*CatalogProvider, error) {
 	if !storageformat.ValidEd25519Key(agreement.ProviderKey[:]) || !storageformat.ValidEd25519Key(agreement.AuthorityKey[:]) {
 		return nil, errors.New("invalid provider or folder authority public key")
@@ -54,17 +74,29 @@ func NewCatalogProvider(agreement CatalogAgreement, catalog CommittedCatalog) (*
 	if agreement.Start.IsZero() || !agreement.Expiry.After(agreement.Start) {
 		return nil, errors.New("invalid enrolled agreement term")
 	}
-	p := &CatalogProvider{agreement: agreement, locator: catalog.Locator}
-	if len(catalog.Sealed) >= catalogMinSize && len(catalog.Sealed) <= catalogMaxSize && sha256.Sum256(catalog.Sealed) == catalog.Digest {
-		p.sealed = bytes.Clone(catalog.Sealed)
+	return &ReadProvider{agreement: agreement, catalog: catalog.owned(catalogMinSize, catalogMaxSize)}, nil
+}
+
+// NewReadProvider provisions an immutable committed catalog and object. Their
+// opaque locators and digests come from the provider's own index.
+func NewReadProvider(agreement CatalogAgreement, catalog CommittedCatalog, object CommittedObject) (*ReadProvider, error) {
+	if catalog.Locator == object.Locator {
+		return nil, errors.New("committed catalog and object must have distinct locators")
 	}
+	p, err := NewCatalogProvider(agreement, catalog)
+	if err != nil {
+		return nil, err
+	}
+	// At most 64 MiB of plaintext, plus one 16-byte tag per 4 MiB block.
+	owned := object.owned(16, (64<<20)+16*16)
+	p.object = &owned
 	return p, nil
 }
 
 // LoadGrant verifies the current locally supplied record. The caller must
 // supply the highest authoritative record when initializing the provider.
 // This method does not implement durable GRANT_UPDATE or issue an ACK.
-func (p *CatalogProvider) LoadGrant(record []byte) error {
+func (p *ReadProvider) LoadGrant(record []byte) error {
 	const domain = "HiveScope/recovery-grant/v1\x00"
 	a := p.agreement
 	if len(record) != 198 || string(record[:28]) != domain || [32]byte(record[28:60]) != a.ProviderKey ||

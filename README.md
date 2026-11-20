@@ -1,4 +1,4 @@
-<!-- docs-pair: home; revision: 17 -->
+<!-- docs-pair: home; revision: 18 -->
 
 English | [Español](README.es.md)
 
@@ -16,17 +16,20 @@ your recovery package on your device. A wrong passphrase stops recovery before
 it contacts a provider or opens the destination. Before requesting the catalog,
 the client checks the provider's authenticated identity against the public key
 in your package. If another machine takes that address and presents a different
-key, the client stops there. In a loopback test, the provider releases the
-encrypted catalog after checking a signed challenge and the current read grant.
-Reusing that signature in another session returns zero catalog bytes.
-You choose where to save and
-whether to replace an existing file. The reader checks the entire file first. If a
-save is uncertain, the reader can reopen the destination and compare it byte for
-byte with the same verified version. A match can confirm the save. If you edited the
+key, the client stops there. In a test on one computer, the client reads the
+catalog, finds the encrypted file and signs a fresh challenge to download it.
+Reusing the catalog signature for the download returns zero file bytes. With
+the correct proof, the client recovers the five original bytes of `hive.txt`.
+
+You choose where to save and whether to replace an existing file. The reader
+checks the entire file first. If a save is uncertain, the reader can reopen
+the destination and compare it byte for byte with the same verified version.
+A match can confirm the save. If you edited the
 file in the meantime, your changes are preserved. The offline examples cover an empty
 file, five bytes and 4 MiB + 1 byte.
-Recovery on a replacement computer and revocation at a running provider are the
-goals of the first desktop prototype. Private computing and service hosting come later.
+Recovery on a replacement computer and revocation that survives a provider
+restart are goals of the first desktop prototype. Private computing and service
+hosting come later.
 [First prototype and test results](docs/en/readiness.md) · [Project vision](docs/en/vision.md) · [Roadmap](docs/en/roadmap.md)
 
 ![A world map connects three scenes. A traveler opens a private folder on a phone, a creator works on a laptop and a volunteer offers resources from a desktop.](assets/story/worldwide-network.jpg)

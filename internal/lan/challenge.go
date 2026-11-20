@@ -22,20 +22,21 @@ const (
 	readSizeOp   = 0x26
 	errorOp      = 0x7f
 	catalogKind  = 0x01
+	objectKind   = 0x02
 )
 
 // ErrReadDenied is the authenticated provider's refusal to authorize the read.
 var ErrReadDenied = errors.New("provider denied the read")
 
 func catalogRequest(pkg *storageformat.RecoveryPackage) []byte {
-	request := append([]byte{catalogKind}, pkg.Catalog.FolderID[:]...)
-	request = append(request, pkg.Catalog.AgreementID[:]...)
-	request = binary.BigEndian.AppendUint64(request, pkg.Generation)
-	return append(request, pkg.Catalog.CatalogLocator[:]...)
+	return readRequest(pkg, catalogKind, pkg.Catalog.CatalogLocator)
 }
 
-func writeCatalogRead(w io.Writer, pkg *storageformat.RecoveryPackage) error {
-	return writeFrame(w, readBegin, catalogRequest(pkg))
+func readRequest(pkg *storageformat.RecoveryPackage, kind byte, locator [32]byte) []byte {
+	request := append([]byte{kind}, pkg.Catalog.FolderID[:]...)
+	request = append(request, pkg.Catalog.AgreementID[:]...)
+	request = binary.BigEndian.AppendUint64(request, pkg.Generation)
+	return append(request, locator[:]...)
 }
 
 func readChallenge(r io.Reader) ([32]byte, error) {
@@ -47,7 +48,7 @@ func readChallenge(r io.Reader) ([32]byte, error) {
 		return [32]byte{}, providerError(payload)
 	}
 	if op != challengeOp || len(payload) != 32 {
-		return [32]byte{}, errors.New("expected CHALLENGE for the pending catalog read")
+		return [32]byte{}, errors.New("expected CHALLENGE for the pending read")
 	}
 	return [32]byte(payload), nil
 }

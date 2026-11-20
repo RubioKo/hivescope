@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package lan reads a HiveScope recovery catalog on a direct, authenticated LAN connection.
+// Package lan recovers HiveScope snapshots from a directly connected, authenticated provider.
 package lan
 
 import (
@@ -34,9 +34,17 @@ var ErrProviderIdentity = errors.New("provider identity differs from the recover
 // use can continue the exchange on that very stream before this call returns.
 // Receiving a challenge does not authorize a read or confirm a recovery.
 func WithCatalogChallenge(ctx context.Context, pkg *storageformat.RecoveryPackage, device crypto.PrivKey,
+	use func([32]byte, network.MuxedStream) error) error {
+	if pkg == nil {
+		return errors.New("missing unlocked recovery package")
+	}
+	return withReadChallenge(ctx, pkg, device, catalogRequest(pkg), use)
+}
+
+func withReadChallenge(ctx context.Context, pkg *storageformat.RecoveryPackage, device crypto.PrivKey, request []byte,
 	use func([32]byte, network.MuxedStream) error) (err error) {
-	if pkg == nil || use == nil || device == nil || device.Type() != crypto.Ed25519 {
-		return errors.New("catalog read requires an unlocked package, an Ed25519 device identity and a continuation")
+	if use == nil || device == nil || device.Type() != crypto.Ed25519 {
+		return errors.New("read requires an Ed25519 device identity and a continuation")
 	}
 	if !pkg.Endpoint.Addr().Is4() || pkg.Endpoint.Port() == 0 || pkg.Generation == 0 {
 		return errors.New("invalid endpoint or grant generation")
@@ -86,15 +94,15 @@ func WithCatalogChallenge(ctx context.Context, pkg *storageformat.RecoveryPackag
 	if err := stream.SetDeadline(time.Now().Add(30 * time.Second)); err != nil {
 		return err
 	}
-	if err := writeCatalogRead(stream, pkg); err != nil {
-		return fmt.Errorf("send catalog READ_BEGIN: %w", err)
+	if err := writeFrame(stream, readBegin, request); err != nil {
+		return fmt.Errorf("send READ_BEGIN: %w", err)
 	}
 	if err := stream.SetReadDeadline(time.Now().Add(30 * time.Second)); err != nil {
 		return err
 	}
 	challenge, err := readChallenge(stream)
 	if err != nil {
-		return fmt.Errorf("receive catalog challenge: %w", err)
+		return fmt.Errorf("receive read challenge: %w", err)
 	}
 	if err := stream.SetDeadline(time.Now().Add(60 * time.Second)); err != nil {
 		return err

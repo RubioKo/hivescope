@@ -18,6 +18,13 @@ import (
 
 const blockSize = 4 << 20
 
+// SealedObjectSize includes a 16-byte AES-GCM tag for every authenticated
+// block, including the single block of an empty file.
+func (s *Snapshot) SealedObjectSize() uint64 {
+	blocks := max(1, (s.size+blockSize-1)/blockSize)
+	return s.size + 16*blocks
+}
+
 func newGCM(key [32]byte) (cipher.AEAD, error) {
 	block, err := aes.NewCipher(key[:])
 	if err != nil {
