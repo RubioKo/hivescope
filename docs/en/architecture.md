@@ -1,11 +1,11 @@
-<!-- docs-pair: architecture; revision: 6 -->
+<!-- docs-pair: architecture; revision: 7 -->
 
 [English](architecture.md) | [Español](../es/architecture.md) | [Index](README.md)
 
 # Architecture and interfaces
 
 The proposed desktop node has a background service and a CLI. Go is the first
-language to evaluate. The repository currently provides design documents.
+language to evaluate. Its offline conformance tests exercise the first storage formats.
 
 ## Components
 

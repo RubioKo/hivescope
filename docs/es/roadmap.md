@@ -1,10 +1,10 @@
-<!-- docs-pair: roadmap; revision: 6 -->
+<!-- docs-pair: roadmap; revision: 7 -->
 
 [English](../en/roadmap.md) | [Español](roadmap.md) | [Índice](README.md)
 
 # Hoja de ruta y criterios de aceptación
 
-HiveScope está en diseño. Cada hito describe una entrega propuesta y la
+La primera prueba local del formato de almacenamiento pasó. Cada hito describe una entrega y la
 evidencia que deberán publicar los colaboradores. Las fechas de lanzamiento
 dependen de la revisión, del hardware disponible y de los voluntarios.
 
@@ -27,8 +27,8 @@ Empezar con una CLI de escritorio, un archivo sintético, un proveedor de
 almacenamiento en una LAN y un dispositivo de reemplazo con un perfil limpio.
 El diseño especifica el protocolo de red, los límites de recursos, las claves
 y los nonces, el paquete de recuperación y la persistencia de la revocación.
-La implementación empezará comparando los bytes de referencia localmente y
-después probará la subida y la recuperación en la LAN.
+Las pruebas en Go reproducen los bytes de referencia localmente. Queda por
+demostrar la subida y la recuperación en la LAN.
 [Procedimiento y criterios de aceptación](readiness.md)
 
 **Aceptación.** Apagar el equipo original. Con el paquete de recuperación, su

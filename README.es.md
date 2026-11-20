@@ -1,4 +1,4 @@
-<!-- docs-pair: home; revision: 10 -->
+<!-- docs-pair: home; revision: 11 -->
 
 [English](README.md) | Español
 
@@ -12,11 +12,12 @@ tu propio software o mantener un servidor para tu comunidad, la aplicación busc
 equipos que puedan ayudarte. Si quieres prestar recursos, eliges qué compartes, cuánto
 y cuándo. Las máquinas se encargan de coordinarlo.
 
-**HiveScope está en diseño.** Ya está definido el primer prototipo. Deberá recuperar
-un archivo cifrado en otra computadora y demostrar que una credencial revocada
-pierde el acceso. Quedan por delante la implementación y las pruebas en equipos.
+**La primera prueba de almacenamiento funciona sin red.** Con una muestra de cinco
+bytes, las pruebas en Go reproducen los formatos cifrados publicados y recuperan
+el contenido original en memoria. El primer prototipo deberá lograrlo en otra
+computadora y demostrar que un proveedor rechaza una credencial revocada.
 El cómputo privado y el alojamiento de servicios vendrán después.
-[Diseño del primer prototipo](docs/es/readiness.md) · [Visión del proyecto](docs/es/vision.md) · [Hoja de ruta](docs/es/roadmap.md)
+[Primer prototipo y resultados](docs/es/readiness.md) · [Visión del proyecto](docs/es/vision.md) · [Hoja de ruta](docs/es/roadmap.md)
 
 ![Un mapa mundial conecta tres escenas. Una viajera abre una carpeta privada en su celular, otra persona trabaja en su portátil y una voluntaria ofrece recursos desde su computadora de escritorio.](assets/story/worldwide-network.jpg)
 

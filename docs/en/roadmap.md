@@ -1,10 +1,10 @@
-<!-- docs-pair: roadmap; revision: 6 -->
+<!-- docs-pair: roadmap; revision: 7 -->
 
 [English](roadmap.md) | [Español](../es/roadmap.md) | [Index](README.md)
 
 # Roadmap and acceptance criteria
 
-HiveScope is in design. Each milestone below describes a proposed delivery and
+The first offline storage format test passes. Each milestone describes a delivery and
 the evidence contributors will need to publish. Release dates depend on
 review, available hardware and volunteers.
 
@@ -24,8 +24,8 @@ design and observable pass criteria. [Offer my computer](resource-offers.md) · 
 Start with a desktop CLI, one synthetic file, one storage provider on a LAN and
 a clean replacement device. The design specifies the wire protocol, resource
 limits, keys and nonces, recovery package and durable revocation. The first
-implementation will compare offline reference bytes, then exercise storage and
-retrieval on the LAN. [Trial procedure and acceptance record](readiness.md)
+Go tests reproduce the offline reference bytes. Storage and recovery on the
+LAN remain to be demonstrated. [Trial procedure and acceptance record](readiness.md)
 
 **Acceptance.** Turn off the original device. Using the saved recovery package,
 its password and a reachable provider, recover the file byte for byte. Revoke
