@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 3 -->
+<!-- docs-pair: readiness; revision: 4 -->
 
 [English](../en/readiness.md) | [Español](readiness.md) | [Índice](README.md)
 
@@ -79,6 +79,9 @@ la contraseña puede usarlo hasta que el proveedor reciba la revocación. Revoca
 solo la identidad de un dispositivo no invalida la clave de recuperación. Quien ya
 recibió datos o claves conserva esas copias.
 
+El [formato de recuperación v1 propuesto](recovery-format.md) detalla la estructura
+del paquete, los bytes que se firman en cada lectura y dos ejemplos con la misma exportación.
+
 ## Decisiones pendientes para la implementación
 
 La regla de primera lectura resuelve parte de la decisión 1. El trabajo pendiente
@@ -87,7 +90,7 @@ de cada fila requiere una especificación revisada en inglés y español.
 | Orden | Pregunta de diseño | Qué hace falta para empezar ese componente |
 | --- | --- | --- |
 | 1. Identidad y recuperación | ¿Cómo se desbloquean los secretos locales y se mantiene recuperable la clave administrativa separada? | Especificar la custodia y el desbloqueo local en cada sistema objetivo respetando el permiso de primera lectura y los casos de revocación. |
-| 2. Formato de archivos y catálogos | ¿Cómo se generan, protegen y recuperan las claves por versión? ¿Qué bytes vinculan cada bloque con su versión, posición y longitud? ¿Qué ocurre con el nonce y el contenido cifrado tras un reinicio? | Un formato binario versionado para el objeto cifrado, el catálogo y el paquete de recuperación, con ejemplos sintéticos de entrada y salida para un archivo vacío y otro de varios bloques. Incluir un bloque que no corresponde y una contraseña incorrecta. |
+| 2. Formato de archivos y catálogos | ¿Cómo se generan, protegen y recuperan las claves por versión? ¿Qué bytes vinculan cada bloque con su versión, posición y longitud? ¿Qué ocurre con el nonce y el contenido cifrado tras un reinicio? | Especificar el objeto cifrado y el catálogo que se abren con el paquete de recuperación. Dar ejemplos sintéticos de entrada y salida para un archivo vacío y otro de varios bloques, incluido un bloque que no corresponde. |
 | 3. Protocolo de transferencia | ¿Cómo reservan espacio los pares, envían, reanudan, confirman y recuperan un objeto? ¿Qué se firma exactamente? ¿Cómo distingue el proveedor un reintento de una solicitud nueva? | Una tabla de mensajes versionados con campos obligatorios, bytes firmados, tamaños de trama, límites de concurrencia y tiempo, errores, reintentos y vigencia del acuerdo durante la transferencia. Incluir una carga cuya confirmación se pierde en la red. |
 | 4. Disco y reinicios | ¿Cuándo puede confirmar el proveedor que el contenido quedó guardado de forma duradera? ¿Cómo compiten dos reservas por el último espacio libre? ¿Cómo se concilian el directorio de fragmentos y SQLite al reiniciar? | Una tabla de estados que cubra reserva, temporal, bytes verificados, índice persistido y confirmación. Documentar qué sobrevive a cada interrupción, cómo se contabiliza y cómo se liberan bytes o reservas huérfanos. |
 
@@ -125,7 +128,6 @@ doméstica, el tráfico de relay, el uso de disco y el impacto en batería en Wi
 Linux y macOS. El cómputo privado de propósito general y el alojamiento persistente
 tienen criterios propios en la [hoja de ruta](roadmap.md).
 
-**Siguiente contribución.** Especificar el formato versionado del paquete de
-recuperación y los bytes que se firman en la solicitud mediante ejemplos
-sintéticos. Usar los casos válido y revocado para comprobar que implementaciones
-independientes coinciden en lo que verifica el proveedor.
+**Siguiente paso de diseño.** Especificar el catálogo autenticado del ensayo con un
+solo archivo. Dar un ejemplo de cómo el equipo de reemplazo localiza el objeto,
+obtiene la clave de su versión y detecta un bloque sustituido antes de escribir en el destino.

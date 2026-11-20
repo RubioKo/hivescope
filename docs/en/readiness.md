@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 3 -->
+<!-- docs-pair: readiness; revision: 4 -->
 
 [English](readiness.md) | [Español](../es/readiness.md) | [Index](README.md)
 
@@ -73,6 +73,9 @@ new export. Anyone with the old package and password can use it until the
 provider learns of revocation. Revoking one device identity alone does not revoke
 the recovery key. Previously delivered bytes and keys remain with their holder.
 
+The [proposed v1 recovery format](recovery-format.md) gives the package layout,
+the exact bytes signed for each read and two examples using the same export.
+
 ## Decisions still needed for implementation
 
 The first-read rule above settles part of decision 1. The remaining work in
@@ -81,7 +84,7 @@ each row needs a reviewed specification in English and Spanish.
 | Order | Design question | Evidence needed to start that component |
 | --- | --- | --- |
 | 1. Identity and recovery | How are local secrets unlocked and the separate administrative key kept recoverable? | Specify custody and local unlock on each target OS. Use the scoped first-read grant and revocation cases above as constraints. |
-| 2. File and catalog format | How are version keys generated, wrapped and recovered? Which bytes bind a block to its version, position and length? What happens to the nonce and ciphertext after a restart? | A versioned byte layout for the encrypted object, catalog and recovery package, plus synthetic input/output vectors for an empty file and a multi-block file. Include a mismatched block and a wrong password. |
+| 2. File and catalog format | How are version keys generated, wrapped and recovered? Which bytes bind a block to its version, position and length? What happens to the nonce and ciphertext after a restart? | Specify the encrypted object and catalog that the recovery package opens. Give synthetic input/output vectors for an empty file and a multi-block file, including a mismatched block. |
 | 3. Transfer protocol | How do peers reserve, send, resume, acknowledge and retrieve an object? What precisely gets signed? How does a peer distinguish a retry from a new request? | A versioned message table with required fields, signed bytes, frame sizes, concurrency and time limits, error responses, retry rules and agreement validity during transfer. Include an acknowledged upload whose reply is lost. |
 | 4. Disk and restart behavior | At which point may a provider acknowledge durable storage? How do two reservations share the last free bytes? How does restart reconcile the fragment directory with SQLite? | A state table covering reservation, temporary file, verified bytes, durable index and acknowledgment. For each interruption, document what survives, what is charged and how orphaned bytes or reservations are reclaimed. |
 
@@ -117,6 +120,6 @@ desktop alpha will measure home connectivity, relay bandwidth, disk use and batt
 impact on Windows, Linux and macOS. General-purpose private computing and persistent
 hosting have separate acceptance criteria in the [roadmap](roadmap.md).
 
-**Next contribution.** Specify the versioned recovery package and signed request
-bytes with synthetic examples. Use the valid and revoked cases to check that
-independent implementations agree on exactly what the provider verifies.
+**Next design step.** Specify the authenticated catalog for the single-file
+trial. Give one entry showing how the replacement finds the object, obtains
+its version key and detects a substituted block before writing the destination.

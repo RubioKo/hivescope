@@ -1,4 +1,4 @@
-<!-- docs-pair: index; revision: 4 -->
+<!-- docs-pair: index; revision: 5 -->
 
 [English](../en/README.md) | [Español](README.md) | [Inicio del proyecto](../../README.es.md)
 
@@ -15,6 +15,7 @@ una solicitud desde la persona que necesita recursos hasta la máquina que los p
 - [Ofrecer mi equipo](resource-offers.md)
 - [Arquitectura e interfaces](architecture.md)
 - [Primera prueba de recuperación y decisiones pendientes](readiness.md)
+- [Paquete de recuperación y lecturas firmadas](recovery-format.md)
 - [Almacenamiento cifrado y mantenimiento](storage.md)
 - [Sincronización de carpetas](synchronization.md)
 - [Seguridad y modelo de amenazas](security.md)
