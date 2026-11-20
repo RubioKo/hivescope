@@ -1,4 +1,4 @@
-<!-- docs-pair: recovery-format; revision: 2 -->
+<!-- docs-pair: recovery-format; revision: 3 -->
 
 [English](../en/recovery-format.md) | [Español](recovery-format.md) | [Índice](README.md)
 
@@ -8,8 +8,10 @@
 original de Ana está apagada. Ana conserva su paquete de recuperación y su contraseña,
 y puede conectarse al proveedor que guardó su archivo cifrado. Con el paquete, el
 equipo nuevo identifica al proveedor, demuestra su derecho a leer y descifra el resultado
-localmente. El proveedor puede aceptar o rechazar cada lectura por separado. Los ejemplos
-describen el diseño de una futura herramienta de línea de comandos. [Primera prueba de recuperación](readiness.md)
+localmente. El proveedor puede aceptar o rechazar cada lectura por separado. El
+lector en Go abre el paquete localmente. La conexión entre pares y las decisiones
+de lectura descritas aquí corresponden al diseño de la futura herramienta de
+línea de comandos y del proveedor. [Primera prueba de recuperación](readiness.md)
 
 ## Qué conserva Ana
 
@@ -59,6 +61,14 @@ Este primer perfil usa identidades Ed25519 y conexiones directas TCP/IPv4. Si
 la generación o el puerto valen cero o una clave tiene un formato inválido,
 el equipo rechaza el paquete antes de conectarse. La clave de esa versión del
 archivo queda cifrada dentro del catálogo firmado. [Catálogo y verificación de bloques](file-catalog.md) · [Autenticación entre pares](https://github.com/libp2p/specs/blob/master/tls/tls.md)
+
+Tras autenticar la carga útil, se validan ambas claves públicas Ed25519 fijadas.
+Cada una debe representar un punto de la curva Edwards25519 cuya codificación
+canónica coincida con los 32 bytes originales. Se rechaza todo punto que dé el
+elemento neutro al multiplicarlo por el cofactor ocho. La semilla de recuperación
+y la clave simétrica de lectura de la carpeta son dos campos opacos de 32 bytes
+cada uno. Para comprobar las claves públicas, el lector en Go usa `SetBytes`,
+`Bytes` y `MultByCofactor`. [Decodificación de puntos Ed25519](https://www.rfc-editor.org/rfc/rfc8032#section-5.1.3) · [Operaciones sobre puntos en Go](https://pkg.go.dev/filippo.io/edwards25519@v1.2.0#Point)
 
 ## Qué firma el equipo de reemplazo
 

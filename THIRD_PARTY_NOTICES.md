@@ -26,6 +26,16 @@ Las cuatro ilustraciones conceptuales de `assets/story/` se crearon con OpenAI
 ImageGen para HiveScope. Las pantallas adaptan el motivo de siete celdas y el nombre
 del proyecto tal como aparecen en el banner de RubioKo. [Aviso MIT original](LICENSES/MIT-banner.txt)
 
+## Recovery package reader / Lector del paquete de recuperación
+
+The reader imports `filippo.io/edwards25519` v1.2.0 to validate the public keys
+in a recovery package. The module carries the BSD-3-Clause license and the
+copyright notice of The Go Authors (2009). [Module source and license](https://github.com/FiloSottile/edwards25519/blob/v1.2.0/LICENSE)
+
+El lector utiliza el módulo `filippo.io/edwards25519` v1.2.0 para validar las
+claves públicas del paquete de recuperación. El módulo conserva la licencia
+BSD-3-Clause y el aviso de copyright de The Go Authors (2009). [Fuente y licencia del módulo](https://github.com/FiloSottile/edwards25519/blob/v1.2.0/LICENSE)
+
 ## ECC reference / Referencia a ECC
 
 [ECC](https://github.com/affaan-m/ECC) is an external, MIT-licensed reference for

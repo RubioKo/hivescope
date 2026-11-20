@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 11 -->
+<!-- docs-pair: readiness; revision: 12 -->
 
 [English](readiness.md) | [Español](../es/readiness.md) | [Index](README.md)
 
@@ -105,6 +105,17 @@ manifest all fail their respective checks. [Object and catalog](../../internal/c
 
 A mathematically valid signature from an old key is part of the reference
 example. Rejecting its read after revocation requires a running provider.
+
+The Go entry point `WithRecoveryPackage` authenticates the package locally
+and checks its fields before handing control to the owner's recovery code.
+With the correct passphrase, the offline test reads the signed catalog and
+ciphertext from an in-memory provider and saves the five bytes of `hive.txt`.
+A wrong passphrase and a damaged tag return the same authentication error.
+In both cases the test counts zero provider reads and zero calls to save the
+destination. Its original five bytes, `keep\n`, survive and the restore state
+directory stays empty. This covers local package authentication
+in M1-04. Testing a remote peer with the wrong identity still requires a LAN
+connection. [Package reader](../../internal/storageformat/recovery.go) · [Recovery entry point tests](../../internal/conformance/recovery_reader_test.go)
 
 The Go reader verifies the signed catalog, authenticates each encrypted block
 and checks the object's total length and SHA-256 digest. It stages plaintext
