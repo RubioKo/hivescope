@@ -1,4 +1,4 @@
-<!-- docs-pair: architecture; revision: 1 -->
+<!-- docs-pair: architecture; revision: 2 -->
 
 [English](../en/architecture.md) | [Español](architecture.md) | [Índice](README.md)
 
@@ -97,9 +97,14 @@ y revisarse en el hito del núcleo seguro.
 
 Reutilizar identidad, transporte, límites y conceptos de acuerdo, aislando el
 runtime de cómputo del almacenamiento. No permitir programas arbitrarios enviados
-por pares. Comenzar con runtimes aprobados y modelos completos en proveedores
-capaces. Las cuotas de cómputo, la integridad de resultados y la privacidad de
-consultas necesitan su propia revisión de diseño.
+por pares. Las grabaciones privadas, incluidos los archivos sin clasificar, se
+transcribirían en el equipo del propietario con un modelo local. Si el equipo
+carece de recursos, el cliente informaría del problema y ofrecería reintentar allí.
+
+El servicio remoto propuesto aceptaría el identificador de una obra pública de
+un catálogo aprobado y ejecutaría un modelo completo en un entorno aprobado.
+El proveedor obtendría la obra directamente del catálogo. Quedan por revisar
+las cuotas y la integridad del resultado. [Decisión sobre la privacidad de las transcripciones](security.md#decisión-propuesta-sobre-la-transcripción)
 
 ## Referencias
 

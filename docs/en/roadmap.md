@@ -1,4 +1,4 @@
-<!-- docs-pair: roadmap; revision: 1 -->
+<!-- docs-pair: roadmap; revision: 3 -->
 
 [English](roadmap.md) | [Español](../es/roadmap.md) | [Index](README.md)
 
@@ -62,7 +62,21 @@ or its database. Publish measured results and unresolved problems, not an SLA.
 ## Later work
 
 A GUI follows a usable daemon. Public admission and global credits require
-additional abuse and accounting designs. Community AI starts with complete existing
-models on capable providers under separate compute agreements, then evaluates
-partitioned inference. Training a model is a separate initiative. None of these
+additional abuse and accounting designs. The community AI pilot would use recordings
+from an approved public catalog, complete open models and separate compute agreements.
+For private recordings, the goal is transcription on the owner's device. Before
+enabling it, use synthetic audio marked private to test that a local failure or retry
+keeps the audio and transcript on the device, even with a volunteer host available.
+Partitioned inference is a later research question. Training a model is a separate initiative. None of these
 capabilities is part of the current documentation delivery.
+
+### Community game server trial
+
+Explore round-the-clock play with low latency and no mandatory rental fee. Choose
+a game whose license permits community hosting of a dedicated server. Agree on an
+active host and a standby. Disconnect the active host mid-game and restore the
+latest available save on the standby. Check that players can reconnect and only
+one server accepts changes, even when the original host returns. Measure downtime,
+lost progress and player latency by region before and after the handover. Record
+electricity and connectivity costs and who covers them. Use the results to decide
+whether to trial other persistent services.

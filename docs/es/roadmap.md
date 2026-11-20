@@ -1,4 +1,4 @@
-<!-- docs-pair: roadmap; revision: 1 -->
+<!-- docs-pair: roadmap; revision: 3 -->
 
 [English](../en/roadmap.md) | [Español](roadmap.md) | [Índice](README.md)
 
@@ -64,7 +64,23 @@ problemas pendientes, no un SLA.
 
 La interfaz gráfica seguirá a un daemon utilizable. El ingreso público y los
 créditos globales necesitan diseños adicionales de abuso y contabilidad. La IA
-comunitaria comenzará con modelos existentes completos en proveedores capaces y
-acuerdos de cómputo independientes; después se evaluará inferencia por partes.
+comunitaria se probaría con grabaciones de un catálogo público aprobado, modelos
+abiertos completos y acuerdos de cómputo independientes. Para las grabaciones privadas,
+el objetivo es transcribir en el equipo del dueño. Antes de habilitar esa función,
+probar con audio ficticio marcado como privado que un fallo local o un reintento
+mantenga el audio y el texto en el dispositivo, incluso si hay un anfitrión disponible.
+La inferencia repartida entre varios equipos queda para una evaluación posterior.
 Entrenar un modelo es otra iniciativa. Ninguna de estas capacidades forma parte
 de la entrega documental actual.
+
+### Prueba de un servidor de juego comunitario
+
+Explorar si se puede jugar a cualquier hora con baja latencia y sin cuota
+obligatoria de alquiler. Elegir un juego cuya licencia permita alojar un servidor
+dedicado. Acordar un anfitrión activo y un relevo. Desconectar al primero durante
+la partida y restaurar en el relevo el último guardado disponible. Comprobar que
+los jugadores pueden reconectarse y que solo un servidor acepta cambios, incluso
+cuando vuelve el primero. Medir la interrupción, el progreso perdido y la latencia
+por región antes y después del relevo. Registrar los costes de electricidad y
+conexión y quién los asume. Con esos resultados, decidir si probar otros servicios
+persistentes.
