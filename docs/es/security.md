@@ -1,4 +1,4 @@
-<!-- docs-pair: security; revision: 1 -->
+<!-- docs-pair: security; revision: 2 -->
 
 [English](../en/security.md) | [Español](security.md) | [Índice](README.md)
 
@@ -51,6 +51,34 @@ retira texto descargado ni garantiza el servicio de voluntarios. Fallos simultá
 de hogares, acuerdos vencidos y pérdida de claves pueden impedir la recuperación.
 La inferencia distribuida tiene otras propiedades de privacidad y no debe heredar
 las afirmaciones del almacenamiento.
+
+## Decisión propuesta sobre la transcripción
+
+Tratar las grabaciones de una persona como privadas por defecto. Transcribirlas
+únicamente en el equipo del propietario. Durante el procesamiento, el audio,
+los extractos, los datos derivados, las instrucciones y la transcripción
+permanecen allí. Los registros, informes de fallos y datos de telemetría deben
+excluir ese contenido, las rutas privadas y las claves. Si falta el modelo,
+se agota la memoria o falla la tarea, informar del problema en el propio equipo.
+Los reintentos siguen la misma regla. Una copia de seguridad solicitada por
+separado puede enviar fragmentos cifrados bajo un acuerdo de almacenamiento.
+
+Para el cómputo voluntario se propone usar material ya publicado en un
+catálogo público aprobado. Una solicitud remota elige el identificador de una
+obra del catálogo y una operación aprobada. El operador puede leer la entrada
+pública y el resultado. Aprobar a un anfitrión o marcar una casilla de envío
+no convierte un archivo privado en material del catálogo. El procesamiento
+remoto de material privado sigue siendo una cuestión de investigación.
+Quien comprometa el equipo del propietario aún podría leer los datos locales.
+
+**Prueba de aceptación futura.** Dar a una grabación privada sintética una frase
+hablada y un nombre de archivo distintivos. Con el modelo instalado, transcribirla
+sin conexión. Después, ofrecer un equipo remoto, agotar los recursos locales y
+reintentar tras recuperar la conexión. Inspeccionar las solicitudes salientes en
+el equipo de origen y la cola del proveedor. La primera transcripción debe quedar
+en el equipo y ninguno de los intentos debe solicitar trabajo remoto. Buscar la
+frase y la ruta privada en los registros, informes de fallos y datos de telemetría.
+Repetir con una grabación sin clasificar.
 
 ## Informar un problema
 

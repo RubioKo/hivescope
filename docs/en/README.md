@@ -1,4 +1,4 @@
-<!-- docs-pair: index; revision: 1 -->
+<!-- docs-pair: index; revision: 2 -->
 
 [English](README.md) | [Español](../es/README.md) | [Project home](../../README.md)
 
@@ -10,6 +10,7 @@ contracts below describe intended behavior; there is no running service yet.
 ## Design
 
 - [Vision and boundaries](vision.md)
+- [Offer my computer](resource-offers.md)
 - [Architecture and interfaces](architecture.md)
 - [Encrypted storage and maintenance](storage.md)
 - [Folder synchronization](synchronization.md)
