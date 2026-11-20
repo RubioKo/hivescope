@@ -1,4 +1,4 @@
-<!-- docs-pair: index; revision: 7 -->
+<!-- docs-pair: index; revision: 8 -->
 
 [English](README.md) | [Español](../es/README.md) | [Project home](../../README.md)
 
@@ -14,10 +14,13 @@ one request from the person asking for resources to the machine lending them.
 - [Vision and boundaries](vision.md)
 - [Offer my computer](resource-offers.md)
 - [Architecture and interfaces](architecture.md)
-- [First recovery test and open design decisions](readiness.md)
+- [First prototype design and acceptance record](readiness.md)
+- [Identity, grants and key custody](identity-custody.md)
 - [Recovery package and signed reads](recovery-format.md)
 - [How recovery identifies and verifies the file](file-catalog.md)
 - [When a provider can confirm an upload](upload-confirmation.md)
+- [LAN transfer protocol and limits](lan-protocol.md)
+- [Provider persistence and restart cases](provider-persistence.md)
 - [Encrypted storage and maintenance](storage.md)
 - [Folder synchronization](synchronization.md)
 - [Security and threat model](security.md)

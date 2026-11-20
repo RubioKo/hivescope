@@ -1,4 +1,4 @@
-<!-- docs-pair: roadmap; revision: 5 -->
+<!-- docs-pair: roadmap; revision: 6 -->
 
 [English](../en/roadmap.md) | [Español](roadmap.md) | [Índice](README.md)
 
@@ -15,27 +15,28 @@ el modelo de amenazas y la hoja de ruta. Conservar en ambas portadas el selector
 de idioma, el relato ilustrado, las vías de contribución y el canal privado de
 seguridad.
 
-**Aceptación.** Preguntar a alguien que descubre HiveScope qué puede solicitar o
-prestar, quién controla el software de una sesión, quién fija los límites de la
-máquina física y qué sucede si falta un anfitrión con protección adecuada.
-Registrar las dudas y revisar ambas versiones. [Ofrecer mi equipo](resource-offers.md)
+**Aceptación documental.** Las dos portadas explican qué se puede solicitar o
+prestar, quién controla una sesión, quién fija los límites físicos y dónde
+quedan las claves si falta un anfitrión compatible. El primer ensayo de
+almacenamiento tiene un diseño enlazado y criterios observables de aceptación.
+[Ofrecer mi equipo](resource-offers.md) · [Diseño del primer prototipo](readiness.md)
 
 ## Hito 1 — Primera copia recuperable
 
 Empezar con una CLI de escritorio, un archivo sintético, un proveedor de
 almacenamiento en una LAN y un dispositivo de reemplazo con un perfil limpio.
-Antes de implementar, especificar los mensajes de protocolo, los límites de
-recursos, el manejo de claves y nonces, la protección local de secretos y el
-paquete de recuperación. El borrador de diseño explica cómo acredita el equipo
-nuevo su derecho a leer y cómo el proveedor recuerda una revocación.
-[Primera prueba de recuperación y decisiones pendientes](readiness.md)
+El diseño especifica el protocolo de red, los límites de recursos, las claves
+y los nonces, el paquete de recuperación y la persistencia de la revocación.
+La implementación empezará comparando los bytes de referencia localmente y
+después probará la subida y la recuperación en la LAN.
+[Procedimiento y criterios de aceptación](readiness.md)
 
 **Aceptación.** Apagar el equipo original. Con el paquete de recuperación, su
 contraseña y un proveedor accesible, recuperar un archivo idéntico byte por byte.
 Revocar la credencial, esperar la confirmación del proveedor, reiniciarlo y
 reintentar con el paquete antiguo. Tanto la lectura del catálogo como la del
 objeto deben devolver cero bytes. Probar también transferencias interrumpidas,
-una contraseña incorrecta y datos corruptos. Una recuperación fallida conserva
+una contraseña incorrecta y datos corruptos. Una verificación fallida conserva
 cualquier archivo ya existente en el destino. Un único proveedor permite
 verificar una copia que todavía depende de ese equipo.
 

@@ -1,4 +1,4 @@
-<!-- docs-pair: index; revision: 7 -->
+<!-- docs-pair: index; revision: 8 -->
 
 [English](../en/README.md) | [Español](README.md) | [Inicio del proyecto](../../README.es.md)
 
@@ -14,10 +14,13 @@ una solicitud desde la persona que necesita recursos hasta la máquina que los p
 - [Visión y límites](vision.md)
 - [Ofrecer mi equipo](resource-offers.md)
 - [Arquitectura e interfaces](architecture.md)
-- [Primera prueba de recuperación y decisiones pendientes](readiness.md)
+- [Diseño y criterios de aceptación del primer prototipo](readiness.md)
+- [Identidad, permisos y custodia de claves](identity-custody.md)
 - [Paquete de recuperación y lecturas firmadas](recovery-format.md)
 - [Cómo se identifica y verifica el archivo al recuperarlo](file-catalog.md)
 - [Cuándo puede el proveedor confirmar una subida](upload-confirmation.md)
+- [Protocolo y límites de transferencia en la LAN](lan-protocol.md)
+- [Persistencia del proveedor y casos de reinicio](provider-persistence.md)
 - [Almacenamiento cifrado y mantenimiento](storage.md)
 - [Sincronización de carpetas](synchronization.md)
 - [Seguridad y modelo de amenazas](security.md)

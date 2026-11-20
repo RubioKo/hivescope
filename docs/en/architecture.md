@@ -1,4 +1,4 @@
-<!-- docs-pair: architecture; revision: 5 -->
+<!-- docs-pair: architecture; revision: 6 -->
 
 [English](architecture.md) | [Español](../es/architecture.md) | [Index](README.md)
 
@@ -69,10 +69,10 @@ replicates encrypted catalogs so a replacement can recover without the original
 database. [Upload confirmation and lost replies](upload-confirmation.md)
 
 The CLI and later GUI share operations for resource profiles, requests, pause,
-status, folder authorization and recovery. P2P protocols are versioned, with
-Protobuf messages and bounded streaming frames. Reject unknown versions and
-oversized requests before reserving resources. The following contracts describe
-the behavior to specify and test before choosing a wire encoding.
+status, folder authorization and recovery. The first LAN exchange uses a versioned
+stream, a bounded Protobuf envelope and explicitly defined bytes for signatures.
+The semantics below span multiple milestones. The LAN profile specifies its own
+messages and limits. [LAN protocol](lan-protocol.md) · [Provider persistence](provider-persistence.md)
 
 | Contract | Required meaning |
 | --- | --- |
@@ -92,15 +92,15 @@ the appropriate folder secrets over an authenticated channel. Revoking a device
 starts a new authorization epoch and rotates keys for future versions. Content
 already read by that device may remain in its possession.
 
-The milestone 1 design under review gives a replacement device a narrow grant
+The milestone 1 design gives a replacement device a narrow grant
 to retrieve encrypted objects and the catalog. The encrypted recovery package
 contains the recovery signing key, decryption material and provider locator
 and fingerprint. The owner keeps the administrative signing key separately.
 The provider verifies a fresh proof of possession and the current grant. After
 acknowledging revocation it must still refuse the old grant after a restart.
-The package format and local secret protection need review before implementation.
 Enrolling the replacement as a permanent reader requires separate authorization.
-[First-read grant, revocation and recovery tests](readiness.md)
+The LAN trial defines key custody, the recovery package and the outcomes a
+working prototype must demonstrate. [Identity and key custody](identity-custody.md) · [Recovery format](recovery-format.md) · [Acceptance record](readiness.md)
 
 ## Private compute and persistent services
 

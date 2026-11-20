@@ -1,125 +1,102 @@
-<!-- docs-pair: readiness; revision: 6 -->
+<!-- docs-pair: readiness; revision: 7 -->
 
 [English](readiness.md) | [Español](../es/readiness.md) | [Index](README.md)
 
-# Is HiveScope ready for its first prototype?
+# First prototype design and acceptance record
 
-The [architecture](architecture.md) defines the node, roles, trust boundaries,
-data flow and storage model. The [roadmap](roadmap.md) sets the milestones.
-Contributors can start specifying the secure core now. Implementing each part
-requires settling the corresponding contract below. The current CI checks
-documentation. Reliability, interoperability and recovery require running software.
+Ana's computer has stopped working. Can she recover one file on another
+computer using only her recovery package, its passphrase and the provider
+that holds the encrypted copy? Can that same provider refuse the same package
+after it has acknowledged revocation and restarted? These two outcomes define
+the first desktop prototype.
 
-## First recovery from one storage provider
+**Documentary status.** The LAN trial has a bilingual design, public synthetic
+reference values and an acceptance procedure. The project has yet to run a
+HiveScope client or provider. A documentation check covers the documents and
+links. Only observations from a running build can establish a recovery, a
+revocation or durability on a particular filesystem.
 
-**Proposed scope for milestone 1.** Use one owner's device, one storage provider
-at a known LAN address and a direct connection. A third, clean device profile represents
-the owner after losing the original device. A single provider keeps a complete
-encrypted object and a minimal authenticated catalog that points to it. Losing
-that provider makes this demonstration unavailable. The three-provider placement
-policy and the `protected` state belong to milestone 3.
+## Scope and contracts
 
-1. The peers authenticate each other. The provider checks the request against its
-   local resource profile and reserves capacity under a storage agreement. The client
-   records the provider's identity for recovery. The test supplies its address directly.
-2. The owner encrypts a synthetic file and uploads it and the catalog. The
-   provider uses the reservation, persists the bytes and acknowledges the operation.
-3. The owner exports a password-protected recovery package. Switch off the original
-   device and start with an empty local database and a fresh device identity.
-4. Using only the package, its password and the reachable provider, recover the
-   file. Compare every byte with an independent test fixture. Record which
-   credential authorized retrieval and which local information was required.
+Use one owner profile, one provider at a known IPv4/TCP address and one clean
+replacement profile with its own new device identity. Isolate the profiles so
+the replacement cannot access the original database, OS key store, source
+file, cached ciphertext or administrative backup. The provider stores one
+complete encrypted object and its signed, encrypted catalog. A single provider
+can disconnect, lose its disk or return an older snapshot. Ana needs an
+independent copy of anything valuable throughout the trial.
 
-## How a replacement device earns its first read
-
-**Design decision for review.** The provider accepts proof of possession of a
-recovery signing key that the owner registered for one folder and one storage
-agreement. Its only permission is to fetch that folder's encrypted catalog and
-the encrypted objects covered by the agreement. This lets the owner recover a
-copy after losing a device while keeping administrative authority separate.
-
-| Who | What they hold and do |
+| Decision | Where the implementer finds the contract |
 | --- | --- |
-| Owner | At agreement setup, both parties pin the folder authority's public key. The owner uses its private key to sign the initial recovery grant and later replacements or revocations. The owner keeps that administrative key separately from the recovery package. |
-| Provider | Stores the signed grant with the opaque folder and agreement IDs, provider identity, recovery public key, read scope and generation. Persists the highest accepted generation and its active or revoked status. |
-| Replacement device | Creates its own device identity. The password unlocks the package locally. It contains the recovery signing key and grant reference (including its generation), folder decryption and catalog verification material, an opaque catalog locator, and the storage provider's connection details and pinned fingerprint. |
+| Who can write, recover or revoke? | Trusted LAN setup pins the peers and folder authority. The read grant has a generation and a narrow scope. The owner keeps administrative recovery separate from file recovery. [Identity and key custody](identity-custody.md) |
+| What does the replacement bring? | One 255-byte password-protected package identifies a snapshot, its provider and the secrets needed for a read. Each catalog or object read needs a fresh proof. [Recovery format and reference signatures](recovery-format.md) |
+| Which bytes belong to the file? | The authenticated catalog supplies the object locator, version key and expected length and digest. A private temporary destination holds verified plaintext until publication. [File and catalog format](file-catalog.md) |
+| What do the peers exchange? | The versioned direct-LAN protocol specifies bounded messages, deadlines, authentication, grant updates and error handling. [LAN protocol](lan-protocol.md) |
+| When may the client say the upload is confirmed? | One reservation covers both sealed items. The client checks the provider's signed receipt against its saved manifest. Repeating the same request returns the recorded outcome. [Upload confirmation](upload-confirmation.md) |
+| Which state must survive a restart? | The reference provider orders file and directory flushes, the SQLite commit, acknowledgment and cleanup. Physical admission includes temporary and metadata space. [Provider persistence and interruption cases](provider-persistence.md) |
 
-1. The new device checks the provider fingerprint on an authenticated libp2p
-   connection. The provider can challenge this new peer before granting any read.
-   [libp2p peer authentication](https://github.com/libp2p/specs/blob/master/tls/tls.md)
-2. For each catalog or object read, the provider issues a fresh, short-lived,
-   single-use challenge on that connection. The device signs it with the recovery
-   key, binding the recovery-read operation, both peer identities, agreement,
-   folder, grant generation and requested opaque locator. The password and
-   private keys stay on the device.
-3. Before sending bytes the provider consumes the challenge once, checks the
-   signature against its stored active key, matches the request to that connection
-   and grant, and checks the requested item and the agreement's read window.
-   Existing data is readable during the [agreement's grace period](storage.md).
-   Missing authorization state, a stale grant or an out-of-scope request is denied.
-   A successful read grants no write, renewal or device-enrollment rights.
-4. The device verifies and decrypts the catalog, then requests its encrypted
-   object under the same checks. It authenticates the recovered contents before
-   replacing the destination. An old export and a single provider cannot
-   establish that the catalog is the latest version.
+## Walk through one recovery
 
-The provider verifies grant records with the folder authority pinned at setup.
-It accepts changes only at a higher generation for the same scope. To revoke,
-the owner signs a record marking the grant revoked.
-The provider acknowledges it after persisting the change and invalidating
-outstanding challenges for the old grant. Restart discards outstanding challenges
-and retains the revocation. A replacement grant uses a new key and requires a
-new export. Anyone with the old package and password can use it until the
-provider learns of revocation. Revoking one device identity alone does not revoke
-the recovery key. Previously delivered bytes and keys remain with their holder.
+1. **Offer space.** The operator selects a local volume, a disk budget and
+   availability on the provider. On the controlled LAN, provision the agreement
+   and check the public fingerprints separately. Enable the owner's recovery
+   grant. Future community discovery can use the same separation of write and
+   read authority. [Resource offers](resource-offers.md)
+2. **Store a snapshot.** Start with the synthetic file `hive.txt`. The owner
+   seals the object and catalog, records the request locally and reserves space
+   for both. If the reply disappears, the owner sees **awaiting confirmation**
+   and queries the same request. Mark **upload confirmed** only after verifying
+   and saving the receipt. The five input bytes produce 21 object bytes and
+   250 catalog bytes, plus separate disk overhead.
+3. **Prepare for loss.** Explicitly export the snapshot's recovery package.
+   Keep the package and passphrase available separately. Turn off the original
+   profile. Keep the independent reference bytes with the test observer, outside
+   the replacement profile.
+4. **Recover.** Select the package and a local destination on the clean device.
+   Unlock locally, authenticate the pinned provider, then prove the active
+   grant separately for the catalog and object. Verify the catalog, every block,
+   length and digest before publishing to the selected destination. Display
+   **recovered** only after successful publication. Compare the output with the
+   independent reference.
+5. **Exercise revocation.** In a separate run from the same starting state,
+   sign the revocation with the folder authority, wait for the provider's
+   durable acknowledgment, restart it and unlock its profile. Reconnect to the
+   pinned provider. For each locator obtain a new challenge and submit a valid
+   signature with the old key. Both must return `DENIED` with zero payload bytes. Bytes
+   delivered before revocation remain in their recipient's possession.
 
-The [proposed v1 recovery format](recovery-format.md) gives the package layout,
-the exact bytes signed for each read and two examples using the same export.
+## Acceptance record for the first implementation
 
-## Decisions still needed for implementation
+Use synthetic inputs throughout. The identifiers below let a contributor record
+each result against a build. Every row currently awaits execution.
 
-The first-read rule above settles part of decision 1. The remaining work in
-each row needs a reviewed specification in English and Spanish.
-
-| Order | Design question | Evidence needed to start that component |
+| ID | Trial | Evidence to retain |
 | --- | --- | --- |
-| 1. Identity and recovery | How are local secrets unlocked and the separate administrative key kept recoverable? | Specify custody and local unlock on each target OS. Use the scoped first-read grant and revocation cases above as constraints. |
-| 2. File and catalog format | The [single-file catalog proposal](file-catalog.md) specifies the version key, encrypted blocks and retry rules. | Reference values cover a five-byte file, an empty file, a two-block file and a substituted record. A future CLI must reproduce them and demonstrate that a failed restore preserves the destination. |
-| 3. Transfer protocol | The [upload contract](upload-confirmation.md) defines the request identity, signed receipt and retry outcomes. | Specify the versioned messages for reservation, transfer, status and finalization, including frame sizes, concurrency, time limits and errors. |
-| 4. Disk and restart behavior | The upload contract specifies the commit point and how to reconcile the two files, index and quota. | Demonstrate durability on each supported filesystem. Interrupt the provider on both sides of commit and verify visibility, accounting and receipt replay after restart. |
+| M1-01 | Compare the published package, read transcripts, catalog, object and receipt with a local implementation before networking. | Exact lengths, digests and signature checks agree with the reference values. A substituted block fails verification. |
+| M1-02 | Use the active generation 7 package after loss of the original profile. Repeat with an empty file and with a file of 4 MiB + 1 byte. | The replacement receives both items and restores the exact expected bytes. The empty file still authenticates its one block. |
+| M1-03 | Acknowledge generation 8 revocation, restart and unlock the provider. Try both old locators independently with fresh, correctly signed challenges. Separately replay a consumed challenge. | The authenticated provider explicitly returns `DENIED` on each old-grant read with zero payload bytes. A replay authorizes no read. The existing five-byte destination stays intact. |
+| M1-04 | Try a wrong passphrase, a damaged export and an endpoint presenting a different provider key. | A package authentication failure ends locally. An identity mismatch stops before a read challenge. The destination stays intact. |
+| M1-05 | Cut the connection mid-item, then in a separate run lose the final reply after commit. Retry with the same request and with a changed manifest. | An incomplete item restarts at byte zero. The committed request returns the identical receipt, two locator mappings and one charge. The changed manifest gets a conflict. |
+| M1-06 | Race two distinct requests by the enrolled uploader for the last space, pause new offers, cancel a reservation and let another expire. | At most one reservation wins the final space. Status survives retry. Occupied space is accounted for until cleanup is durable. |
+| M1-07 | Interrupt before and after each publication boundary in the persistence contract. Remove or corrupt a committed file in a disposable copy. | Each restart returns the specified visibility, accounting and receipt. A damaged committed copy reports unavailable. Record process interruptions and storage power-loss trials separately. |
+| M1-08 | Use a wrong-scope read, an over-limit frame, a truncated object and a full destination volume. | The peer enforces its limits. No failed verification publishes partial plaintext. Record the preserved destination digest. |
+| M1-09 | Lock the OS key store, restart the provider and restore the separate authority backup in an isolated owner profile. | Locked keys prevent the operations that need them. After unlock, identity and highest accepted generation persist. The restored authority can sign an update. The file recovery package alone cannot. |
+| M1-10 | Try an elapsed write agreement within its read grace period, then after grace. Disconnect the only provider. | New writes stop at expiry. Eligible reads succeed during grace and stop at closure. The client reports an unreachable provider without claiming the copy is lost or recovered. |
 
-Three implementation details inform these decisions. Go's AEAD interface requires
-nonce uniqueness for each key. Protobuf serialization does not guarantee canonical
-bytes for a signature. SQLite's transaction guarantee applies to its database
-changes. HiveScope also writes fragment files outside that database.
-[Go AEAD](https://pkg.go.dev/crypto/cipher#AEAD) ·
-[Protobuf serialization](https://protobuf.dev/programming-guides/serialization-not-canonical/) ·
-[SQLite atomic commit](https://sqlite.org/atomiccommit.html)
+For each run record the case ID, build commit, OS, filesystem, fixture name,
+initial state, interruption point, expected and observed outcome, and pass,
+fail or unrun. Count payload bytes and committed reservations when those are
+the claim. Use synthetic identifiers in reports. Keep passphrases, keys, export
+contents, private paths and identifying logs out of the evidence. One successful
+read exercises one snapshot. Repeat on each platform before claiming support.
 
-## Evidence to collect from the prototype
+## Handoff to implementation
 
-These scenarios are planned. Record the build, operating system, inputs and
-observed outcome when the first implementation can run them.
+The first coding task is an **offline Go conformance test** for the five-byte
+fixture. It can check exact bytes before transport or disk behavior can obscure
+a format error. The next executable slice uses that same fixture with the
+provider and a clean replacement. Implementation starts in a separate change.
 
-| Scenario | Observable success |
-| --- | --- |
-| Upload an empty file and a file of 4 MiB + 1 byte | Retrieval preserves length and exact bytes across the block boundary. |
-| Disconnect after the provider commits but before the client sees the reply | Repeating the operation completes with one stored object and one quota charge. |
-| Interrupt between writing the file and updating the index | Restart settles or releases the reservation. Every acknowledged object is readable after restart. |
-| Two concurrent uploads compete for capacity sufficient for one | At most one completes. Physical usage including temporary files stays inside the agreed limits. |
-| Supply a corrupted block, an unapproved reader or a wrong recovery password | Each case reports failure and preserves any existing destination file. |
-| Valid grant. With the original device offline and an empty replacement profile, use only the package, password and reachable provider. | The new identity receives the catalog and object after proving possession. The recovered file matches the independent fixture byte for byte. |
-| Revoked grant. Starting from the same fixture, have the provider acknowledge the owner's revocation, restart it, and leave the original device offline. Retry from a clean profile with the old package and password. | Even a correct signature on a fresh challenge with the old key yields zero catalog or object bytes. Check both locators independently. The existing destination file stays intact. |
-
-## What can wait
-
-Milestone 2 adds automatic placement using replaceable directories and tests
-concurrent reservations and retries between previously unknown peers. Milestone 3
-tests 2+1 repair, audit costs, offline conflicts and filename portability. The
-desktop alpha will measure home connectivity, relay bandwidth, disk use and battery
-impact on Windows, Linux and macOS. General-purpose private computing and persistent
-hosting have separate acceptance criteria in the [roadmap](roadmap.md).
-
-**Next design step.** Define the messages exchanged during this upload. Specify
-how the client reserves space, sends each item, finalizes the pair and asks for
-status, with bounded frames, timeouts and an actionable response for each error.
+Automatic discovery and matching belong to milestone 2. Three-provider
+redundancy and repair, desktop GUI and mobile access, private compute and
+persistent services each have their own scope and evidence. [Roadmap](roadmap.md)

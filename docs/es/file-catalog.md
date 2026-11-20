@@ -1,4 +1,4 @@
-<!-- docs-pair: file-catalog; revision: 1 -->
+<!-- docs-pair: file-catalog; revision: 2 -->
 
 [English](../en/file-catalog.md) | [Español](file-catalog.md) | [Índice](README.md)
 
@@ -87,8 +87,22 @@ de la clave de firma que el cliente usa para la recuperación. [Ed25519](https:/
    sistema de archivos de destino. Si faltan o sobran bytes, una etiqueta es inválida
    o la huella difiere, la recuperación falla. Solo cuando se han verificado la
    longitud final, todas las etiquetas y la huella se publica el archivo de forma
-   atómica en el destino elegido. En caso de fallo, el cliente elimina el temporal
-   que creó y conserva cualquier archivo previo en el destino. [Política de almacenamiento](storage.md)
+   atómica en el destino elegido. Un fallo de escritura o verificación anterior
+   a la publicación conserva el destino previo. Limpiar únicamente el temporal
+   creado para esta operación.
+
+En el ensayo de referencia, Ana elige un destino en un directorio local privado.
+Si ya existe un archivo, se requiere su elección expresa para reemplazarlo.
+Sincronizar el temporal verificado antes del cambio de nombre atómico en el
+mismo sistema de archivos. Sincronizar después el directorio padre antes de
+informar que la recuperación terminó. Si falla esa última sincronización,
+indicar **publicación incierta**. El archivo completo y verificado puede estar
+ya visible. Al reabrir, recuperar la misma versión autenticada en otro temporal
+privado y compararlo byte por byte con el destino. Si coinciden, sincronizar el
+destino y su directorio antes de confirmar. Si el proveedor está inaccesible,
+mantener el resultado como incierto. Si los bytes difieren, conservar el
+destino y pedir uno nuevo. Registrar por separado una
+recuperación interrumpida y un fallo de autenticación. [Supuestos del proveedor y del sistema de archivos](provider-persistence.md)
 
 ## Tres entradas de catálogo reproducibles
 

@@ -1,4 +1,4 @@
-<!-- docs-pair: architecture; revision: 5 -->
+<!-- docs-pair: architecture; revision: 6 -->
 
 [English](../en/architecture.md) | [Español](architecture.md) | [Índice](README.md)
 
@@ -72,11 +72,11 @@ reinicio. El hito de redundancia replica los catálogos cifrados para poder
 recuperar datos sin la base original. [Confirmación de subida y respuesta perdida](upload-confirmation.md)
 
 La CLI y la futura interfaz gráfica compartirán operaciones para perfiles,
-solicitudes, pausa, estado, permisos de carpeta y recuperación. Los protocolos
-P2P llevarán versión, mensajes Protobuf y tramas de transferencia acotadas. Se
-rechazarán las versiones desconocidas y los mensajes excesivos antes de reservar
-recursos. Los contratos describen el comportamiento que habrá que especificar y
-probar antes de elegir la codificación.
+solicitudes, pausa, estado, permisos de carpeta y recuperación. El primer intercambio
+en la LAN usará un flujo versionado, un mensaje contenedor Protobuf de tamaño
+acotado y bytes definidos para cada firma. Los contratos siguientes abarcan
+varios hitos. El perfil de LAN especifica sus propios mensajes y límites.
+[Protocolo de la LAN](lan-protocol.md) · [Persistencia del proveedor](provider-persistence.md)
 
 | Contrato | Significado requerido |
 | --- | --- |
@@ -96,15 +96,15 @@ y transfiere los secretos de carpeta que le corresponden por un canal autenticad
 Revocar un equipo inicia una época de autorización y rota las claves para
 versiones futuras. El contenido ya leído puede seguir en poder de ese equipo.
 
-El diseño del hito 1 en revisión concede al equipo de reemplazo un permiso limitado
+El diseño del hito 1 concede al equipo de reemplazo un permiso limitado
 para recuperar objetos cifrados y el catálogo. El paquete cifrado contiene la clave
 de firma de recuperación, material de descifrado, localizador y huella del proveedor.
 El dueño guarda por separado la clave de firma administrativa. El proveedor verifica
 una prueba reciente de posesión y la autorización vigente. Una vez confirmada una
 revocación, tiene que seguir rechazando la autorización antigua tras un reinicio.
-El formato del paquete y la protección local de los secretos requieren revisión
-antes de implementar. Incorporar el equipo nuevo como lector permanente requiere
-una autorización aparte. [Primera lectura, revocación y pruebas de recuperación](readiness.md)
+Incorporar el equipo nuevo como lector permanente requiere una autorización
+aparte. El ensayo en LAN define la custodia de claves, el paquete de recuperación
+y los resultados que deberá demostrar el prototipo. [Identidad y custodia de claves](identity-custody.md) · [Formato de recuperación](recovery-format.md) · [Criterios de aceptación](readiness.md)
 
 ## Cómputo privado y servicios persistentes
 

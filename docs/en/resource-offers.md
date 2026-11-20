@@ -1,4 +1,4 @@
-<!-- docs-pair: resource-offers; revision: 3 -->
+<!-- docs-pair: resource-offers; revision: 4 -->
 
 English | [Español](../es/resource-offers.md) | [Index](README.md)
 
@@ -73,8 +73,9 @@ The requester checks the last receipt, result or save before reporting recovery.
 
 ## How to test the design
 
-- Show both choices to a newcomer. Ask what they can request or lend, who chooses
-  the software and limits, and what happens when suitable hardware is unavailable.
+- Check the request and offer descriptions against the local profile. The requester
+  chooses the software, the host sets physical limits and the requester retains
+  the keys while suitable hardware is unavailable.
 - Start with offering turned off. Activate a disk-only profile, request CPU, then
   request disk outside its schedule. Check that neither request occupies capacity.
 - Interrupt a transfer after the host has stored it but before the requester

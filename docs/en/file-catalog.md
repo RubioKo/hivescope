@@ -1,4 +1,4 @@
-<!-- docs-pair: file-catalog; revision: 1 -->
+<!-- docs-pair: file-catalog; revision: 2 -->
 
 [English](file-catalog.md) | [Español](../es/file-catalog.md) | [Index](README.md)
 
@@ -80,8 +80,20 @@ signing key is separate from the client's recovery signing key.
    temporary file on the destination filesystem. A short read, extra byte,
    bad tag or digest mismatch fails the recovery. Only after the final length,
    tags and digest match does it atomically publish the chosen destination.
-   On failure it cleans up its own temporary file and preserves any previous
-   destination. [Storage policy](storage.md)
+   Write or verification failure before publication leaves the old destination
+   intact. Clean up only this operation's owned temporary file.
+
+For the reference restore, Ana selects a destination in a private local
+directory. Require an explicit replacement choice if a file already exists.
+Flush the verified temporary file before the atomic rename on the same
+filesystem, then flush the parent directory before reporting recovery complete.
+If that last flush fails, report **publication uncertain**. A complete verified
+file may already be visible. On reopening, recover the same authenticated
+snapshot to a separate private temporary file and compare the destination
+byte for byte. If they match, flush the destination and parent before confirming.
+If recovery is unavailable, keep the outcome uncertain. If the bytes differ,
+leave the destination intact and ask for a new one. Record an
+interrupted restore separately from a failed authentication. [Provider and filesystem assumptions](provider-persistence.md)
 
 ## Three reproducible catalog entries
 

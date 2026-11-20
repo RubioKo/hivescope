@@ -1,4 +1,4 @@
-<!-- docs-pair: security; revision: 3 -->
+<!-- docs-pair: security; revision: 4 -->
 
 [English](security.md) | [Español](../es/security.md) | [Index](README.md)
 
@@ -43,6 +43,14 @@ or sessions. The node must authenticate the peer and authorize each operation.
 - Persist authorization epochs and remembered version heads to limit rollback.
   A stale export and an outdated provider can still conceal a newer version.
   A provider that acknowledged revocation must retain that decision over restart.
+
+In the first LAN trial the operator checks public pins during enrollment. A
+storage receipt can establish what this provider signed. It cannot establish
+that the host retained every byte or that its entire disk image has never
+been rolled back. An unlocked, compromised owner profile can expose the
+plaintext it handles. The trial gives specific outcomes for a lost device,
+a revoked grant, a corrupted copy and an unavailable provider. These remain
+claims to test. [Key custody](identity-custody.md) · [Acceptance record](readiness.md)
 
 ## What storage can protect
 

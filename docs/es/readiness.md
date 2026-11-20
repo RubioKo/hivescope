@@ -1,134 +1,112 @@
-<!-- docs-pair: readiness; revision: 6 -->
+<!-- docs-pair: readiness; revision: 7 -->
 
 [English](../en/readiness.md) | [Español](readiness.md) | [Índice](README.md)
 
-# ¿Está HiveScope listo para su primer prototipo?
+# Diseño y criterios de aceptación del primer prototipo
 
-La [arquitectura](architecture.md) define el nodo, las funciones, los límites de
-confianza, el flujo de datos y el modelo de almacenamiento. La [hoja de ruta](roadmap.md)
-establece los hitos. Ya se puede empezar a especificar el núcleo seguro. Para
-implementar cada parte hay que cerrar su contrato, descrito abajo. Las comprobaciones
-actuales verifican documentación. La fiabilidad, la interoperabilidad y la
-recuperación se comprobarán con software en funcionamiento.
+La computadora de Ana ha dejado de encender. ¿Puede recuperar un archivo en
+otro equipo con solo su paquete de recuperación, su contraseña y el proveedor
+que guarda la copia cifrada? ¿Puede ese mismo proveedor rechazar el mismo
+paquete después de confirmar una revocación y reiniciarse? Estos dos resultados
+definen el primer prototipo de escritorio.
 
-## Primera recuperación desde un proveedor de almacenamiento
+**Estado de la fase documental.** El ensayo en red local tiene un diseño
+bilingüe, valores de referencia sintéticos y un procedimiento de aceptación.
+Aún queda por ejecutar el primer cliente y proveedor de HiveScope. La
+comprobación documental revisa los documentos y sus enlaces. Solo una ejecución
+del prototipo permitirá acreditar una recuperación, una revocación o la
+persistencia en un sistema de archivos concreto.
 
-**Alcance propuesto para el hito 1.** Utilizar un equipo del propietario, un proveedor
-de almacenamiento con dirección conocida en la LAN y una conexión directa. Un tercer perfil de dispositivo,
-limpio, representa al propietario tras perder su equipo. Un único proveedor conserva
-un objeto cifrado completo y un catálogo mínimo autenticado que permite localizarlo.
-Si se pierde ese proveedor, los datos de la demostración quedan inaccesibles. La
-distribución entre tres proveedores y el estado `protected` corresponden al hito 3.
+## Alcance y contratos
 
-1. Los pares se autentican. El proveedor contrasta la solicitud con su perfil
-   local y reserva capacidad mediante un acuerdo de almacenamiento. El cliente
-   registra la identidad del proveedor para recuperar la copia. Para el ensayo
-   se proporciona directamente la dirección del proveedor.
-2. El propietario cifra un archivo sintético y sube el contenido y el catálogo.
-   El proveedor utiliza la reserva, persiste los bytes y confirma la operación.
-3. El propietario exporta un paquete de recuperación protegido con contraseña.
-   Se apaga el equipo original y se empieza con una base de datos vacía y una
-   identidad de dispositivo nueva.
-4. Con solo el paquete, su contraseña y el proveedor accesible, se recupera el
-   archivo. Se compara cada byte con una copia de prueba independiente. Se registra
-   qué credencial autorizó la lectura y qué información local hizo falta.
+Se usará un perfil de propietario, un proveedor con dirección IPv4/TCP conocida
+y un perfil de reemplazo limpio con identidad de dispositivo nueva. Aislar los
+perfiles para que el reemplazo carezca de acceso a la base original, el almacén
+de claves original, el archivo fuente, los datos cifrados en caché y el respaldo
+administrativo. El proveedor guarda un objeto cifrado completo y su catálogo
+cifrado y firmado. Un único proveedor puede desconectarse, perder su disco o
+devolver una versión antigua. Ana necesita una copia independiente de todo
+archivo valioso durante el ensayo.
 
-## Cómo acredita el equipo nuevo su primera lectura
-
-**Decisión de diseño para revisión.** El proveedor acepta una prueba de posesión
-de la clave de firma de recuperación que el propietario registró para una carpeta
-y un acuerdo de almacenamiento. Su único permiso es obtener el catálogo cifrado
-de esa carpeta y los objetos cifrados cubiertos por el acuerdo. Así el propietario
-puede recuperar una copia tras perder su equipo y custodiar por separado la
-autoridad administrativa.
-
-| Quién | Qué conserva y qué hace |
+| Decisión | Dónde consultar el contrato |
 | --- | --- |
-| Propietario | Al establecer el acuerdo, ambas partes fijan la clave pública de la autoridad de carpeta. El propietario usa la privada para firmar la autorización inicial de recuperación y sus posteriores sustituciones o revocaciones. Guarda esa clave administrativa fuera del paquete de recuperación. |
-| Proveedor | Guarda la autorización firmada con los identificadores opacos de carpeta y acuerdo, su propia identidad, la clave pública de recuperación, el alcance de lectura y la generación. Conserva de forma persistente la generación más alta aceptada y su estado activo o revocado. |
-| Equipo de reemplazo | Crea su propia identidad de dispositivo. La contraseña desbloquea el paquete localmente. El paquete contiene la clave de firma de recuperación, la referencia de la autorización con su generación, el material para descifrar la carpeta y verificar el catálogo, el localizador opaco del catálogo, los datos de conexión del proveedor y la huella fijada en el acuerdo. |
+| ¿Quién puede escribir, recuperar o revocar? | La configuración de la LAN fija las identidades de los pares y la autoridad de la carpeta. El permiso de lectura tiene generación y alcance limitados. El propietario guarda por separado el respaldo administrativo. [Identidad y custodia de claves](identity-custody.md) |
+| ¿Qué lleva consigo el equipo de reemplazo? | Un paquete de 255 bytes protegido por contraseña identifica la instantánea, el proveedor y los secretos de lectura. Cada lectura del catálogo o del objeto exige una prueba nueva. [Formato de recuperación y firmas de referencia](recovery-format.md) |
+| ¿Qué bytes pertenecen al archivo? | El catálogo autenticado proporciona el localizador, la clave de versión, la longitud y el resumen esperados del objeto. Un archivo temporal privado conserva el contenido verificado hasta publicarlo en el destino. [Formato de archivo y catálogo](file-catalog.md) |
+| ¿Qué intercambian los equipos? | El protocolo versionado para la LAN define mensajes acotados, plazos, autenticación, cambios de permisos y errores. [Protocolo de red local](lan-protocol.md) |
+| ¿Cuándo se puede confirmar la subida? | Una sola reserva cubre ambos elementos cifrados. El cliente contrasta el recibo firmado por el proveedor con su manifiesto local. Repetir la solicitud devuelve el resultado registrado. [Confirmación de subida](upload-confirmation.md) |
+| ¿Qué debe sobrevivir a un reinicio? | El proveedor de referencia ordena la sincronización de archivos y directorios, la transacción de SQLite, la confirmación y la limpieza. La reserva física cubre temporales y metadatos. [Persistencia del proveedor e interrupciones](provider-persistence.md) |
 
-1. El equipo nuevo verifica la huella del proveedor en una conexión libp2p
-   autenticada. El proveedor puede emitir un reto a este nuevo par antes de
-   autorizar una lectura. [Autenticación de pares en libp2p](https://github.com/libp2p/specs/blob/master/tls/tls.md)
-2. Para cada lectura de catálogo u objeto, el proveedor emite en esa conexión
-   un reto nuevo, de corta duración y de un solo uso. El equipo lo firma con la
-   clave de recuperación y vincula la operación de lectura, las identidades de
-   ambos pares, el acuerdo, la carpeta, la generación y el localizador opaco
-   solicitado. La contraseña y las claves privadas permanecen en el equipo.
-3. Antes de enviar datos, el proveedor consume el reto una sola vez, verifica la
-   firma con la clave activa que tiene registrada, comprueba que la solicitud
-   corresponde a la conexión y a la autorización, y verifica el elemento solicitado
-   y el plazo de lectura. Los datos existentes se pueden leer durante el
-   [periodo de gracia del acuerdo](storage.md). Si falta el estado de autorización,
-   la generación está desactualizada o la petición excede el permiso, deniega la
-   lectura. Leer no concede permiso para escribir, renovar o incorporar dispositivos.
-4. El equipo verifica y descifra el catálogo y después solicita su objeto cifrado
-   bajo los mismos controles. Autentica el contenido recuperado antes de reemplazar
-   el archivo de destino. Una exportación antigua y un único proveedor no permiten
-   determinar si el catálogo es el más reciente.
+## Recorrido de una recuperación
 
-El proveedor verifica los registros con la clave de la autoridad de carpeta fijada
-al establecer el acuerdo. Solo acepta cambios de generación superior para el mismo
-alcance. Para revocar, el propietario firma un registro que marca la autorización
-como revocada. El proveedor confirma la revocación tras persistirla e invalidar
-los retos pendientes de la autorización antigua. Al reiniciarse, descarta los
-retos pendientes y conserva la revocación. Una autorización de reemplazo usa
-una clave nueva y requiere otra exportación. Quien conserve el paquete antiguo y
-la contraseña puede usarlo hasta que el proveedor reciba la revocación. Revocar
-solo la identidad de un dispositivo no invalida la clave de recuperación. Quien ya
-recibió datos o claves conserva esas copias.
+1. **Ofrecer espacio.** El operador elige un volumen local, el límite de disco
+   y la disponibilidad del proveedor. En la LAN controlada se configura el
+   acuerdo y se comprueban por separado las huellas de las claves públicas.
+   Se activa el permiso de recuperación del dueño. El futuro descubrimiento
+   comunitario podrá mantener esta separación entre escritura y lectura.
+   [Ofrecer mi equipo](resource-offers.md)
+2. **Guardar una versión.** Empezar con el archivo sintético `hive.txt`. El
+   equipo del dueño cifra el objeto y el catálogo, registra la solicitud y
+   reserva espacio para ambos. Si la respuesta se pierde, Ana ve **pendiente
+   de confirmación** y su equipo consulta la misma solicitud. Solo muestra
+   **subida confirmada** tras verificar y guardar el recibo. Los cinco bytes
+   originales dan 21 bytes de objeto y 250 de catálogo, más el espacio que
+   necesite el disco para guardarlos.
+3. **Prepararse para perder el equipo.** Exportar explícitamente el paquete
+   de recuperación de esa versión. Guardar el paquete y la contraseña por
+   separado. Apagar el perfil original. Quien ejecute el ensayo conservará
+   los bytes de referencia fuera del perfil de reemplazo.
+4. **Recuperar.** Elegir en el equipo limpio el paquete y un destino local.
+   Desbloquearlo localmente, autenticar al proveedor fijado y demostrar el
+   permiso vigente en dos lecturas, una del catálogo y otra del objeto. Verificar
+   catálogo, bloques, longitud y resumen antes de publicar el archivo en el
+   destino elegido. Mostrar **recuperado** tras completar la publicación.
+   Comparar el resultado con la referencia independiente.
+5. **Ejercer la revocación.** En otro ensayo con el mismo estado inicial, firmar
+   la revocación con la autoridad de la carpeta, esperar la confirmación
+   persistente del proveedor, reiniciarlo y desbloquear su perfil. Reconectar
+   con el proveedor autenticado. Para cada localizador, obtener un reto nuevo
+   y firmarlo correctamente con la clave antigua. Ambas lecturas deben devolver
+   `DENIED` y cero bytes de contenido. Quien recibió bytes antes de la revocación
+   conserva su copia.
 
-El [formato de recuperación v1 propuesto](recovery-format.md) detalla la estructura
-del paquete, los bytes que se firman en cada lectura y dos ejemplos con la misma exportación.
+## Registro de aceptación de la primera implementación
 
-## Decisiones pendientes para la implementación
+Todos los ensayos usan datos sintéticos. Los identificadores permiten asociar
+cada resultado con la versión del prototipo que lo produjo. Todas las filas
+están pendientes de ejecución.
 
-La regla de primera lectura resuelve parte de la decisión 1. El trabajo pendiente
-de cada fila requiere una especificación revisada en inglés y español.
-
-| Orden | Pregunta de diseño | Qué hace falta para empezar ese componente |
+| ID | Ensayo | Evidencia que registrar |
 | --- | --- | --- |
-| 1. Identidad y recuperación | ¿Cómo se desbloquean los secretos locales y se mantiene recuperable la clave administrativa separada? | Especificar la custodia y el desbloqueo local en cada sistema objetivo respetando el permiso de primera lectura y los casos de revocación. |
-| 2. Formato de archivos y catálogos | La [propuesta de catálogo para un archivo](file-catalog.md) especifica la clave de versión, los bloques cifrados y las reglas de reintento. | Hay valores de referencia para un archivo de cinco bytes, uno vacío, uno de dos bloques y un bloque sustituido. La futura CLI deberá reproducirlos y demostrar que una recuperación fallida conserva el destino. |
-| 3. Protocolo de transferencia | El [contrato de subida](upload-confirmation.md) define la identidad de la solicitud, el recibo firmado y los resultados de los reintentos. | Especificar los mensajes versionados de reserva, transferencia, consulta y confirmación, con tamaños de trama, concurrencia, plazos y errores. |
-| 4. Disco y reinicios | El contrato de subida especifica en qué momento se confirma la operación y cómo se concilian los dos archivos, el índice y la cuota. | Demostrar la persistencia en cada sistema de archivos admitido. Interrumpir el proveedor antes y después de confirmar la transacción y verificar tras el reinicio la visibilidad, la cuota y la devolución del mismo recibo. |
+| M1-01 | Antes de usar la red, comparar con una implementación local el paquete, los mensajes firmados de lectura, el catálogo, el objeto y el recibo publicados. | Las longitudes, los resúmenes y la verificación de firmas coinciden con las referencias. Un bloque sustituido falla la verificación. |
+| M1-02 | Usar el paquete activo de generación 7 tras perder el perfil original. Repetir con un archivo vacío y uno de 4 MiB + 1 byte. | El reemplazo recibe los dos elementos y recupera exactamente los bytes previstos. El archivo vacío también autentica su único bloque. |
+| M1-03 | Confirmar la revocación de generación 8, reiniciar al proveedor y desbloquearlo. Probar ambos localizadores por separado con retos nuevos correctamente firmados. Por separado, repetir un reto ya consumido. | El proveedor autenticado devuelve expresamente `DENIED` y cero bytes para ambas lecturas con el permiso antiguo. Repetir un reto no autoriza otra lectura. El archivo de cinco bytes que ya existía en destino permanece intacto. |
+| M1-04 | Probar una contraseña errónea, un paquete dañado y un equipo que presenta otra clave de proveedor. | El fallo de autenticación del paquete termina localmente. Una identidad distinta detiene la operación antes del reto de lectura. Se conserva el destino. |
+| M1-05 | Cortar la conexión a mitad de un elemento. En otro ensayo, perder la respuesta posterior a la confirmación en disco. Reintentar con la solicitud original y con el manifiesto cambiado. | Un elemento incompleto se reenvía desde el byte cero. La solicitud confirmada devuelve el mismo recibo, dos localizadores y un único cargo. El cambio de manifiesto devuelve conflicto. |
+| M1-06 | Enviar dos solicitudes distintas del equipo autorizado a subir, hacerlas competir por el último espacio, pausar nuevas ofertas, cancelar una reserva y dejar vencer otra. | Como máximo una reserva obtiene ese espacio. El estado se conserva al reintentar. El espacio ocupado sigue contabilizado hasta que la limpieza sea persistente. |
+| M1-07 | Interrumpir antes y después de cada punto de publicación definido en el contrato de persistencia. En una copia desechable, eliminar o dañar un archivo confirmado. | Tras cada reinicio coinciden visibilidad, cuota y recibo con lo previsto. Una copia confirmada que sufrió daños figura como inaccesible. Registrar por separado las interrupciones del proceso y la pérdida de alimentación del almacenamiento. |
+| M1-08 | Probar una lectura fuera de alcance, una trama excesiva, un objeto truncado y un volumen de destino lleno. | El par aplica sus límites. Si la verificación falla, el contenido parcial queda fuera del destino. Registrar el resumen del archivo de destino conservado. |
+| M1-09 | Bloquear el almacén de claves del sistema, reiniciar al proveedor y restaurar el respaldo administrativo independiente en un perfil del dueño aislado. | El bloqueo impide usar las claves de las que depende cada operación. Tras el desbloqueo se conservan identidad y generación máxima aceptada. La autoridad restaurada puede firmar un cambio. El paquete de recuperación de archivos por sí solo carece de ese permiso. |
+| M1-10 | Probar un acuerdo de escritura vencido dentro de su periodo de gracia de lectura y después del cierre. Desconectar el único proveedor. | Las escrituras nuevas cesan al vencer el acuerdo. Las lecturas autorizadas funcionan durante la gracia y cesan al cierre. El cliente informa que el proveedor está inaccesible sin declarar el archivo perdido ni recuperado. |
 
-Tres detalles técnicos orientan estas decisiones. La interfaz AEAD de Go exige
-un nonce único por clave para cada cifrado. La serialización Protobuf no garantiza
-una representación canónica para calcular una firma. La garantía transaccional
-de SQLite cubre los cambios en su base de datos. HiveScope también escribe
-fragmentos fuera de ella.
-[AEAD en Go](https://pkg.go.dev/crypto/cipher#AEAD) ·
-[Serialización Protobuf](https://protobuf.dev/programming-guides/serialization-not-canonical/) ·
-[Transacciones atómicas en SQLite](https://sqlite.org/atomiccommit.html)
+Por ejecución, registrar ID del caso, commit, sistema operativo, sistema de
+archivos, muestra, estado inicial, punto de interrupción, resultado esperado,
+resultado observado y estado (aprobado, fallido o sin ejecutar). Contar bytes
+de contenido y reservas confirmadas cuando sean el criterio que se comprueba.
+Usar identificadores sintéticos en los informes. Las contraseñas, claves,
+exportaciones, rutas privadas y registros identificativos quedan fuera de la
+evidencia. Una lectura correcta comprueba una sola versión. Repetir en cada
+plataforma antes de anunciar compatibilidad.
 
-## Evidencia que deberá producir el prototipo
+## Paso a la implementación
 
-Estos ensayos están planificados. Registrar versión, sistema operativo, entradas
-y resultado observado cuando exista una implementación que permita ejecutarlos.
+La primera tarea de código será una **prueba local de conformidad en Go** con
+la muestra de cinco bytes. Así se puede detectar una diferencia de formato
+antes de introducir red o disco. El siguiente recorrido ejecutable utilizará
+la misma muestra, el proveedor y un perfil de reemplazo limpio. La implementación
+empezará en un cambio independiente.
 
-| Escenario | Resultado que debe observarse |
-| --- | --- |
-| Subir un archivo vacío y otro de 4 MiB + 1 byte | La recuperación conserva longitud y contenido exactos al cruzar el límite entre bloques. |
-| Cortar la conexión después de que el proveedor guarde el objeto y antes de que el cliente reciba la respuesta | Repetir la operación concluye con un objeto almacenado y un solo cargo de cuota. |
-| Interrumpir entre la escritura del archivo y la actualización del índice | Al reiniciar se consolida o libera la reserva. Todo objeto ya confirmado sigue siendo legible. |
-| Iniciar dos cargas que compiten por espacio suficiente para una | Como máximo se completa una. El uso físico, incluidos los temporales, respeta los límites acordados. |
-| Entregar un bloque corrupto, intentar leer con una identidad sin aprobar o usar una contraseña de recuperación incorrecta | Cada caso indica fallo y conserva cualquier archivo que ya exista en el destino. |
-| Autorización válida. Con el equipo original apagado y el perfil de reemplazo vacío, utilizar solo el paquete, la contraseña y el proveedor accesible. | La identidad nueva recibe catálogo y objeto tras demostrar posesión de la clave. El archivo recuperado coincide byte a byte con la copia de prueba independiente. |
-| Autorización revocada. Partiendo de los mismos datos de prueba, hacer que el proveedor confirme la revocación del propietario, reiniciarlo y dejar apagado el equipo original. Reintentar desde un perfil limpio con el paquete y la contraseña antiguos. | Incluso una firma correcta de un reto nuevo con la clave antigua devuelve cero bytes de catálogo u objeto. Comprobar ambos localizadores por separado. El archivo existente en destino permanece intacto. |
-
-## Qué puede esperar
-
-El hito 2 incorpora asignación automática mediante directorios reemplazables y
-prueba reservas concurrentes y reintentos entre equipos que se encuentran por primera vez.
-El hito 3 prueba la reparación 2+1, el coste de las comprobaciones, los conflictos
-sin conexión y la portabilidad de nombres. La alfa de escritorio medirá la conectividad
-doméstica, el tráfico de relay, el uso de disco y el impacto en batería en Windows,
-Linux y macOS. El cómputo privado de propósito general y el alojamiento persistente
-tienen criterios propios en la [hoja de ruta](roadmap.md).
-
-**Siguiente paso de diseño.** Definir los mensajes que se intercambian durante
-la subida. Especificar cómo el cliente reserva espacio, envía cada elemento,
-confirma el par y consulta su estado, con tramas acotadas, tiempos de espera y
-una respuesta que le permita decidir qué hacer ante cada error.
+El descubrimiento y la asignación automáticos corresponden al hito 2. La
+redundancia y reparación con tres proveedores, la interfaz de escritorio y el
+acceso móvil, el cómputo privado y los servicios persistentes tienen alcance y
+criterios propios. [Hoja de ruta](roadmap.md)
