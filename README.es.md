@@ -1,4 +1,4 @@
-<!-- docs-pair: home; revision: 8 -->
+<!-- docs-pair: home; revision: 9 -->
 
 [English](README.md) | Español
 
@@ -17,23 +17,41 @@ recuperar archivos cifrados desde una computadora. El cómputo privado de propó
 general y el alojamiento de servicios forman parte de la hoja de ruta.
 [Visión del proyecto](docs/es/vision.md) · [Hoja de ruta](docs/es/roadmap.md)
 
+![Un mapa mundial conecta tres escenas. Una viajera abre una carpeta privada en su celular, otra persona trabaja en su portátil y una voluntaria ofrece recursos desde su computadora de escritorio.](assets/story/worldwide-network.jpg)
+
+*Así imaginamos HiveScope. Tú eliges qué dispositivos pueden abrir tus carpetas. Cuando
+tu equipo se quede corto para una tarea, podrías pedir capacidad a la comunidad.*
+
 ## ¿Para qué podrías usar HiveScope?
 
-- **Proteger los archivos que elijas.** Guarda copias de carpetas con fotos, documentos,
-  música, código fuente u otros trabajos. Tú conservas las claves y eliges cuáles de
-  tus dispositivos pueden leer cada carpeta. La sincronización llegará después de la recuperación.
-- **Ejecutar tu propio software.** Solicita CPU y memoria para un entorno privado que
-  tú controlas. Podrías instalar herramientas, compilar un proyecto, renderizar una
-  escena o ejecutar un modelo. Tu dispositivo solo entregará las claves de la sesión
-  tras verificar el entorno remoto, incluida cualquier GPU que se utilice. Si la
-  verificación falla o falta un anfitrión compatible, las claves seguirán en tu equipo.
-  Podrás esperar o cancelar. [Modelo de seguridad](docs/es/security.md)
-- **Alojar un servicio para tu comunidad.** Un grupo de jugadores podría mantener un
-  mundo compartido aprovechando los horarios de sus voluntarios. Solo un anfitrión
-  aceptaría cambios a la vez. Un relevo compatible podría continuar desde un guardado
-  verificado. Project Zomboid es un posible ensayo. Antes de anunciar una expectativa
-  de disponibilidad se medirán la latencia de los jugadores, las interrupciones y el
-  progreso perdido. [Prueba de alojamiento](docs/es/roadmap.md)
+### Proteger los archivos que elijas
+
+![Una persona con máscara consulta la misma carpeta privada en su portátil y su tableta. En ambos se ven la foto de una cabaña junto al lago, una grabación y un documento.](assets/story/private-files.jpg)
+
+Guarda copias de carpetas con fotos, documentos, música, código fuente u otros trabajos.
+Tú conservas las claves y eliges cuáles de tus dispositivos pueden leer cada carpeta.
+La primera prueba recuperará un archivo en otra computadora. La sincronización de
+carpetas y las pruebas con celulares y tabletas vendrán después.
+
+### Ejecutar tu propio software
+
+![Una diseñadora renderiza un casco verde. En otro equipo, quien presta la GPU ve dos indicadores de uso, uno de GPU y otro de memoria.](assets/story/shared-compute.jpg)
+
+Podrías solicitar CPU y memoria para un entorno privado donde instalar tus herramientas,
+compilar un proyecto, renderizar una escena o ejecutar un modelo. Antes de enviar las
+claves de sesión, tu dispositivo verificaría el entorno remoto, incluida cualquier GPU
+que se utilice. Si la verificación falla o falta un anfitrión compatible, las claves
+seguirían en tu equipo. Podrías esperar o cancelar. [Modelo de seguridad](docs/es/security.md)
+
+### Alojar un servicio para tu comunidad
+
+![Dos personas exploran el mismo faro desde pantallas distintas. Junto al pequeño PC que aloja la partida, una pantalla indica que el servidor está en línea.](assets/story/game-hosting.jpg)
+
+Un grupo de jugadores podría mantener un mundo compartido aprovechando los horarios de
+sus voluntarios. Solo un anfitrión aceptaría cambios a la vez. Un relevo compatible
+podría continuar desde un guardado verificado. Project Zomboid es un posible ensayo.
+El grupo mediría la latencia, las interrupciones y el progreso perdido antes de anunciar
+una expectativa de disponibilidad. [Prueba de alojamiento](docs/es/roadmap.md)
 
 ## ¿Qué pasa cuando solicitas u ofreces recursos?
 
@@ -55,8 +73,6 @@ la electricidad, la conexión y el tráfico de los relays. [Ofrecer mi equipo](d
 
 ### Ana elige qué equipos pueden leer sus archivos
 
-![Ana señala una foto familiar que aparece en su portátil junto a un documento y la onda de una grabación.](assets/story/hivescope-story.jpg)
-
 Ana autoriza a su portátil y a su computadora de escritorio a leer `Estudios`, donde
 guarda el borrador de su tesis, una foto y una entrevista grabada. Para
 `Documentos personales` autoriza solo el portátil. Cada elección se aplica a todos los
@@ -64,16 +80,12 @@ archivos de esa carpeta.
 
 ### El equipo de Luis guarda la copia cifrada
 
-![Luis ajusta un control debajo de dos filas de bloques de colores que representan datos cifrados en su pantalla.](assets/story/encrypted-storage.jpg)
-
 La computadora de Ana cifra el contenido y los nombres antes de enviar la copia. El
 perfil de almacenamiento de Luis admite la transferencia automáticamente. Luis puede
 observar su tamaño y el momento en que ocurre. Ana conserva el control de las claves
 que abren sus archivos.
 
 ### Ana recupera su trabajo en otra computadora
-
-![Ana sostiene una memoria USB junto al portátil cerrado. La foto, el documento y la grabación vuelven a aparecer en un monitor de escritorio.](assets/story/recovering-files.jpg)
 
 Con el portátil original apagado, Ana usa su contraseña para abrir el paquete de
 recuperación que guardó aparte. En la primera prueba prevista, un proveedor accesible

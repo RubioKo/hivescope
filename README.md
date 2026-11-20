@@ -1,4 +1,4 @@
-<!-- docs-pair: home; revision: 8 -->
+<!-- docs-pair: home; revision: 9 -->
 
 English | [Español](README.es.md)
 
@@ -15,21 +15,40 @@ resources, you choose what to share, how much and when. The computers coordinate
 recovering encrypted files. Private general-purpose computing and service hosting are
 later milestones. [Project vision](docs/en/vision.md) · [Roadmap](docs/en/roadmap.md)
 
+![A world map connects three scenes. A traveler opens a private folder on a phone, a creator works on a laptop and a volunteer offers resources from a desktop.](assets/story/worldwide-network.jpg)
+
+*A vision of HiveScope. You choose which devices can open your folders. When your own
+computer is too small for a job, you could request capacity from the community.*
+
 ## What could you do with HiveScope?
 
-- **Protect the files you choose.** Back up folders containing photos, documents, music,
-  source code or other work. You hold the keys and choose which of your devices may read
-  each folder. Folder synchronization will follow recovery.
-- **Run your own software.** Request CPU and memory for a private environment you control.
-  Install tools, compile a project, render a scene or run a model. Your device will release
-  session keys only after it verifies the remote environment, including any GPU used.
-  If verification fails or a compatible host is unavailable, the keys stay on your
-  device. You can wait or cancel. [Security model](docs/en/security.md)
-- **Host a service for a community.** A gaming group could keep a shared world going
-  across volunteers' schedules. One host would accept changes at a time. A compatible
-  standby could take over from a verified save. Project Zomboid is one possible trial.
-  Players' latency, downtime and lost progress would be measured before making an
-  availability claim. [Hosting trial](docs/en/roadmap.md)
+### Protect the files you choose
+
+![A masked owner views the same private folder on a laptop and a tablet. Both show a lakeside cabin photo, a recording and a document.](assets/story/private-files.jpg)
+
+Back up folders containing photos, documents, music, source code or other work. You
+hold the keys and choose which of your devices may read each folder. The first test
+will recover one file on a replacement computer. Folder synchronization and trials on
+phones and tablets come later.
+
+### Run your own software
+
+![A designer renders a green helmet. On a separate computer, the person lending the GPU sees two meters showing GPU and memory use.](assets/story/shared-compute.jpg)
+
+You could request CPU and memory for a private environment where you install your own
+tools, compile a project, render a scene or run a model. Before sending session keys,
+your device would verify the remote environment, including any GPU used. If verification
+fails or a compatible host is unavailable, the keys stay on your device. You can wait
+or cancel. [Security model](docs/en/security.md)
+
+### Host a service for a community
+
+![Two players explore the same lighthouse from separate screens. Beside the mini PC hosting their game, a small display shows the server online.](assets/story/game-hosting.jpg)
+
+A gaming group could keep a shared world going across volunteers' schedules. One host
+would accept changes at a time. A compatible standby could take over from a verified
+save. Project Zomboid is one possible trial. The group would measure latency, downtime
+and lost progress before making an availability claim. [Hosting trial](docs/en/roadmap.md)
 
 ## What happens when you ask for or offer resources?
 
@@ -49,23 +68,17 @@ hardware, electricity, connectivity and relay traffic. [Offer my computer](docs/
 
 ### Ana chooses which devices may read her files
 
-![Ana points to a family photo beside a document and an audio waveform on her laptop.](assets/story/hivescope-story.jpg)
-
 Ana authorizes her laptop and desktop to read `Studies`, which holds a thesis draft,
 a photo and a recorded interview. For `Personal documents`, she authorizes only her
 laptop. Each choice covers all files in that folder.
 
 ### Luis's computer stores the encrypted copy
 
-![Luis adjusts a slider beneath rows of colored blocks representing encrypted data on his screen.](assets/story/encrypted-storage.jpg)
-
 Ana's computer encrypts the contents and names before sending the copy. Luis's storage
 profile admits the transfer automatically. He can observe its size and timing. The keys
 that open Ana's files stay under her control.
 
 ### Ana restores her work on a replacement computer
-
-![Ana holds a USB drive beside her closed laptop. The photo, document and recording reappear on a desktop monitor.](assets/story/recovering-files.jpg)
 
 With her original laptop off, Ana uses her password to unlock the recovery package she
 kept separately. In the first planned test, a reachable provider checks her recovery

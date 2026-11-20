@@ -16,6 +16,16 @@ se conserva en [LICENSES/MIT-banner.txt](LICENSES/MIT-banner.txt).
 Ambos banners adaptados mantienen la licencia MIT. El resto del material nuevo
 utiliza AGPL-3.0-only salvo indicación expresa en un archivo.
 
+## README illustrations / Ilustraciones de los README
+
+The four concept illustrations in `assets/story/` were created with OpenAI ImageGen
+for HiveScope. The device screens adapt the seven-cell motif and wordmark from
+RubioKo's banner. [Original MIT notice](LICENSES/MIT-banner.txt)
+
+Las cuatro ilustraciones conceptuales de `assets/story/` se crearon con OpenAI
+ImageGen para HiveScope. Las pantallas adaptan el motivo de siete celdas y el nombre
+del proyecto tal como aparecen en el banner de RubioKo. [Aviso MIT original](LICENSES/MIT-banner.txt)
+
 ## ECC reference / Referencia a ECC
 
 [ECC](https://github.com/affaan-m/ECC) is an external, MIT-licensed reference for
