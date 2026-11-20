@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 9 -->
+<!-- docs-pair: readiness; revision: 10 -->
 
 [English](../en/readiness.md) | [Español](readiness.md) | [Índice](README.md)
 
@@ -120,9 +120,7 @@ El lector en Go verifica el catálogo firmado, autentica cada bloque cifrado
 y comprueba la longitud total y el resumen SHA-256 del objeto. Guarda el
 contenido descifrado en un archivo temporal dentro del directorio privado que
 indica el cliente. Solo permite leer el objeto completo y verificado. Al cerrar
-el lector se elimina su archivo temporal. Si el proceso termina de forma
-abrupta, ese archivo puede quedar en claro en el directorio privado. La
-limpieza tras un cierre inesperado sigue pendiente. [Lector de catálogo](../../internal/storageformat/catalog.go) · [Lector de objetos](../../internal/storageformat/object.go)
+el lector se elimina su archivo temporal. [Lector de catálogo](../../internal/storageformat/catalog.go) · [Lector de objetos](../../internal/storageformat/object.go)
 
 Las tres [muestras publicadas](file-catalog.md) se recuperan byte por byte sin
 red. En `empty.bin` se autentica un bloque vacío. De `hive.txt` se recuperan
@@ -131,10 +129,36 @@ bloque. Si ese bloque llega alterado o truncado, el cliente recibe un error
 antes de poder leer el contenido. M1-02 aún requiere recuperar los archivos
 por la LAN en un equipo de reemplazo con un perfil limpio.
 
-El siguiente paso local es publicar de forma atómica el archivo verificado en
-el destino que elija el propietario. Se comprobará que un fallo anterior a la
-publicación conserva cualquier archivo previo y que solo se informa de la
-recuperación tras completar las sincronizaciones necesarias.
+### Guardar en el destino elegido
+
+La API local de Go `SaveObject` guarda en directorios privados. En Linux
+requiere un sistema de archivos local que admita el cambio de nombre y las
+sincronizaciones indicadas. En Windows requiere NTFS local. El cliente elige
+el destino independientemente del nombre que figura
+en el catálogo. El modo de solo creación conserva cualquier archivo previo,
+incluso uno creado mientras se verifica la copia. Reemplazarlo requiere una
+elección expresa. El lector verifica el objeto en un temporal del directorio
+de destino, sincroniza el archivo y lo publica mediante un único cambio de
+nombre. [Pruebas del guardado local](../../internal/conformance/publication_test.go)
+
+La prueba de interrupción detiene un proceso hijo después de sincronizar el
+temporal verificado y justo antes de cambiarle el nombre. Al reabrir el destino
+se recuperan exactamente los bytes del archivo anterior. Si el proceso termina
+en ese punto, el temporal privado puede quedar en disco con el contenido en
+claro. El ensayo comprueba la interrupción del proceso. Un corte de alimentación
+requiere pruebas independientes en el sistema de archivos.
+[Pruebas de interrupción y sincronización del directorio](../../internal/storageformat/publish_test.go)
+
+Confirmar el guardado requiere sincronizar el directorio. La prueba local en
+Windows con NTFS completó esa sincronización. [Sincronización de directorios en Linux](https://man7.org/linux/man-pages/man2/fsync.2.html) · [Sincronización del sistema de archivos en Windows](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/0de7dc40-9627-437e-a4df-c4696cdc3d02)
+
+Si la sincronización del directorio falla después del reemplazo,
+la API devuelve `ErrPublicationUncertain`. El nuevo
+archivo completo puede estar ya visible. El siguiente paso es resolver esa
+incertidumbre antes de reintentar. Recuperar por separado la misma versión
+autenticada y comparar el destino byte por byte. Si coincide, sincronizar el
+archivo y su directorio antes de confirmar. Si difiere, conservar el destino
+y pedir otra ruta. [Recuperación tras un guardado incierto](file-catalog.md)
 
 El descubrimiento y la asignación automáticos corresponden al hito 2. La
 redundancia y reparación con tres proveedores, la interfaz de escritorio y el

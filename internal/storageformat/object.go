@@ -39,18 +39,28 @@ func (s *Snapshot) OpenObject(src io.Reader, privateDir string) (io.ReadCloser, 
 		return nil, err
 	}
 	name := "hivescope-" + rand.Text()
-	file, err := root.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600)
+	file, err := s.verifyToTemp(src, root, name)
 	if err != nil {
 		return nil, errors.Join(err, root.Close())
 	}
 	staged := &stagedReader{file: file, root: root, name: name}
-	if err := s.decryptObject(src, file); err != nil {
-		return nil, errors.Join(err, staged.Close())
-	}
 	if _, err := file.Seek(0, io.SeekStart); err != nil {
 		return nil, errors.Join(err, staged.Close())
 	}
 	return staged, nil
+}
+
+// verifyToTemp creates an owned temporary file and returns it still open only
+// after the complete ciphertext and the signed catalog agree.
+func (s *Snapshot) verifyToTemp(src io.Reader, root *os.Root, name string) (*os.File, error) {
+	file, err := root.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.decryptObject(src, file); err != nil {
+		return nil, errors.Join(err, file.Close(), root.Remove(name))
+	}
+	return file, nil
 }
 
 // decryptObject writes authenticated blocks into unpublished staging only.
