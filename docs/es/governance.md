@@ -1,4 +1,4 @@
-<!-- docs-pair: governance; revision: 1 -->
+<!-- docs-pair: governance; revision: 3 -->
 
 [English](../en/governance.md) | [Español](governance.md) | [Índice](README.md)
 
@@ -21,11 +21,34 @@ mantenedores requiere un cambio público revisado de gobernanza y su consentimie
 
 ## Ramas y revisión
 
-`main` es la rama de referencia. El trabajo se realiza en ramas breves o forks y
-llega mediante pull requests. El mantenimiento revisa alcance, precisión, paridad
-de idiomas, licencias y comprobaciones. Una comprobación documental correcta no
-es una auditoría de seguridad. Los cambios administrativos directos se reservan
-al mantenimiento del repositorio y se describen si afectan a los colaboradores.
+`main` es la rama estable y predeterminada. Crea una rama breve a partir de
+`development` y abre un pull request hacia `development` para integrar tu trabajo.
+Los mantenedores revisan alcance, precisión, paridad de idiomas, licencias y
+las comprobaciones pertinentes. Cuando el hito cumpla los
+[criterios de la hoja de ruta](roadmap.md), abre un PR de `development` a `main`
+con los resultados y usa **Create a merge commit** para conservar el historial común.
+
+Ambas ramas permanentes exigen un PR, conversaciones de revisión resueltas y
+la comprobación `Markdown, links and language parity` de GitHub Actions aprobada.
+Ambas bloquean el borrado y los envíos forzados, sin excepciones. GitHub elimina
+las ramas de trabajo de este repositorio tras integrarlas. Mientras haya un solo
+mantenedor con escritura, el mínimo de aprobaciones es cero. Al conceder
+escritura a un segundo mantenedor, se debe
+exigir una aprobación independiente como parte de ese cambio.
+
+Las actualizaciones de Dependabot y las correcciones urgentes pueden llegar a
+`main` mediante un PR. Después de integrarlo, abre un PR de `main` a `development`
+y usa un commit de fusión para incorporar la corrección al trabajo en curso.
+Los mantenedores documentan los cambios administrativos que afecten a los
+colaboradores. La comprobación documental revisa Markdown, enlaces locales
+y pares de idiomas.
+
+Dependabot revisa las dependencias de npm y las acciones de GitHub cada semana
+y puede abrir PR de seguridad entre revisiones programadas. El repositorio
+exige fijar las acciones al SHA completo de un commit y permite dos acciones
+externas, `actions/checkout` y `actions/setup-node`. Para añadir otra, explica
+en un PR la necesidad y los permisos que requiere para que el mantenedor pueda
+revisar el cambio en la lista de acciones permitidas.
 
 ## Publicaciones futuras
 

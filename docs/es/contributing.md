@@ -1,4 +1,4 @@
-<!-- docs-pair: contributing; revision: 1 -->
+<!-- docs-pair: contributing; revision: 2 -->
 
 [English](../en/contributing.md) | [Español](contributing.md) | [Índice](README.md)
 
@@ -24,11 +24,14 @@ una propuesta o maqueta.
 ## Flujo local
 
 1. Crea un fork y clónalo.
-2. Crea una rama descriptiva desde `main` actualizado.
+2. Obtén la última versión de `development` de `RubioKo/hivescope` y crea desde
+   ella una rama de trabajo breve, aunque tu fork solo contenga `main` al principio.
 3. Realiza el cambio completo más pequeño, incluyendo textos en inglés y español.
 4. Con Node.js 22 o posterior, ejecuta `npm ci` y `npm run check` en la raíz.
-5. Abre un pull request hacia `RubioKo/hivescope:main` con la plantilla.
-6. Atiende la revisión. Solo los mantenedores integran el trabajo aceptado.
+5. Sube tu rama al fork. Abre un pull request con la plantilla y selecciona
+   `development` de `RubioKo/hivescope` como rama de destino.
+6. Atiende la revisión. Los mantenedores integran el trabajo aceptado en `development`
+   y pasan los hitos validados a `main` según la [gobernanza](governance.md).
 
 Estos comandos npm ejecutan herramientas documentales, no un servicio HiveScope.
 No añadas árboles vacíos, ejecutables de relleno ni instrucciones de compilación

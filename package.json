@@ -14,5 +14,10 @@
     "github-slugger": "2.0.0",
     "markdown-it": "15.0.3",
     "markdownlint-cli2": "0.24.1"
+  },
+  "overrides": {
+    "micromark-extension-math": {
+      "katex": "0.18.2"
+    }
   }
 }
