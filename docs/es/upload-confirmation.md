@@ -1,4 +1,4 @@
-<!-- docs-pair: upload-confirmation; revision: 1 -->
+<!-- docs-pair: upload-confirmation; revision: 2 -->
 
 [English](../en/upload-confirmation.md) | [Español](upload-confirmation.md) | [Índice](README.md)
 
@@ -156,6 +156,8 @@ d391894a4b1772edefcca619d2ffad9cc9d67e223a3f0f8f643bfc1a4db85377
 
 La firma del ejemplo se verificó con la clave pública del proveedor. Al cambiar
 únicamente la longitud del objeto de 21 a 22 bytes, cambió la huella y la firma
-original dejó de ser válida para ese manifiesto. Los resultados de caídas y
-de uso de cuota descritos arriba siguen siendo criterios de aceptación para
-el prototipo.
+original dejó de ser válida para ese manifiesto. El ensayo de subida en Linux
+utiliza ese mismo objeto y catálogo para comprobar una transferencia
+interrumpida. La copia sigue pendiente después de que llegan ambos elementos.
+La publicación y la entrega del recibo firmado por la red siguen siendo
+criterios de aceptación. [Ensayo de subida interrumpida](readiness.md)

@@ -63,6 +63,23 @@ func TestReservationRefusalsPrecedeLookupAndAllocation(t *testing.T) {
 			t.Fatalf("incomplete request produced %x %x, %v", op, payload, err)
 		}
 	}
+	// PUT must apply the same independent enrollment before creating a writer.
+	request := append(ref[:], byte(UploadCatalog))
+	for _, tc := range []struct {
+		peer    [32]byte
+		payload []byte
+		code    byte
+	}{
+		{host, request, 2},
+		{writer, append(wrongAgreement[:], byte(UploadObject)), 2},
+		{writer, ref[:], 1},
+		{writer, append(ref[:], byte(3)), 1},
+	} {
+		w, state, code := p.beginPut(tc.peer, tc.payload)
+		if w != nil || state != (grantstore.UploadState{}) || code != tc.code {
+			t.Fatalf("refused PUT returned a writer or reservation: state=%+v, code=%d", state, code)
+		}
+	}
 }
 
 type failingUploadReader struct{}

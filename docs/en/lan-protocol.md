@@ -1,4 +1,4 @@
-<!-- docs-pair: lan-protocol; revision: 7 -->
+<!-- docs-pair: lan-protocol; revision: 8 -->
 
 [English](lan-protocol.md) | [Español](../es/lan-protocol.md) | [Index](README.md)
 
@@ -13,8 +13,10 @@ verifies the catalog before requesting the object under a fresh proof. The Linux
 provider with a SQLite grant store acknowledges signed grant updates and reloads
 the latest grant after a process restart. A separate upload trial starts with
 an empty Linux provider. The enrolled uploader can reserve disk space for both
-items and query the original deadline after losing the reply. Sending the
-sealed bytes and issuing a storage receipt remain subsequent steps.
+items and query the original deadline after losing the reply. With `PUT`,
+it can stage the object first, reconnect after an interrupted catalog
+transfer, and send just the catalog from byte zero. Both items remain
+private and pending until the future finalization step.
 [Recovery trial](readiness.md)
 
 ## Connection and framing

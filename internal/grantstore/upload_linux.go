@@ -32,6 +32,12 @@ const uploadTable = `CREATE TABLE upload_v1(
 	expired INTEGER NOT NULL DEFAULT 0 CHECK(expired IN (0,1))
 )`
 
+// Version 1 reserved the same two slots without writing payloads. Preserve
+// its exact rows, original deadlines and charges when enabling staging.
+const stagingSchema = `ALTER TABLE upload_v1 ADD COLUMN mask INTEGER NOT NULL DEFAULT 0 CHECK(mask BETWEEN 0 AND 3);
+	ALTER TABLE upload_v1 ADD COLUMN cleanup INTEGER NOT NULL DEFAULT 0 CHECK(cleanup IN (0,1) AND (cleanup=0 OR expired=1));
+	PRAGMA user_version=2;`
+
 // InitUploads is an explicit provisioning step on a new dedicated store. A
 // missing upload table on an existing store must never look like no uploads.
 func (s *Store) InitUploads(scope [96]byte) error {
@@ -41,7 +47,7 @@ func (s *Store) InitUploads(scope [96]byte) error {
 		return errors.New("upload enrollment requires a new empty store")
 	}
 	s.fresh = false
-	s.fault = s.db.exec(fmt.Sprintf("BEGIN IMMEDIATE; CREATE TABLE upload_profile(id INTEGER PRIMARY KEY CHECK(id=1), scope BLOB NOT NULL CHECK(length(scope)=96)); INSERT INTO upload_profile VALUES(1,X'%x'); %s; COMMIT", scope, uploadTable))
+	s.fault = s.db.exec(fmt.Sprintf("BEGIN IMMEDIATE; CREATE TABLE upload_profile(id INTEGER PRIMARY KEY CHECK(id=1), scope BLOB NOT NULL CHECK(length(scope)=96)); INSERT INTO upload_profile VALUES(1,X'%x'); %s; %s COMMIT", scope, uploadTable, stagingSchema))
 	s.uploadScope = scope
 	s.uploads = s.fault == nil
 	return s.fault
@@ -63,6 +69,9 @@ func (s *Store) CheckUploads(scope [96]byte) error {
 	s.fault = s.db.expect(fmt.Sprintf("SELECT count(*) FROM upload_profile WHERE id=1 AND scope=X'%x'", scope), "1")
 	if s.fault == nil {
 		s.fault = s.checkUploadRows()
+	}
+	if s.fault == nil {
+		s.fault = s.reopenUploadSlots()
 	}
 	s.uploads = s.fault == nil
 	return s.fault
@@ -145,11 +154,19 @@ func (s *Store) uploadReady(now int64) error {
 func (s *Store) uploadTransaction(now int64, scope *[96]byte, operation func() (UploadState, error)) (UploadState, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	return s.uploadTransactionLocked(now, scope, operation)
+}
+
+func (s *Store) uploadTransactionLocked(now int64, scope *[96]byte, operation func() (UploadState, error)) (UploadState, error) {
 	if err := s.uploadReady(now); err != nil {
 		return UploadState{}, err
 	}
 	if scope != nil && *scope != s.uploadScope {
 		return UploadState{}, ErrUploadDenied
+	}
+	if err := s.expireUploads(now); err != nil {
+		s.fault = err
+		return UploadState{}, err
 	}
 	if err := s.db.exec("BEGIN IMMEDIATE"); err != nil {
 		s.fault = err
@@ -158,13 +175,11 @@ func (s *Store) uploadTransaction(now int64, scope *[96]byte, operation func() (
 	var state UploadState
 	var result error
 	if now > s.lastUTC {
-		// Only unstaged reservations exist at this implementation stage. An
-		// expired row releases unallocated slots and retains its ID forever.
-		s.fault = s.db.exec(fmt.Sprintf("UPDATE upload_v1 SET expired=1 WHERE expired=0 AND deadline<=%d; UPDATE enrollment SET last_utc=%d WHERE id=1", now, now))
+		s.fault = s.db.exec(fmt.Sprintf("UPDATE enrollment SET last_utc=%d WHERE id=1", now))
 	}
 	if s.fault == nil {
 		state, result = operation()
-		if result != nil && !errors.Is(result, ErrUploadConflict) && !errors.Is(result, ErrUploadPaused) && !errors.Is(result, ErrUploadCapacity) && !errors.Is(result, ErrUploadDenied) {
+		if result != nil && !errors.Is(result, ErrUploadConflict) && !errors.Is(result, ErrUploadPaused) && !errors.Is(result, ErrUploadCapacity) && !errors.Is(result, ErrUploadDenied) && !errors.Is(result, ErrUploadBusy) && !errors.Is(result, ErrUploadInvalid) {
 			s.fault = result
 		}
 	}
@@ -197,7 +212,11 @@ func (s *Store) lookupUpload(id [16]byte, fingerprint [32]byte, exact []byte) (U
 	if deadline == 0 {
 		return UploadState{Code: 3}, nil
 	}
-	return UploadState{Code: 1, Deadline: int64(deadline)}, nil
+	mask, err := s.uploadNumber(fmt.Sprintf("SELECT mask FROM upload_v1 WHERE id=X'%x'", id))
+	if err != nil || mask > 3 {
+		return UploadState{}, errors.Join(errors.New("invalid staged item mask"), err)
+	}
+	return UploadState{Code: 1, Mask: byte(mask), Deadline: int64(deadline)}, nil
 }
 
 func (s *Store) ReserveUpload(m [276]byte, limits UploadLimits, now, expiry int64) (UploadState, error) {
@@ -261,6 +280,6 @@ func (s *Store) uploadUsage() (int, uint64, error) {
 	if err != nil || count > uploadCeiling {
 		return 0, 0, errors.Join(errors.New("invalid retained upload count"), err)
 	}
-	charged, err := s.uploadNumber("SELECT coalesce(sum(charge),0) FROM upload_v1 WHERE expired=0")
+	charged, err := s.uploadNumber("SELECT coalesce(sum(charge),0) FROM upload_v1 WHERE expired=0 OR cleanup=1")
 	return int(count), charged, err
 }

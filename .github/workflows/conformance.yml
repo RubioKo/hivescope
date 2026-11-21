@@ -41,10 +41,11 @@ jobs:
           GOPROXY: 'off'
         run: |
           test "$(go env CGO_ENABLED)" = 1
-          trials=$(go test -mod=readonly -list '^Test(AcknowledgedRevocationSurvivesRestart|InterruptedRevocationCanBeRetried|LostReservationReplyKeepsOneCharge)$' ./internal/conformance)
+          trials=$(go test -mod=readonly -list '^Test' ./internal/conformance)
           grep -Fx TestAcknowledgedRevocationSurvivesRestart <<< "$trials"
           grep -Fx TestInterruptedRevocationCanBeRetried <<< "$trials"
           grep -Fx TestLostReservationReplyKeepsOneCharge <<< "$trials"
+          grep -Fx TestInterruptedCatalogPutKeepsStagedObject <<< "$trials"
       - name: Run the offline vectors
         env:
           GOPROXY: 'off'

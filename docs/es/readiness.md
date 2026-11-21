@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 18 -->
+<!-- docs-pair: readiness; revision: 19 -->
 
 [English](../en/readiness.md) | [Español](readiness.md) | [Índice](README.md)
 
@@ -16,8 +16,9 @@ local comprueban la identidad del proveedor y las firmas de un solo uso para
 leer por separado el catálogo y su objeto cifrado. En Linux también se comprueba
 la identidad del proveedor en equipos virtuales aislados. Las pruebas de
 reinicio cubren una revocación confirmada y otra interrumpida que el
-propietario reenvía. Otro ensayo comprueba que perder la respuesta a una
-reserva deja un solo cargo de espacio. Recuperar el archivo en otra computadora
+propietario reenvía. Los ensayos de subida comprueban que perder la respuesta a
+una reserva deja un solo cargo de espacio y que, tras un corte en el envío del
+catálogo, el proveedor conserva el objeto ya recibido. Recuperar el archivo en otra computadora
 sigue siendo parte del ensayo en red local.
 
 ## Alcance y contratos
@@ -116,6 +117,16 @@ estado y reenvía el mismo manifiesto. El proveedor devuelve la reserva
 pendiente con su plazo original y un solo cargo de espacio. El cliente debe
 conservar el manifiesto, el ID de solicitud y los datos cifrados de origen
 mientras espera la confirmación. [Prueba de reserva](../../internal/conformance/reserve_linux_test.go)
+
+En la misma configuración Linux, ejecuta
+`go test -mod=readonly -count=1 -run '^TestInterruptedCatalogPutKeepsStagedObject$' ./internal/conformance`.
+El equipo de origen envía el objeto cifrado de 21 bytes, transmite 125 de los
+250 bytes del catálogo y cierra el flujo. Al reabrir el almacén, `STATUS`
+indica que solo el objeto está preparado (máscara `02`). Reintentar ese objeto
+consume cero bytes del archivo de origen. Enviar el catálogo completo cambia
+la máscara a `03` con la reserva y el vencimiento originales. En ese punto,
+ambos localizadores siguen sin permitir lecturas. El recibo firmado y la
+publicación del par son la siguiente parte de M1-05. [Prueba de PUT interrumpido](../../internal/conformance/put_linux_test.go)
 
 Desde la raíz del repositorio, con Go 1.26 o posterior, ejecutar una vez
 `go mod download` y después `go test -mod=readonly -count=1 ./...`. Las

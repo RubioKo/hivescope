@@ -1,4 +1,4 @@
-<!-- docs-pair: provider-persistence; revision: 4 -->
+<!-- docs-pair: provider-persistence; revision: 5 -->
 
 [English](../en/provider-persistence.md) | [Español](provider-persistence.md) | [Índice](README.md)
 
@@ -108,8 +108,9 @@ y contabiliza el espacio antes de responder con el estado pendiente. Al volver
 a conectarse, el cliente puede consultar el mismo ID y resumen o reenviar el
 manifiesto original. El plazo y el cargo se fijan en la primera admisión.
 La reserva por sí sola no publica datos. El ensayo utiliza un reloj de
-laboratorio confiable y conserva los ID vencidos. La transferencia y la
-confirmación mediante un recibo firmado se probarán en pasos posteriores.
+laboratorio confiable y conserva los ID vencidos. Cada elemento preparado
+utiliza la reserva inicial. La emisión del recibo firmado requiere todavía
+el paso final de publicación.
 
 Este almacén conserva hasta 64 identificadores de solicitud, sujetos a un
 límite local menor. Redondea por separado el tamaño de cada elemento y
@@ -195,6 +196,16 @@ a verificar la hora antes de eliminar archivos por vencimiento. Los plazos
 de streams y retos usan tiempo transcurrido y se descartan al reiniciar.
 
 ## De la reserva a la publicación
+
+En `PUT`, cada solicitud admite un solo escritor para ambos elementos. El
+proveedor Linux escribe en un archivo sin nombre en su volumen privado.
+Comprueba el tamaño declarado, el SHA-256, la trama final `END` y el cierre
+ordenado de la solicitud. Luego sincroniza el archivo, lo enlaza en el espacio
+reservado, sincroniza el directorio y registra el elemento antes de responder.
+Al cerrar una transferencia interrumpida se descarta su archivo sin nombre.
+El otro elemento conserva su espacio y la reserva inicial sigue vigente.
+Tras reiniciar, el proveedor coteja cada archivo enlazado con el manifiesto
+antes de comunicar su estado.
 
 | Etapa | Orden requerido |
 | --- | --- |

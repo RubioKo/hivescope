@@ -1,4 +1,4 @@
-<!-- docs-pair: provider-persistence; revision: 4 -->
+<!-- docs-pair: provider-persistence; revision: 5 -->
 
 [English](provider-persistence.md) | [Español](../es/provider-persistence.md) | [Index](README.md)
 
@@ -98,8 +98,9 @@ slots, records the exact manifest and accounts for space before a pending
 reply can leave the provider. On reconnect the client can query the same ID
 and fingerprint or resend the original manifest. The deadline and charge
 belong to the original admission. A reservation alone publishes no data.
-The trial uses a trusted lab clock and retains expired IDs. Staging bytes
-and confirming storage with a signed receipt are subsequent steps.
+The trial uses a trusted lab clock and retains expired IDs. Each staged
+item uses the original reservation. A signed storage receipt still requires
+the final publication step.
 
 This store retains up to 64 request IDs, subject to a lower local limit.
 It rounds each item separately and budgets extra blocks for file extents
@@ -173,6 +174,15 @@ garbage collection. Verify time again before destructive expiry cleanup.
 Stream and challenge timeouts use elapsed time and do not survive restart.
 
 ## From reservation to publication
+
+For `PUT`, each request has one writer for either item. The Linux provider
+writes into an unnamed file on its private volume. It links that file to
+the reserved slot only after verifying the declared length, SHA-256, the
+final `END` and the orderly end of the request. It flushes the file, links
+it, flushes the directory and records the staged bit before replying.
+Closing an interrupted transfer drops its unnamed file. The other item's
+slot and the original reservation remain available. After a restart, the
+provider checks each linked slot against its manifest before reporting it.
 
 | Boundary | Required order |
 | --- | --- |

@@ -41,6 +41,7 @@ type Store struct {
 	fresh       bool // only a new, unused enrollment may initialize upload tables
 	uploads     bool
 	uploadScope [96]byte // exact provider, uploader, folder and agreement
+	writers     map[[16]byte]*PutWriter
 }
 
 func open(dir string, binding [32]byte, create bool) (_ *Store, err error) {
@@ -84,17 +85,21 @@ func open(dir string, binding [32]byte, create bool) (_ *Store, err error) {
 	if err := unix.Flock(fd, unix.LOCK_EX|unix.LOCK_NB); err != nil {
 		return nil, fmt.Errorf("acquire grant store lock: %w", err)
 	}
-	// At most five distinct store entries can be legitimate, including
-	// the SQLite rollback journal and an interrupted checkpoint write.
-	entries, err := s.dir.ReadDir(6)
+	// A bounded upload index can own two named slots per retained request.
+	entries, err := s.dir.ReadDir(2*uploadCeiling + 6)
 	if err != nil && !errors.Is(err, io.EOF) {
 		return nil, err
 	}
+	var linkedSlots []uint64
 	for _, entry := range entries {
 		name := entry.Name()
-		if create || (name != indexName && name != indexName+"-journal" && name != anchorName &&
+		slot, _, item := parseUploadSlot(name)
+		if create || (!item && name != indexName && name != indexName+"-journal" && name != anchorName &&
 			name != intentName && name != stageName) {
 			return nil, errors.New("unexpected entry in private grant store")
+		}
+		if item {
+			linkedSlots = append(linkedSlots, slot)
 		}
 		if _, err := s.ownedFile(name); err != nil {
 			return nil, err
@@ -140,8 +145,21 @@ func open(dir string, binding [32]byte, create bool) (_ *Store, err error) {
 			return nil, err
 		}
 	}
-	if err := s.db.expect("PRAGMA user_version", "1"); err != nil {
-		return nil, err
+	version, err := s.db.scalar("PRAGMA user_version")
+	if err != nil || (string(version) != "1" && string(version) != "2") {
+		return nil, errors.Join(errors.New("unsupported store schema"), err)
+	}
+	if string(version) == "2" {
+		if err := s.db.expect("SELECT count(*) FROM sqlite_master WHERE type='table' AND name IN ('upload_profile','upload_v1')", "2"); err != nil {
+			return nil, err
+		}
+	} else if len(linkedSlots) != 0 {
+		return nil, errors.New("unexpected item in a grant or reservation-only store")
+	}
+	for _, slot := range linkedSlots {
+		if err := s.db.expect(fmt.Sprintf("SELECT count(*) FROM upload_v1 WHERE slot=%d AND (expired=0 OR cleanup=1)", slot), "1"); err != nil {
+			return nil, err
+		}
 	}
 	if err := s.db.expect("PRAGMA integrity_check(1)", "ok"); err != nil {
 		return nil, err
@@ -404,8 +422,11 @@ func (s *Store) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var err error
+	for _, w := range s.writers {
+		err = errors.Join(err, w.abortLocked())
+	}
 	if s.db != nil {
-		err = s.db.close()
+		err = errors.Join(err, s.db.close())
 		s.db = nil
 	}
 	if s.dir != nil {

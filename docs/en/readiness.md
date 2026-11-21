@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 18 -->
+<!-- docs-pair: readiness; revision: 19 -->
 
 [English](readiness.md) | [Español](../es/readiness.md) | [Index](README.md)
 
@@ -14,8 +14,9 @@ the first desktop prototype.
 Loopback TCP tests cover provider identity and separate single-use proofs
 for reading the catalog and its encrypted object. Linux tests also check provider
 identity on isolated virtual hosts. The restart trials cover a confirmed
-revocation and an interrupted revocation that the owner resubmits. A separate
-upload trial checks that losing a reservation reply leaves one charge. Recovery
+revocation and an interrupted revocation that the owner resubmits. Upload trials
+check that losing a reservation reply leaves one charge and that retrying an
+interrupted catalog transfer preserves the object already staged. Recovery
 on a separate replacement computer remains part of the LAN trial.
 
 ## Scope and contracts
@@ -107,6 +108,15 @@ queries its status and submits the same manifest again. The provider returns
 the pending state with the original deadline and one physical charge. The
 client must retain the original manifest, request ID and sealed source while
 confirmation is pending. [Reservation trial](../../internal/conformance/reserve_linux_test.go)
+
+Run `go test -mod=readonly -count=1 -run '^TestInterruptedCatalogPutKeepsStagedObject$' ./internal/conformance`
+on the same Linux configuration. The uploader stages the 21-byte sealed object,
+then sends 125 of the 250 catalog payload bytes and closes the stream.
+After reopening the store, `STATUS` reports only the object staged (mask
+`02`). Retrying that object consumes zero source bytes. Sending the complete
+catalog changes the mask to `03` under the original reservation and deadline.
+Neither locator is readable at this point. The signed receipt and publication
+of the pair are the next part of M1-05. [Interrupted PUT trial](../../internal/conformance/put_linux_test.go)
 
 From the repository root with Go 1.26 or later, run `go mod download` once,
 then `go test -mod=readonly -count=1 ./...`. The tests use synthetic data.

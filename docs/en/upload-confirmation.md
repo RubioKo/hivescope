@@ -1,4 +1,4 @@
-<!-- docs-pair: upload-confirmation; revision: 1 -->
+<!-- docs-pair: upload-confirmation; revision: 2 -->
 
 [English](upload-confirmation.md) | [Español](../es/upload-confirmation.md) | [Index](README.md)
 
@@ -135,5 +135,7 @@ d391894a4b1772edefcca619d2ffad9cc9d67e223a3f0f8f643bfc1a4db85377
 
 The example signature was verified with the public provider key. Changing
 only the object length from 21 to 22 changed the fingerprint and invalidated
-the original signature for that manifest. The crash and quota outcomes above
-remain acceptance criteria for the prototype.
+the original signature for that manifest. The Linux upload trial exercises
+interrupted staging with this same object and catalog. The pair is still
+pending after both items arrive. Publication and a signed receipt over
+the network remain acceptance criteria. [Interrupted upload trial](readiness.md)
