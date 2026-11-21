@@ -4,11 +4,8 @@ package lan
 
 import (
 	"bytes"
-	"crypto/ed25519"
 	"crypto/sha256"
-	"encoding/binary"
 	"errors"
-	"math"
 	"sync"
 	"time"
 
@@ -49,16 +46,17 @@ func (item CommittedItem) owned(minSize, maxSize int) CommittedItem {
 	return item
 }
 
-// ReadProvider serves the prototype's single committed pair. Grant state
-// is process-local. A restarted provider needs an independently trusted source
-// for its latest signed record before it may serve reads.
+// ReadProvider serves the prototype's single committed pair. Persistent
+// providers serialize durable updates and read admission under the same lock.
 type ReadProvider struct {
 	agreement CatalogAgreement
 	catalog   CommittedCatalog
 	object    *CommittedObject // absent on catalog-only providers
 
-	mu         sync.RWMutex // a grant change excludes writes of individual frames
-	record     [198]byte
+	mu         sync.RWMutex     // a grant change excludes writes of individual frames
+	store      grantPersistence // nil on an in-memory provider
+	offline    bool             // closed or awaiting reconciliation after a storage error
+	record     [grantRecordSize]byte
 	generation uint64
 	recovery   [32]byte // zero for missing or revoked grant
 }
@@ -93,41 +91,50 @@ func NewReadProvider(agreement CatalogAgreement, catalog CommittedCatalog, objec
 	return p, nil
 }
 
-// LoadGrant verifies the current locally supplied record. The caller must
-// supply the highest authoritative record when initializing the provider.
-// This method does not implement durable GRANT_UPDATE or issue an ACK.
+// LoadGrant verifies a locally supplied signed record. On a persistent
+// provider it uses the same commit path as a network update.
 func (p *ReadProvider) LoadGrant(record []byte) error {
-	const domain = "HiveScope/recovery-grant/v1\x00"
-	a := p.agreement
-	if len(record) != 198 || string(record[:28]) != domain || [32]byte(record[28:60]) != a.ProviderKey ||
-		[16]byte(record[60:76]) != a.FolderID || [16]byte(record[76:92]) != a.AgreementID || record[101] != 1 ||
-		!ed25519.Verify(a.AuthorityKey[:], record[:134], record[134:]) {
-		return errors.New("grant signature or enrollment mismatch")
-	}
-	generation := binary.BigEndian.Uint64(record[92:100])
-	key := [32]byte(record[102:134])
-	switch record[100] {
-	case 1:
-		if generation == math.MaxUint64 || !storageformat.ValidEd25519Key(key[:]) {
-			return errors.New("invalid active grant")
-		}
-	case 2:
-		if key != [32]byte{} {
-			return errors.New("revoked grant includes a recovery key")
-		}
-	default:
-		return errors.New("unknown recovery grant state")
+	return p.applyGrant(record, false)
+}
+
+func (p *ReadProvider) applyGrant(raw []byte, requireDurable bool) error {
+	grant, err := p.agreement.verifyGrant(raw)
+	if err != nil {
+		return err
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if !a.readable(time.Now()) {
-		return errors.New("agreement outside read window")
+	if p.offline || (requireDurable && p.store == nil) {
+		return ErrGrantUnavailable
 	}
-	if generation == 0 || generation < p.generation || (generation == p.generation && !bytes.Equal(record, p.record[:])) {
-		return errors.New("stale or conflicting recovery grant")
+	if !p.agreement.readable(time.Now()) {
+		return ErrGrantDenied
 	}
-	p.record = [198]byte(record)
-	p.generation = generation
-	p.recovery = key
+	if grant.generation < p.generation || (grant.generation == p.generation && grant.record != p.record) {
+		return ErrGrantConflict
+	}
+	if grant.generation == p.generation {
+		if p.store != nil {
+			current, err := p.store.Record()
+			if err != nil || !bytes.Equal(current, grant.record[:]) {
+				p.offline = true
+				return errors.Join(ErrGrantUnavailable, err)
+			}
+		}
+		return nil
+	}
+	if p.store != nil {
+		var previous []byte
+		if p.generation != 0 {
+			previous = p.record[:]
+		}
+		if err := p.store.Replace(previous, grant.record[:]); err != nil {
+			// The durable outcome can be uncertain. No cached grant may
+			// authorize another frame until a new provider reconciles it.
+			p.offline = true
+			return errors.Join(ErrGrantUnavailable, err)
+		}
+	}
+	p.record, p.generation, p.recovery = grant.record, grant.generation, grant.key
 	return nil
 }

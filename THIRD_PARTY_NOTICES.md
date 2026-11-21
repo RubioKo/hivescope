@@ -53,6 +53,16 @@ go-yamux para multiplexar los flujos, bajo la licencia MPL-2.0.
 - [go-multistream v0.6.1](https://github.com/multiformats/go-multistream/blob/v0.6.1/LICENSE)
 - [go-yamux v5.1.0](https://github.com/libp2p/go-yamux/blob/v5.1.0/LICENSE)
 
+## Grant persistence / Persistencia de permisos
+
+The Linux grant store links to the system SQLite 3 library through cgo.
+The SQLite authors dedicated the core library to the public domain.
+[SQLite copyright](https://www.sqlite.org/copyright.html)
+
+El almacén de permisos en Linux se enlaza con la biblioteca SQLite 3 del
+sistema mediante cgo. Los autores de SQLite dedicaron su biblioteca principal
+al dominio público. [Declaración de SQLite](https://www.sqlite.org/copyright.html)
+
 ## ECC reference / Referencia a ECC
 
 [ECC](https://github.com/affaan-m/ECC) is an external, MIT-licensed reference for

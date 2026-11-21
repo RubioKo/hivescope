@@ -1,4 +1,4 @@
-<!-- docs-pair: provider-persistence; revision: 1 -->
+<!-- docs-pair: provider-persistence; revision: 2 -->
 
 [English](../en/provider-persistence.md) | [Español](provider-persistence.md) | [Índice](README.md)
 
@@ -10,6 +10,25 @@ debe encontrar la misma subida cuando él reinicie. Si el disco pierde después
 alguno de los archivos, Ana debe ver que su copia está inaccesible. Este diseño
 especifica qué guardar, cuándo confirmarlo y cómo comprobar ambos resultados.
 [Confirmación de subida y recibo de referencia](upload-confirmation.md)
+
+## Almacenamiento de permisos en el prototipo Linux
+
+El operador configura un almacén privado con un permiso inicial firmado.
+Cuando cambia el permiso, el proveedor guarda el registro firmado en una
+transacción SQLite, reemplaza un archivo local separado que contiene el
+resumen del registro y sincroniza el directorio antes de devolver
+`GRANT_ACK`. Tras reiniciar, abre el almacén existente para la identidad y
+el acuerdo registrados, verifica el permiso y coteja el resumen. Si hay una
+discrepancia, las lecturas quedan suspendidas hasta conciliar el estado.
+Restaurar solo una base de datos anterior puede producir esa discrepancia.
+Restaurar la base y el archivo de comprobación desde la misma instantánea
+antigua del volumen puede hacer retroceder ambos.
+
+La prueba de bucle local presupone un reloj de sistema confiable y utiliza
+elementos cifrados precargados. El reinicio del proceso comprueba la recuperación del permiso.
+Los recibos de subida, el comportamiento del volumen ante cortes eléctricos
+y la conciliación del reloj requieren ensayos por separado.
+[Prueba de reinicio y requisitos de compilación](readiness.md)
 
 ## Volumen de la prueba
 

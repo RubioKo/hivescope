@@ -1,4 +1,4 @@
-<!-- docs-pair: home; revision: 18 -->
+<!-- docs-pair: home; revision: 19 -->
 
 English | [Español](README.es.md)
 
@@ -27,9 +27,11 @@ the destination and compare it byte for byte with the same verified version.
 A match can confirm the save. If you edited the
 file in the meantime, your changes are preserved. The offline examples cover an empty
 file, five bytes and 4 MiB + 1 byte.
-Recovery on a replacement computer and revocation that survives a provider
-restart are goals of the first desktop prototype. Private computing and service
-hosting come later.
+If you revoke a recovery credential, the Linux test provider saves that
+decision before confirming it. After its process restarts, the old
+credential receives zero bytes from either the catalog or the file. The
+next hardware trial will use a separate replacement computer. Private
+computing and service hosting come later.
 [First prototype and test results](docs/en/readiness.md) · [Project vision](docs/en/vision.md) · [Roadmap](docs/en/roadmap.md)
 
 ![A world map connects three scenes. A traveler opens a private folder on a phone, a creator works on a laptop and a volunteer offers resources from a desktop.](assets/story/worldwide-network.jpg)

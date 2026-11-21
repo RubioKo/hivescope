@@ -106,10 +106,13 @@ func (p *ReadProvider) serveStream(stream network.MuxedStream, replacement [32]b
 	if err := stream.SetDeadline(time.Now().Add(30 * time.Second)); err != nil {
 		return err
 	}
-	op, request, err := readFrame(stream, 73)
+	op, request, err := readFrame(stream, grantRecordSize)
 	if err != nil {
 		stream.Reset()
 		return err
+	}
+	if op == grantUpdateOp {
+		return p.serveGrantUpdate(stream, request)
 	}
 	if op != readBegin || len(request) != 73 || (request[0] != catalogKind && request[0] != objectKind) || binary.BigEndian.Uint64(request[33:41]) == 0 {
 		return writeFrame(stream, errorOp, []byte{1})
@@ -155,6 +158,9 @@ func (p *ReadProvider) serveStream(stream network.MuxedStream, replacement [32]b
 func (p *ReadProvider) authorizedItem(request []byte, nonce, replacement [32]byte, proof []byte, issuedGeneration uint64, deadline time.Time) ([]byte, byte) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
+	if p.offline {
+		return nil, 7
+	}
 	now := time.Now()
 	a := p.agreement
 	if !now.Before(deadline) || !a.readable(now) || p.recovery == [32]byte{} || p.generation != issuedGeneration ||
@@ -191,6 +197,9 @@ func (p *ReadProvider) releaseRead(send func(byte, []byte) error, request []byte
 	sendCurrent := func(op byte, payload []byte) error {
 		p.mu.RLock()
 		defer p.mu.RUnlock()
+		if p.offline {
+			return ErrGrantUnavailable
+		}
 		if p.generation != issuedGeneration || !p.agreement.readable(time.Now()) {
 			return ErrReadDenied
 		}
@@ -199,6 +208,9 @@ func (p *ReadProvider) releaseRead(send func(byte, []byte) error, request []byte
 	err := sendItem(sendCurrent, sealed)
 	if err == ErrReadDenied {
 		return send(errorOp, []byte{2})
+	}
+	if err == ErrGrantUnavailable {
+		return send(errorOp, []byte{7})
 	}
 	return err
 }

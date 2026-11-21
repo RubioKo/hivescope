@@ -12,17 +12,19 @@ import (
 )
 
 const (
-	opField      = 0x08
-	payloadField = 0x12
-	readBegin    = 0x07
-	proofOp      = 0x08
-	dataOp       = 0x21
-	endOp        = 0x22
-	challengeOp  = 0x25
-	readSizeOp   = 0x26
-	errorOp      = 0x7f
-	catalogKind  = 0x01
-	objectKind   = 0x02
+	opField       = 0x08
+	payloadField  = 0x12
+	grantUpdateOp = 0x06
+	readBegin     = 0x07
+	proofOp       = 0x08
+	dataOp        = 0x21
+	endOp         = 0x22
+	grantAckOp    = 0x24
+	challengeOp   = 0x25
+	readSizeOp    = 0x26
+	errorOp       = 0x7f
+	catalogKind   = 0x01
+	objectKind    = 0x02
 )
 
 // ErrReadDenied is the authenticated provider's refusal to authorize the read.

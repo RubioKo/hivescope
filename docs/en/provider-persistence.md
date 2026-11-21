@@ -1,4 +1,4 @@
-<!-- docs-pair: provider-persistence; revision: 1 -->
+<!-- docs-pair: provider-persistence; revision: 2 -->
 
 [English](provider-persistence.md) | [Español](../es/provider-persistence.md) | [Index](README.md)
 
@@ -10,6 +10,23 @@ the same upload when he restarts. If his disk later loses either file, Ana
 must see that the copy is unavailable. This design specifies what to store,
 when to acknowledge it and how to test both outcomes.
 [Upload confirmation and reference receipt](upload-confirmation.md)
+
+## Grant storage in the Linux prototype
+
+The operator provisions a private store with an initial signed grant. On a
+change, the provider commits the new signed record to SQLite, replaces a
+separate local checkpoint containing the record's digest, and synchronizes
+the directory before returning `GRANT_ACK`. After restart it opens the
+existing store for the enrolled identity and agreement, verifies the grant
+and checks the checkpoint. If the records disagree, reads stay disabled
+pending reconciliation. Restoring an older database alone can cause such
+a mismatch. Restoring the database and checkpoint together from the same
+old volume snapshot can roll back both.
+
+This loopback trial assumes a trusted host clock and uses preloaded sealed items.
+The subprocess restart exercises grant recovery. Upload receipts, volume
+power-loss behavior and clock reconciliation remain separate trials.
+[Restart test and build requirements](readiness.md)
 
 ## The trial volume
 
