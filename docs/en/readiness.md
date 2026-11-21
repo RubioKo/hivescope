@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 16 -->
+<!-- docs-pair: readiness; revision: 17 -->
 
 [English](readiness.md) | [Español](../es/readiness.md) | [Index](README.md)
 
@@ -13,9 +13,9 @@ the first desktop prototype.
 **Current evidence.** Local tests cover recovery formats and verified saves.
 Loopback TCP tests cover provider identity and separate single-use proofs
 for reading the catalog and its encrypted object. Linux tests also check provider
-identity on isolated virtual hosts and enforce an acknowledged revocation after
-restarting the provider process. Recovery on a separate replacement computer
-remains part of the LAN trial.
+identity on isolated virtual hosts. The restart trials cover a confirmed
+revocation and an interrupted revocation that the owner resubmits. Recovery
+on a separate replacement computer remains part of the LAN trial.
 
 ## Scope and contracts
 
@@ -122,6 +122,16 @@ fresh challenge with the old credential for each item. Both requests return
 digest. Replaying the older signed grant returns `CONFLICT`. The test
 preloads the encrypted items. Hardware and native profile unlock remain part
 of the full LAN procedure. [Process restart test](../../internal/conformance/grant_restart_linux_test.go)
+
+To exercise an interrupted revocation, run
+`go test -mod=readonly -count=1 -run '^TestInterruptedRevocationCanBeRetried$' ./internal/conformance`.
+This loopback test interrupts the checkpoint write after SQLite records the
+revocation and kills the provider before the owner receives confirmation.
+The restarted provider first receives fresh read proofs from the old
+credential. It returns `DENIED` and zero bytes for both the catalog and the
+object. The owner then resends the exact signed revocation and verifies the
+matching acknowledgment. The test repeats both denied reads after the retry
+and after one more restart. [Interrupted grant storage](provider-persistence.md)
 
 The Go entry point `WithRecoveryPackage` authenticates the package locally
 and checks its fields before handing control to the owner's recovery code.

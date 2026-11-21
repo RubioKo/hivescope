@@ -8,6 +8,10 @@ import "errors"
 
 var ErrUnsupported = errors.New("durable grant storage requires Linux with SQLite and cgo")
 
+// ErrPendingRevocation prevents normal grant use until the owner retries
+// the exact signed revocation returned by PendingRevocation.
+var ErrPendingRevocation = errors.New("interrupted revocation requires an exact retry")
+
 // Create exclusively provisions a new private directory under an existing
 // trusted parent. binding identifies the enrolled store and agreement.
 func Create(dir string, binding [32]byte) (*Store, error) { return open(dir, binding, true) }

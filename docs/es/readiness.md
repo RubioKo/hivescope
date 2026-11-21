@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 16 -->
+<!-- docs-pair: readiness; revision: 17 -->
 
 [English](../en/readiness.md) | [Español](readiness.md) | [Índice](README.md)
 
@@ -14,9 +14,10 @@ definen el primer prototipo de escritorio.
 y el guardado de archivos verificados. Las pruebas TCP en la interfaz de bucle
 local comprueban la identidad del proveedor y las firmas de un solo uso para
 leer por separado el catálogo y su objeto cifrado. En Linux también se comprueba
-la identidad del proveedor en equipos virtuales aislados y que, tras reiniciar
-el proceso, el proveedor respeta una revocación ya confirmada. Recuperar el
-archivo en otra computadora sigue siendo parte del ensayo en red local.
+la identidad del proveedor en equipos virtuales aislados. Las pruebas de
+reinicio cubren una revocación confirmada y otra interrumpida que el
+propietario reenvía. Recuperar el archivo en otra computadora sigue siendo
+parte del ensayo en red local.
 
 ## Alcance y contratos
 
@@ -133,6 +134,18 @@ bytes del elemento. Reenviar la misma revocación devuelve el resumen original.
 Reenviar el permiso anterior firmado devuelve `CONFLICT`. La prueba parte de
 los elementos cifrados ya cargados. El ensayo completo en red local incluye
 equipos físicos y el desbloqueo nativo del perfil. [Prueba de reinicio del proceso](../../internal/conformance/grant_restart_linux_test.go)
+
+Para probar una revocación interrumpida, ejecutar
+`go test -mod=readonly -count=1 -run '^TestInterruptedRevocationCanBeRetried$' ./internal/conformance`.
+Este ensayo de bucle local interrumpe la escritura del archivo de
+comprobación después de guardar la revocación en SQLite y termina el
+proceso del proveedor antes de que el propietario reciba la confirmación.
+Al reiniciar, el proveedor recibe primero pruebas de lectura nuevas firmadas
+con la credencial antigua. Devuelve `DENIED` y cero bytes tanto para el
+catálogo como para el objeto. El propietario reenvía la misma revocación
+firmada y verifica el resumen de la confirmación. La prueba repite ambas
+lecturas denegadas tras el reintento y después de otro reinicio.
+[Persistencia de la revocación interrumpida](provider-persistence.md)
 
 La función de Go `WithRecoveryPackage` autentica el paquete en el equipo y
 comprueba sus campos antes de pasar el control al código de recuperación del

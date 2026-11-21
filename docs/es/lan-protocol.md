@@ -1,4 +1,4 @@
-<!-- docs-pair: lan-protocol; revision: 5 -->
+<!-- docs-pair: lan-protocol; revision: 6 -->
 
 [English](../en/lan-protocol.md) | [Español](lan-protocol.md) | [Índice](README.md)
 
@@ -121,6 +121,14 @@ Al sustituir una autorización, el proveedor deja de poner datos en cola
 para las lecturas activas afectadas e invalida sus retos pendientes antes
 de confirmar el cambio. Los bytes ya entregados al transporte todavía
 pueden llegar después.
+
+Si la conexión termina antes de verificar `GRANT_ACK`, el propietario
+mantiene la revocación pendiente y reenvía los mismos 198 bytes firmados en
+un flujo autenticado nuevo. Si al reiniciar el proveedor encuentra una
+revocación pendiente válida, deniega la lectura de ambos elementos y solo
+acepta ese mismo registro firmado para completar la operación. El propietario
+la da por confirmada tras recibir el resumen esperado y el cierre ordenado
+del flujo. [Recuperación de una revocación interrumpida](provider-persistence.md)
 
 En una lectura autorizada, el proveedor envía `26 READ_SIZE` con la longitud
 cifrada (8), tramas consecutivas `DATA` que suman exactamente esa longitud,

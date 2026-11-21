@@ -163,7 +163,7 @@ func (p *ReadProvider) authorizedItem(request []byte, nonce, replacement [32]byt
 	}
 	now := time.Now()
 	a := p.agreement
-	if !now.Before(deadline) || !a.readable(now) || p.recovery == [32]byte{} || p.generation != issuedGeneration ||
+	if p.pendingRevocation || !now.Before(deadline) || !a.readable(now) || p.recovery == [32]byte{} || p.generation != issuedGeneration ||
 		p.generation != binary.BigEndian.Uint64(request[33:41]) || a.FolderID != [16]byte(request[1:17]) ||
 		a.AgreementID != [16]byte(request[17:33]) ||
 		!ed25519.Verify(p.recovery[:], readTranscript(a.ProviderKey, replacement, request, nonce), proof) {
@@ -200,7 +200,7 @@ func (p *ReadProvider) releaseRead(send func(byte, []byte) error, request []byte
 		if p.offline {
 			return ErrGrantUnavailable
 		}
-		if p.generation != issuedGeneration || !p.agreement.readable(time.Now()) {
+		if p.pendingRevocation || p.generation != issuedGeneration || !p.agreement.readable(time.Now()) {
 			return ErrReadDenied
 		}
 		return send(op, payload)

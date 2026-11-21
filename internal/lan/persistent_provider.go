@@ -14,6 +14,8 @@ import (
 type grantPersistence interface {
 	Replace(previous, next []byte) error
 	Record() ([]byte, error)
+	PendingRevocation() ([]byte, error)
+	CompleteRevocation(signed []byte) error
 	Close() error
 }
 
@@ -68,7 +70,7 @@ func CreatePersistentReadProvider(dir string, storeID [32]byte, agreement Catalo
 }
 
 // OpenPersistentReadProvider reopens existing enrollment after local unlock.
-// It requires the store's current record and authenticates it again. Sealed
+// It authenticates the current grant or a pending restrictive update. Sealed
 // items are still provisioned separately in this stage of the prototype.
 func OpenPersistentReadProvider(dir string, storeID [32]byte, agreement CatalogAgreement,
 	catalog CommittedCatalog, object CommittedObject) (*ReadProvider, error) {
@@ -84,17 +86,37 @@ func OpenPersistentReadProvider(dir string, storeID [32]byte, agreement CatalogA
 	if err != nil {
 		return nil, err
 	}
-	raw, err := store.Record()
-	if err != nil {
+	if err := p.restoreGrant(store); err != nil {
 		return nil, errors.Join(err, store.Close())
 	}
-	grant, err := agreement.verifyGrant(raw)
+	return p, nil
+}
+
+// A pending intent can only disable access. The previous SQLite row never
+// becomes a live read grant while the authority's revocation awaits a retry.
+func (p *ReadProvider) restoreGrant(store grantPersistence) error {
+	raw, err := store.PendingRevocation()
 	if err != nil {
-		return nil, errors.Join(err, store.Close())
+		return err
 	}
+	pending := raw != nil
+	if !pending {
+		raw, err = store.Record()
+		if err != nil {
+			return err
+		}
+	}
+	grant, err := p.agreement.verifyGrant(raw)
+	if err != nil {
+		return err
+	}
+	if pending && grant.record[100] != 2 {
+		return errors.New("pending grant is not a signed revocation")
+	}
+	p.pendingRevocation = pending
 	p.store = store
 	p.record, p.generation, p.recovery = grant.record, grant.generation, grant.key
-	return p, nil
+	return nil
 }
 
 // Close stops this instance from authorizing additional frames before it
