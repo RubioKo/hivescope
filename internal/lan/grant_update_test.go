@@ -34,8 +34,12 @@ func TestGrantAckRequiresExactDigestAndEOF(t *testing.T) {
 // A transaction can reach the disk and still fail to confirm its checkpoint.
 type uncertainGrantStore struct{ record []byte }
 
-func (s *uncertainGrantStore) Record() ([]byte, error) { return s.record, nil }
-func (s *uncertainGrantStore) Close() error            { return nil }
+func (s *uncertainGrantStore) Record() ([]byte, error)            { return s.record, nil }
+func (s *uncertainGrantStore) Close() error                       { return nil }
+func (s *uncertainGrantStore) PendingRevocation() ([]byte, error) { return nil, nil }
+func (s *uncertainGrantStore) CompleteRevocation([]byte) error {
+	return errors.New("no resumable revocation")
+}
 func (s *uncertainGrantStore) Replace(_, next []byte) error {
 	s.record = bytes.Clone(next)
 	return errors.New("synthetic checkpoint failure")

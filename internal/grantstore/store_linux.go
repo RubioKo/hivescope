@@ -23,6 +23,7 @@ import (
 const (
 	indexName  = "grants.sqlite"
 	anchorName = "grant.checkpoint"
+	stageName  = "checkpoint.next"
 	recordSize = 198
 )
 
@@ -34,6 +35,7 @@ type Store struct {
 	db       *index
 	scope    []byte
 	record   []byte
+	pending  *revocationIntent
 	lastUTC  int64
 	fault    error
 }
@@ -79,13 +81,16 @@ func open(dir string, binding [32]byte, create bool) (_ *Store, err error) {
 	if err := unix.Flock(fd, unix.LOCK_EX|unix.LOCK_NB); err != nil {
 		return nil, fmt.Errorf("acquire grant store lock: %w", err)
 	}
-	entries, err := s.dir.ReadDir(4)
+	// At most five distinct store entries can be legitimate, including
+	// the SQLite rollback journal and an interrupted checkpoint write.
+	entries, err := s.dir.ReadDir(6)
 	if err != nil && !errors.Is(err, io.EOF) {
 		return nil, err
 	}
 	for _, entry := range entries {
 		name := entry.Name()
-		if create || (name != indexName && name != indexName+"-journal" && name != anchorName) {
+		if create || (name != indexName && name != indexName+"-journal" && name != anchorName &&
+			name != intentName && name != stageName) {
 			return nil, errors.New("unexpected entry in private grant store")
 		}
 		if _, err := s.ownedFile(name); err != nil {
@@ -160,8 +165,21 @@ func open(dir string, binding [32]byte, create bool) (_ *Store, err error) {
 	if err != nil || s.lastUTC <= 0 || now < s.lastUTC {
 		return nil, errors.New("grant store clock requires reconciliation")
 	}
-	if err := s.checkAnchor(); err != nil {
+	s.pending, err = s.readIntent()
+	if err != nil {
 		return nil, err
+	}
+	if s.pending != nil {
+		if err := s.checkPending(now); err != nil {
+			return nil, err
+		}
+	} else {
+		if _, err := s.ownedFile(stageName); !errors.Is(err, os.ErrNotExist) {
+			return nil, errors.New("unexpected checkpoint staging without a revocation intent")
+		}
+		if err := s.checkAnchor(); err != nil {
+			return nil, err
+		}
 	}
 	return s, nil
 }
@@ -205,17 +223,34 @@ func (s *Store) checkLocation() error {
 	return nil
 }
 
-func (s *Store) checkAnchor() error {
-	if _, err := s.ownedFile(anchorName); err != nil {
-		return err
-	}
-	fd, err := unix.Openat(int(s.dir.Fd()), anchorName, unix.O_RDONLY|unix.O_NOFOLLOW|unix.O_CLOEXEC, 0)
+func (s *Store) openOwned(name string, flags int) (*os.File, error) {
+	entry, err := s.ownedFile(name)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	f := os.NewFile(uintptr(fd), anchorName)
+	fd, err := unix.Openat(int(s.dir.Fd()), name, flags|unix.O_NOFOLLOW|unix.O_CLOEXEC|unix.O_NONBLOCK, 0)
+	if err != nil {
+		return nil, err
+	}
+	f := os.NewFile(uintptr(fd), name)
+	var opened unix.Stat_t
+	if err := unix.Fstat(fd, &opened); err != nil || opened.Dev != entry.Dev || opened.Ino != entry.Ino {
+		return nil, errors.Join(errors.New("grant store entry changed while opening"), err, f.Close())
+	}
+	return f, nil
+}
+
+func (s *Store) readOwned(name string, maxBytes int64) ([]byte, error) {
+	f, err := s.openOwned(name, unix.O_RDONLY)
+	if err != nil {
+		return nil, err
+	}
 	defer f.Close()
-	value, err := io.ReadAll(io.LimitReader(f, sha256.Size+1))
+	return io.ReadAll(io.LimitReader(f, maxBytes+1))
+}
+
+func (s *Store) checkAnchor() error {
+	value, err := s.readOwned(anchorName, sha256.Size)
 	if err != nil {
 		return err
 	}
@@ -227,33 +262,44 @@ func (s *Store) checkAnchor() error {
 }
 
 func (s *Store) writeAnchor(record []byte) error {
-	const staging = "checkpoint.next"
-	f, err := s.newFile(staging)
+	f, err := s.newFile(stageName)
 	if err != nil {
 		return err
 	}
 	digest := sha256.Sum256(record)
-	if _, err := f.Write(digest[:]); err != nil {
+	return s.publishAnchor(f, digest[:])
+}
+
+// f is either newly created or points immediately after a verified prefix.
+func (s *Store) publishAnchor(f *os.File, remainder []byte) error {
+	if _, err := f.Write(remainder); err != nil {
 		return errors.Join(err, f.Close())
 	}
 	if err := errors.Join(f.Sync(), f.Close()); err != nil {
 		return err
 	}
 	fd := int(s.dir.Fd())
-	if err := unix.Renameat(fd, staging, fd, anchorName); err != nil {
+	if err := unix.Renameat(fd, stageName, fd, anchorName); err != nil {
 		return err
 	}
 	return s.dir.Sync()
 }
 
 func (s *Store) checkBacking(now int64) error {
+	if err := s.checkRow(now); err != nil {
+		return err
+	}
+	if _, err := s.ownedFile(intentName); !errors.Is(err, os.ErrNotExist) {
+		return errors.New("unexpected revocation intent during normal grant use")
+	}
+	return s.checkAnchor()
+}
+
+func (s *Store) checkRow(now int64) error {
 	if now < s.lastUTC {
 		return errors.New("clock behind persisted grant state")
 	}
 	if err := s.checkLocation(); err != nil {
-		return err
-	}
-	if err := s.checkAnchor(); err != nil {
 		return err
 	}
 	return s.compareRow(s.record, s.lastUTC)
@@ -276,7 +322,16 @@ func (s *Store) Record() ([]byte, error) {
 	if s.db == nil {
 		return nil, os.ErrClosed
 	}
+	if s.pending != nil {
+		return nil, ErrPendingRevocation
+	}
 	if err := s.checkBacking(time.Now().Unix()); err != nil {
+		s.fault = err
+		return nil, err
+	}
+	// A process could have removed a completed intent just before its final
+	// directory sync. An identical retry must not acknowledge that gap.
+	if err := s.dir.Sync(); err != nil {
 		s.fault = err
 		return nil, err
 	}
@@ -294,6 +349,9 @@ func (s *Store) Replace(previous, next []byte) error {
 	if s.db == nil {
 		return os.ErrClosed
 	}
+	if s.pending != nil {
+		return ErrPendingRevocation
+	}
 	if !bytes.Equal(previous, s.record) || len(next) != recordSize {
 		return errors.New("grant replacement does not match current state")
 	}
@@ -304,20 +362,32 @@ func (s *Store) Replace(previous, next []byte) error {
 	// A commit or subsequent checkpoint flush may have reached disk even
 	// when it reports an error. Stop serving until reopened and reconciled.
 	now := time.Now().Unix()
-	if err := s.checkBacking(now); err != nil {
-		s.fault = err
-	} else if err := s.db.exec(fmt.Sprintf("UPDATE enrollment SET record=X'%x',last_utc=%d WHERE id=1 AND record=X'%x'",
-		next, now, previous)); err != nil {
-		s.fault = err
-	} else if err := s.db.expect("SELECT changes()", "1"); err != nil {
-		s.fault = err
-	} else if err := s.compareRow(next, now); err != nil {
-		s.fault = err
-	} else if err := s.writeAnchor(next); err != nil {
-		s.fault = err
+	s.fault = s.checkBacking(now)
+	if s.fault == nil && next[100] == 2 {
+		s.fault = s.publishIntent(previous, next)
 	}
-	if s.fault != nil {
-		return s.fault
+	if s.fault == nil {
+		s.fault = s.advanceRow(next, now)
+	}
+	if s.fault == nil {
+		s.fault = s.writeAnchor(next)
+	}
+	if s.fault == nil && s.pending != nil {
+		s.fault = s.finishIntent()
+	}
+	return s.fault
+}
+
+func (s *Store) advanceRow(next []byte, now int64) error {
+	if err := s.db.exec(fmt.Sprintf("UPDATE enrollment SET record=X'%x',last_utc=%d WHERE id=1 AND record=X'%x'",
+		next, now, s.record)); err != nil {
+		return err
+	}
+	if err := s.db.expect("SELECT changes()", "1"); err != nil {
+		return err
+	}
+	if err := s.compareRow(next, now); err != nil {
+		return err
 	}
 	s.record = bytes.Clone(next)
 	s.lastUTC = now

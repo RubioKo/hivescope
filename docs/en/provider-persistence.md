@@ -1,4 +1,4 @@
-<!-- docs-pair: provider-persistence; revision: 2 -->
+<!-- docs-pair: provider-persistence; revision: 3 -->
 
 [English](provider-persistence.md) | [Español](../es/provider-persistence.md) | [Index](README.md)
 
@@ -15,13 +15,37 @@ when to acknowledge it and how to test both outcomes.
 
 The operator provisions a private store with an initial signed grant. On a
 change, the provider commits the new signed record to SQLite, replaces a
-separate local checkpoint containing the record's digest, and synchronizes
-the directory before returning `GRANT_ACK`. After restart it opens the
-existing store for the enrolled identity and agreement, verifies the grant
-and checks the checkpoint. If the records disagree, reads stay disabled
-pending reconciliation. Restoring an older database alone can cause such
-a mismatch. Restoring the database and checkpoint together from the same
-old volume snapshot can roll back both.
+separate checkpoint containing its digest, and synchronizes the directory.
+After restart the provider checks these records against the enrolled store
+identity and agreement before authorizing a read.
+
+For a revocation, the provider first saves a private intent containing the
+previous checkpoint digest and the exact revocation signed by the folder
+authority. It makes that intent durable before changing SQLite. From this
+point a restart keeps the old credential from reading either item. If the
+provider stops before it has durable evidence of the request, the previous
+grant can still apply. Bytes already handed to the transport can still arrive.
+
+The provider recognizes three combinations when a valid intent is present.
+
+| Signed record in SQLite | Checkpoint digest | On restart |
+| --- | --- | --- |
+| Previous grant | Previous grant | Keep reads disabled while waiting for the same signed revocation. |
+| Revocation | Previous grant | Keep reads disabled. An exact retry can finish the checkpoint. |
+| Revocation | Revocation | Keep reads disabled. An exact retry can finish removing the intent. |
+
+For the retry the provider verifies the authority signature, scope and exact
+bytes against the intent. It finishes the SQLite and checkpoint writes as
+needed, removes the intent, synchronizes the directory and then returns
+`GRANT_ACK` with the digest of the revocation. A lost reply after this point
+can be confirmed by resending the same signed bytes. Missing, inconsistent
+or unrecognized evidence keeps the store offline for reconciliation.
+An older database paired with a newer checkpoint keeps reads disabled. A
+whole-volume snapshot can roll back all of the provider's local evidence.
+
+The Linux store publishes the intent from an unnamed file. This requires a
+filesystem supporting `O_TMPFILE` and access to `/proc/self/fd`.
+[Linux unnamed temporary files](https://man7.org/linux/man-pages/man2/open.2.html)
 
 This loopback trial assumes a trusted host clock and uses preloaded sealed items.
 The subprocess restart exercises grant recovery. Upload receipts, volume

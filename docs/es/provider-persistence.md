@@ -1,4 +1,4 @@
-<!-- docs-pair: provider-persistence; revision: 2 -->
+<!-- docs-pair: provider-persistence; revision: 3 -->
 
 [English](../en/provider-persistence.md) | [Español](provider-persistence.md) | [Índice](README.md)
 
@@ -14,15 +14,43 @@ especifica qué guardar, cuándo confirmarlo y cómo comprobar ambos resultados.
 ## Almacenamiento de permisos en el prototipo Linux
 
 El operador configura un almacén privado con un permiso inicial firmado.
-Cuando cambia el permiso, el proveedor guarda el registro firmado en una
-transacción SQLite, reemplaza un archivo local separado que contiene el
-resumen del registro y sincroniza el directorio antes de devolver
-`GRANT_ACK`. Tras reiniciar, abre el almacén existente para la identidad y
-el acuerdo registrados, verifica el permiso y coteja el resumen. Si hay una
-discrepancia, las lecturas quedan suspendidas hasta conciliar el estado.
-Restaurar solo una base de datos anterior puede producir esa discrepancia.
-Restaurar la base y el archivo de comprobación desde la misma instantánea
-antigua del volumen puede hacer retroceder ambos.
+Cuando cambia el permiso, el proveedor guarda el nuevo registro firmado en
+SQLite, reemplaza un archivo de comprobación separado que contiene su
+resumen y sincroniza el directorio. Tras reiniciar, contrasta esos registros
+con la identidad del almacén y el acuerdo antes de autorizar una lectura.
+
+Ante una revocación, el proveedor guarda primero un registro privado de la
+operación pendiente. Contiene el resumen del permiso anterior y los bytes
+exactos de la revocación firmada por la autoridad de la carpeta. El registro
+debe quedar en disco antes de modificar SQLite. Desde ese momento, un
+reinicio mantiene bloqueadas ambas lecturas con la credencial antigua. Si el
+proveedor se detiene antes de guardar evidencia duradera de la solicitud,
+el permiso anterior puede seguir vigente. Los bytes que ya se entregaron al
+transporte aún pueden llegar a su destino.
+
+El proveedor reconoce tres combinaciones cuando el registro pendiente es válido.
+
+| Registro firmado en SQLite | Resumen en el archivo de comprobación | Al reiniciar |
+| --- | --- | --- |
+| Permiso anterior | Permiso anterior | Mantiene las lecturas bloqueadas a la espera de la misma revocación firmada. |
+| Revocación | Permiso anterior | Mantiene las lecturas bloqueadas. Un reintento idéntico puede completar el archivo de comprobación. |
+| Revocación | Revocación | Mantiene las lecturas bloqueadas. Un reintento idéntico puede completar la eliminación del registro pendiente. |
+
+Al reintentar, el proveedor verifica la firma de la autoridad y su alcance,
+y compara los bytes exactos con el registro pendiente. Completa las
+escrituras necesarias en SQLite y en el archivo de comprobación, elimina el
+registro pendiente, sincroniza el directorio y entonces devuelve `GRANT_ACK`
+con el resumen de la revocación. Si se pierde la respuesta a partir de ese
+momento, reenviar los mismos bytes firmados permite obtener la confirmación.
+La falta de datos o un estado incoherente o desconocido deja el almacén
+fuera de servicio hasta conciliarlo. Una base de datos anterior junto con un
+archivo de comprobación más reciente mantiene las lecturas bloqueadas.
+Una instantánea del volumen completo puede
+hacer retroceder todas las comprobaciones locales del proveedor.
+
+El almacén Linux publica el registro pendiente a partir de un archivo sin
+nombre. Esto requiere un sistema de archivos compatible con `O_TMPFILE` y
+acceso a `/proc/self/fd`. [Archivos temporales sin nombre en Linux](https://man7.org/linux/man-pages/man2/open.2.html)
 
 La prueba de bucle local presupone un reloj de sistema confiable y utiliza
 elementos cifrados precargados. El reinicio del proceso comprueba la recuperación del permiso.

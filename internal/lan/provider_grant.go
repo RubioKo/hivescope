@@ -53,12 +53,13 @@ type ReadProvider struct {
 	catalog   CommittedCatalog
 	object    *CommittedObject // absent on catalog-only providers
 
-	mu         sync.RWMutex     // a grant change excludes writes of individual frames
-	store      grantPersistence // nil on an in-memory provider
-	offline    bool             // closed or awaiting reconciliation after a storage error
-	record     [grantRecordSize]byte
-	generation uint64
-	recovery   [32]byte // zero for missing or revoked grant
+	mu                sync.RWMutex     // a grant change excludes writes of individual frames
+	store             grantPersistence // nil on an in-memory provider
+	offline           bool             // closed or awaiting reconciliation after a storage error
+	pendingRevocation bool             // record is the only update that may complete the interrupted write
+	record            [grantRecordSize]byte
+	generation        uint64
+	recovery          [32]byte // zero for missing or revoked grant
 }
 
 type CatalogProvider = ReadProvider
@@ -109,6 +110,17 @@ func (p *ReadProvider) applyGrant(raw []byte, requireDurable bool) error {
 	}
 	if !p.agreement.readable(time.Now()) {
 		return ErrGrantDenied
+	}
+	if p.pendingRevocation {
+		if grant.record != p.record {
+			return ErrGrantConflict
+		}
+		if err := p.store.CompleteRevocation(grant.record[:]); err != nil {
+			p.offline = true
+			return errors.Join(ErrGrantUnavailable, err)
+		}
+		p.pendingRevocation = false
+		return nil
 	}
 	if grant.generation < p.generation || (grant.generation == p.generation && grant.record != p.record) {
 		return ErrGrantConflict

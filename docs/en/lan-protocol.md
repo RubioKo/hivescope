@@ -1,4 +1,4 @@
-<!-- docs-pair: lan-protocol; revision: 5 -->
+<!-- docs-pair: lan-protocol; revision: 6 -->
 
 [English](lan-protocol.md) | [Español](../es/lan-protocol.md) | [Index](README.md)
 
@@ -107,6 +107,13 @@ damaged item returns `UNAVAILABLE`. [Signed read and fixtures](recovery-format.m
 On a superseding update, stop queuing data for affected active reads and
 invalidate their outstanding challenges before acknowledging the update.
 Bytes already handed to the transport can still arrive afterward.
+
+If the connection ends before the owner verifies `GRANT_ACK`, the owner
+keeps the revocation pending and resends the same 198 signed bytes on a new
+authenticated stream. A provider that reopens with a valid pending revocation
+denies reads of both items and accepts only that signed update for completion.
+The owner confirms it after receiving the matching digest and orderly end of
+stream. [Recovering an interrupted revocation](provider-persistence.md)
 
 On an authorized read the provider sends `26 READ_SIZE` with the sealed
 length (8), consecutive `DATA` frames totalling exactly that length, then
