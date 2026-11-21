@@ -36,11 +36,17 @@ func openIndex(path string, create bool) (*index, error) {
 	C.sqlite3_limit(db, C.SQLITE_LIMIT_LENGTH, 16384)
 	C.sqlite3_limit(db, C.SQLITE_LIMIT_SQL_LENGTH, 16384)
 	idx := &index{db}
+	if err := idx.exec("PRAGMA synchronous=EXTRA; PRAGMA trusted_schema=OFF"); err != nil {
+		idx.close()
+		return nil, err
+	}
 	mode := "PRAGMA journal_mode"
 	if create {
 		mode = "PRAGMA journal_mode=DELETE"
 	}
 	for _, setting := range []struct{ query, want string }{
+		{"PRAGMA synchronous", "3"},
+		{"PRAGMA trusted_schema", "0"},
 		{mode, "delete"},
 		{"PRAGMA max_page_count=32", "32"},
 	} {
@@ -48,14 +54,6 @@ func openIndex(path string, create bool) (*index, error) {
 			idx.close()
 			return nil, err
 		}
-	}
-	if err := idx.exec("PRAGMA synchronous=EXTRA; PRAGMA trusted_schema=OFF"); err != nil {
-		idx.close()
-		return nil, err
-	}
-	if err := idx.expect("PRAGMA synchronous", "3"); err != nil {
-		idx.close()
-		return nil, err
 	}
 	return idx, nil
 }

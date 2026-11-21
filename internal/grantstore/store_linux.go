@@ -246,8 +246,8 @@ func (s *Store) writeAnchor(record []byte) error {
 	return s.dir.Sync()
 }
 
-func (s *Store) checkBacking() error {
-	if time.Now().Unix() < s.lastUTC {
+func (s *Store) checkBacking(now int64) error {
+	if now < s.lastUTC {
 		return errors.New("clock behind persisted grant state")
 	}
 	if err := s.checkLocation(); err != nil {
@@ -276,7 +276,7 @@ func (s *Store) Record() ([]byte, error) {
 	if s.db == nil {
 		return nil, os.ErrClosed
 	}
-	if err := s.checkBacking(); err != nil {
+	if err := s.checkBacking(time.Now().Unix()); err != nil {
 		s.fault = err
 		return nil, err
 	}
@@ -304,9 +304,7 @@ func (s *Store) Replace(previous, next []byte) error {
 	// A commit or subsequent checkpoint flush may have reached disk even
 	// when it reports an error. Stop serving until reopened and reconciled.
 	now := time.Now().Unix()
-	if now < s.lastUTC {
-		s.fault = errors.New("clock behind persisted grant state")
-	} else if err := s.checkBacking(); err != nil {
+	if err := s.checkBacking(now); err != nil {
 		s.fault = err
 	} else if err := s.db.exec(fmt.Sprintf("UPDATE enrollment SET record=X'%x',last_utc=%d WHERE id=1 AND record=X'%x'",
 		next, now, previous)); err != nil {
