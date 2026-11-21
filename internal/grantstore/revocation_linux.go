@@ -71,7 +71,7 @@ func (s *Store) publishIntent(previous, next []byte) error {
 }
 
 func (s *Store) readIntent() (*revocationIntent, error) {
-	value, err := s.readOwned(intentName, intentSize)
+	value, err := s.readOwned(intentName, int64(intentSize))
 	if errors.Is(err, os.ErrNotExist) {
 		return nil, nil
 	}
