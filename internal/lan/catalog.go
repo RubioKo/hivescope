@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/netip"
 	"time"
 
 	"github.com/RubioKo/hivescope/internal/storageformat"
@@ -42,12 +43,35 @@ func WithCatalogChallenge(ctx context.Context, pkg *storageformat.RecoveryPackag
 }
 
 func withReadChallenge(ctx context.Context, pkg *storageformat.RecoveryPackage, device crypto.PrivKey, request []byte,
-	use func([32]byte, network.MuxedStream) error) (err error) {
-	if use == nil || device == nil || device.Type() != crypto.Ed25519 {
-		return errors.New("read requires an Ed25519 device identity and a continuation")
+	use func([32]byte, network.MuxedStream) error) error {
+	if use == nil || pkg.Generation == 0 {
+		return errors.New("read requires a continuation and a positive grant generation")
 	}
-	if !pkg.Endpoint.Addr().Is4() || pkg.Endpoint.Port() == 0 || pkg.Generation == 0 {
-		return errors.New("invalid endpoint or grant generation")
+	return withStorageStream(ctx, pkg.Endpoint, pkg.ProviderKey, device, func(stream network.MuxedStream) error {
+		if err := writeFrame(stream, readBegin, request); err != nil {
+			return fmt.Errorf("send READ_BEGIN: %w", err)
+		}
+		if err := stream.SetReadDeadline(time.Now().Add(30 * time.Second)); err != nil {
+			return err
+		}
+		challenge, err := readChallenge(stream)
+		if err != nil {
+			return fmt.Errorf("receive read challenge: %w", err)
+		}
+		if err := stream.SetDeadline(time.Now().Add(60 * time.Second)); err != nil {
+			return err
+		}
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		return use(challenge, stream)
+	})
+}
+
+func withStorageStream(ctx context.Context, endpoint netip.AddrPort, pin [32]byte, device crypto.PrivKey,
+	use func(network.MuxedStream) error) (err error) {
+	if device == nil || device.Type() != crypto.Ed25519 || !endpoint.Addr().Is4() || endpoint.Port() == 0 {
+		return errors.New("storage exchange requires an IPv4/TCP endpoint and an Ed25519 device identity")
 	}
 	exchange, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
@@ -61,7 +85,7 @@ func withReadChallenge(ctx context.Context, pkg *storageformat.RecoveryPackage, 
 	handshake, endHandshake := context.WithTimeout(exchange, 10*time.Second)
 	defer endHandshake()
 	var dialer net.Dialer
-	socket, err := dialer.DialContext(handshake, "tcp4", pkg.Endpoint.String())
+	socket, err := dialer.DialContext(handshake, "tcp4", endpoint.String())
 	if err != nil {
 		return fmt.Errorf("connect to provider: %w", err)
 	}
@@ -70,7 +94,7 @@ func withReadChallenge(ctx context.Context, pkg *storageformat.RecoveryPackage, 
 	// interrupts multistream and application I/O when the caller cancels.
 	stop := context.AfterFunc(exchange, func() { socket.Close() })
 	defer stop()
-	conn, err := authenticateProvider(handshake, socket, device, pkg.ProviderKey)
+	conn, err := authenticateProvider(handshake, socket, device, pin)
 	if err != nil {
 		return err
 	}
@@ -94,23 +118,10 @@ func withReadChallenge(ctx context.Context, pkg *storageformat.RecoveryPackage, 
 	if err := stream.SetDeadline(time.Now().Add(30 * time.Second)); err != nil {
 		return err
 	}
-	if err := writeFrame(stream, readBegin, request); err != nil {
-		return fmt.Errorf("send READ_BEGIN: %w", err)
-	}
-	if err := stream.SetReadDeadline(time.Now().Add(30 * time.Second)); err != nil {
-		return err
-	}
-	challenge, err := readChallenge(stream)
-	if err != nil {
-		return fmt.Errorf("receive read challenge: %w", err)
-	}
-	if err := stream.SetDeadline(time.Now().Add(60 * time.Second)); err != nil {
-		return err
-	}
 	if err := exchange.Err(); err != nil {
 		return err
 	}
-	return use(challenge, stream)
+	return use(stream)
 }
 
 func authenticateProvider(ctx context.Context, socket net.Conn, device crypto.PrivKey, pin [32]byte) (transport.CapableConn, error) {

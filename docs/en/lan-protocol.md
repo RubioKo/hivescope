@@ -1,4 +1,4 @@
-<!-- docs-pair: lan-protocol; revision: 4 -->
+<!-- docs-pair: lan-protocol; revision: 5 -->
 
 [English](lan-protocol.md) | [Español](../es/lan-protocol.md) | [Index](README.md)
 
@@ -8,9 +8,10 @@ This is the v1 design for one encrypted file on one provider. The original
 device uploads the object and its catalog under one reservation. A replacement
 reads each item under a separate proof. The reservation, receipt and recovery
 proof have the same meaning across reconnects. In the Go loopback trial, the
-provider starts with the current grant, sealed catalog and encrypted object
-in memory. The client verifies the catalog before it connects again to read
-the object under a fresh proof. Uploads and durable grant updates are later steps.
+provider starts with the sealed catalog and object already provisioned. The client
+verifies the catalog before requesting the object under a fresh proof. The Linux
+provider with a SQLite grant store acknowledges signed grant updates and reloads
+the latest grant after a process restart. Uploads remain a later step.
 [Recovery trial](readiness.md)
 
 ## Connection and framing

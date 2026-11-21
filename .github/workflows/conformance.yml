@@ -35,6 +35,13 @@ jobs:
           go version
           go mod download
           go mod verify
+      - name: Check that the Linux build includes the SQLite restart trial
+        if: runner.os == 'Linux'
+        env:
+          GOPROXY: 'off'
+        run: |
+          test "$(go env CGO_ENABLED)" = 1
+          go test -mod=readonly -list '^TestAcknowledgedRevocationSurvivesRestart$' ./internal/conformance | grep -Fx TestAcknowledgedRevocationSurvivesRestart
       - name: Run the offline vectors
         env:
           GOPROXY: 'off'

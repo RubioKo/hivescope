@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 15 -->
+<!-- docs-pair: readiness; revision: 16 -->
 
 [English](../en/readiness.md) | [Español](readiness.md) | [Índice](README.md)
 
@@ -13,10 +13,10 @@ definen el primer prototipo de escritorio.
 **Resultados actuales.** Las pruebas locales cubren los formatos de recuperación
 y el guardado de archivos verificados. Las pruebas TCP en la interfaz de bucle
 local comprueban la identidad del proveedor y las firmas de un solo uso para
-leer por separado el catálogo y su objeto cifrado. La prueba de identidad
-también se ejecuta en equipos virtuales aislados en Linux. Recuperar un archivo
-en un equipo de reemplazo y comprobar que el proveedor mantiene la revocación
-tras reiniciar siguen siendo objetivos del ensayo en red local.
+leer por separado el catálogo y su objeto cifrado. En Linux también se comprueba
+la identidad del proveedor en equipos virtuales aislados y que, tras reiniciar
+el proceso, el proveedor respeta una revocación ya confirmada. Recuperar el
+archivo en otra computadora sigue siendo parte del ensayo en red local.
 
 ## Alcance y contratos
 
@@ -115,9 +115,24 @@ bytes. El contenido recuperado es `48 69 76 65 0a`. La contraseña incorrecta,
 el bloque sustituido, la firma de catálogo alterada y el recibo contrastado con
 un manifiesto modificado fallan sus respectivas comprobaciones. [Objeto y catálogo](../../internal/conformance/snapshot_test.go) · [Recuperación y lecturas](../../internal/conformance/recovery_test.go) · [Recibo](../../internal/conformance/receipt_test.go)
 
-El ejemplo incluye una firma válida hecha con una clave antigua. M1-03
-también requiere un proveedor que confirme la revocación y la mantenga
-después de reiniciarse.
+La prueba de reinicio en Linux comprueba la parte de M1-03 relativa al
+permiso. Compilar con cgo habilitado, un compilador de C y las cabeceras y
+la biblioteca de la misma versión de SQLite del sistema, con soporte para
+`SQLITE_OPEN_NOFOLLOW` (disponible desde SQLite 3.31.0).
+[Notas de la versión de SQLite](https://www.sqlite.org/releaselog/3_31_0.html)
+
+Para ejecutar solo este caso, usar
+`go test -mod=readonly -count=1 -run '^TestAcknowledgedRevocationSurvivesRestart$' ./internal/conformance`.
+Con el permiso de generación 7 activo, el cliente puede recuperar el archivo
+de cinco bytes. El proveedor acepta la revocación de generación 8 firmada por
+el propietario. Una vez que el cliente comprueba el resumen de la confirmación,
+la prueba termina el proceso del proveedor y arranca otro con la misma identidad
+y el mismo almacén. El equipo de reemplazo firma con la credencial antigua
+un reto nuevo por cada elemento. Ambas solicitudes devuelven `DENIED` y cero
+bytes del elemento. Reenviar la misma revocación devuelve el resumen original.
+Reenviar el permiso anterior firmado devuelve `CONFLICT`. La prueba parte de
+los elementos cifrados ya cargados. El ensayo completo en red local incluye
+equipos físicos y el desbloqueo nativo del perfil. [Prueba de reinicio del proceso](../../internal/conformance/grant_restart_linux_test.go)
 
 La función de Go `WithRecoveryPackage` autentica el paquete en el equipo y
 comprueba sus campos antes de pasar el control al código de recuperación del

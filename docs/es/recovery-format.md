@@ -1,4 +1,4 @@
-<!-- docs-pair: recovery-format; revision: 6 -->
+<!-- docs-pair: recovery-format; revision: 7 -->
 
 [English](../en/recovery-format.md) | [Español](recovery-format.md) | [Índice](README.md)
 
@@ -143,8 +143,10 @@ las dos mitades de la firma de 64 bytes. Se firman directamente los 196 bytes.
 El hash permite comprobar su codificación. Las cuatro firmas son matemáticamente
 válidas, incluidas las dos que el proveedor debe rechazar en el caso B.
 Los valores se comprobaron con las claves públicas de prueba del RFC y sus
-correspondientes vectores. La prueba completa en la LAN aún requiere un equipo
-de reemplazo con un perfil limpio y un proveedor que mantenga la revocación al reiniciar.
+correspondientes vectores. La prueba de bucle local en Linux comprueba el caso B
+con retos aleatorios nuevos tras reiniciar el proceso del proveedor. El ensayo
+completo en red local aún requiere un equipo de reemplazo con un perfil limpio.
+[Resultados de la prueba](readiness.md)
 
 ```text
 [11]

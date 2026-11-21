@@ -1,4 +1,4 @@
-<!-- docs-pair: home; revision: 18 -->
+<!-- docs-pair: home; revision: 19 -->
 
 [English](README.md) | Español
 
@@ -30,8 +30,10 @@ versión verificada.
 La coincidencia permite confirmar el guardado. Si entretanto editaste el archivo,
 se conservan tus cambios. Los ejemplos locales cubren un archivo vacío, uno de cinco
 bytes y otro de 4 MiB + 1 byte.
-El primer prototipo deberá lograrlo en otra computadora y demostrar
-que el proveedor sigue rechazando una credencial revocada después de reiniciarse.
+Si revocas una credencial de recuperación, el proveedor de prueba en Linux
+guarda esa decisión antes de confirmarla. Tras reiniciar el proceso, la
+credencial antigua recibe cero bytes tanto del catálogo como del archivo.
+El ensayo con hardware utilizará otra computadora para la recuperación.
 El cómputo privado y el alojamiento de servicios vendrán después.
 [Primer prototipo y resultados](docs/es/readiness.md) · [Visión del proyecto](docs/es/vision.md) · [Hoja de ruta](docs/es/roadmap.md)
 

@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 15 -->
+<!-- docs-pair: readiness; revision: 16 -->
 
 [English](readiness.md) | [Español](../es/readiness.md) | [Index](README.md)
 
@@ -12,9 +12,10 @@ the first desktop prototype.
 
 **Current evidence.** Local tests cover recovery formats and verified saves.
 Loopback TCP tests cover provider identity and separate single-use proofs
-for reading the catalog and its encrypted object. The identity test also runs
-on isolated virtual hosts on Linux. Full recovery on a replacement computer
-and durable revocation at a running provider still require the LAN trial.
+for reading the catalog and its encrypted object. Linux tests also check provider
+identity on isolated virtual hosts and enforce an acknowledged revocation after
+restarting the provider process. Recovery on a separate replacement computer
+remains part of the LAN trial.
 
 ## Scope and contracts
 
@@ -105,9 +106,22 @@ The restored bytes are `48 69 76 65 0a`. A wrong passphrase, a substituted
 block, a changed catalog signature and a receipt checked against an altered
 manifest all fail their respective checks. [Object and catalog](../../internal/conformance/snapshot_test.go) · [Recovery and reads](../../internal/conformance/recovery_test.go) · [Receipt](../../internal/conformance/receipt_test.go)
 
-A mathematically valid signature from an old key is part of the reference
-example. M1-03 also requires a provider that can acknowledge a revocation
-and enforce it after a restart.
+The Linux restart test exercises the grant portion of M1-03. Build with cgo
+enabled, a C compiler, and matching system SQLite headers and library with
+support for `SQLITE_OPEN_NOFOLLOW` (introduced in SQLite 3.31.0).
+[SQLite release notes](https://www.sqlite.org/releaselog/3_31_0.html)
+
+To run this case alone, use
+`go test -mod=readonly -count=1 -run '^TestAcknowledgedRevocationSurvivesRestart$' ./internal/conformance`.
+With generation 7 active, the client can recover the five-byte file. The
+provider accepts the owner's signed generation 8 revocation. After the client
+checks the acknowledgment digest, the test kills the provider process and
+starts a new one with the same identity and store. The replacement signs a
+fresh challenge with the old credential for each item. Both requests return
+`DENIED` and zero item bytes. Retrying the same revocation returns the original
+digest. Replaying the older signed grant returns `CONFLICT`. The test
+preloads the encrypted items. Hardware and native profile unlock remain part
+of the full LAN procedure. [Process restart test](../../internal/conformance/grant_restart_linux_test.go)
 
 The Go entry point `WithRecoveryPackage` authenticates the package locally
 and checks its fields before handing control to the owner's recovery code.

@@ -1,4 +1,4 @@
-<!-- docs-pair: lan-protocol; revision: 4 -->
+<!-- docs-pair: lan-protocol; revision: 5 -->
 
 [English](../en/lan-protocol.md) | [Español](lan-protocol.md) | [Índice](README.md)
 
@@ -9,10 +9,11 @@ equipo original sube el objeto y su catálogo bajo una misma reserva. El
 equipo de reemplazo presenta una prueba distinta para leer cada elemento.
 La reserva, el recibo y la prueba de recuperación conservan su significado
 al reconectar. En la prueba en Go con TCP de bucle local, el proveedor parte
-del permiso vigente, el catálogo firmado y cifrado y el objeto cifrado en
-memoria. El cliente verifica el catálogo antes de conectarse de nuevo y firmar
-otro reto para leer el objeto. Las subidas y el registro persistente de
-cambios de permiso quedan para etapas posteriores.
+del catálogo y del objeto cifrados ya cargados. El cliente verifica el catálogo
+antes de firmar otro reto para leer el objeto. En Linux, el proveedor con un
+almacén de permisos SQLite confirma los cambios de permiso firmados y vuelve
+a cargar el último permiso tras reiniciar el proceso. Las subidas quedan
+para una etapa posterior.
 [Prueba de recuperación](readiness.md)
 
 ## Conexión y tramas

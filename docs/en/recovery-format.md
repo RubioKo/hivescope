@@ -1,4 +1,4 @@
-<!-- docs-pair: recovery-format; revision: 6 -->
+<!-- docs-pair: recovery-format; revision: 7 -->
 
 [English](recovery-format.md) | [Español](../es/recovery-format.md) | [Index](README.md)
 
@@ -130,8 +130,9 @@ SHA-256 of the 196 signed bytes, followed by the 64-byte signature split over
 two lines. Sign the 196 bytes directly. The hash is a check on the encoding.
 All four signatures verify mathematically, including the two that the provider
 must refuse in case B. The values were checked using the published test keys.
-The full LAN trial still requires a clean replacement device and a provider
-that enforces revocation after restart.
+The Linux loopback test exercises case B with new random challenges after
+a provider process restart. The full LAN trial still requires a clean
+replacement device. [Trial results](readiness.md)
 
 ```text
 [11]
