@@ -1,4 +1,4 @@
-<!-- docs-pair: lan-protocol; revision: 6 -->
+<!-- docs-pair: lan-protocol; revision: 7 -->
 
 [English](../en/lan-protocol.md) | [Español](lan-protocol.md) | [Índice](README.md)
 
@@ -12,8 +12,10 @@ al reconectar. En la prueba en Go con TCP de bucle local, el proveedor parte
 del catálogo y del objeto cifrados ya cargados. El cliente verifica el catálogo
 antes de firmar otro reto para leer el objeto. En Linux, el proveedor con un
 almacén de permisos SQLite confirma los cambios de permiso firmados y vuelve
-a cargar el último permiso tras reiniciar el proceso. Las subidas quedan
-para una etapa posterior.
+a cargar el último permiso tras reiniciar el proceso. Otro ensayo parte de
+un proveedor Linux vacío. El dispositivo autorizado puede reservar disco para
+ambos elementos y consultar el plazo original si pierde la respuesta. El envío
+de los datos cifrados y la emisión de un recibo quedan para pasos posteriores.
 [Prueba de recuperación](readiness.md)
 
 ## Conexión y tramas

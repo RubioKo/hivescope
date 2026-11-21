@@ -125,6 +125,9 @@ func (p *ReadProvider) Close() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.offline = true
+	if p.upload != nil {
+		return p.upload.store.Close()
+	}
 	if p.store == nil {
 		return nil
 	}

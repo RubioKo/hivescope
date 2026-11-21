@@ -52,6 +52,7 @@ type ReadProvider struct {
 	agreement CatalogAgreement
 	catalog   CommittedCatalog
 	object    *CommittedObject // absent on catalog-only providers
+	upload    *uploadAdmission // dedicated, initially empty upload store
 
 	mu                sync.RWMutex     // a grant change excludes writes of individual frames
 	store             grantPersistence // nil on an in-memory provider
@@ -67,13 +68,20 @@ type CatalogProvider = ReadProvider
 // NewCatalogProvider provisions only a catalog. An object request still
 // receives a fresh challenge and cannot disclose object membership.
 func NewCatalogProvider(agreement CatalogAgreement, catalog CommittedCatalog) (*CatalogProvider, error) {
-	if !storageformat.ValidEd25519Key(agreement.ProviderKey[:]) || !storageformat.ValidEd25519Key(agreement.AuthorityKey[:]) {
-		return nil, errors.New("invalid provider or folder authority public key")
-	}
-	if agreement.Start.IsZero() || !agreement.Expiry.After(agreement.Start) {
-		return nil, errors.New("invalid enrolled agreement term")
+	if err := agreement.validate(); err != nil {
+		return nil, err
 	}
 	return &ReadProvider{agreement: agreement, catalog: catalog.owned(catalogMinSize, catalogMaxSize)}, nil
+}
+
+func (a CatalogAgreement) validate() error {
+	if !storageformat.ValidEd25519Key(a.ProviderKey[:]) || !storageformat.ValidEd25519Key(a.AuthorityKey[:]) {
+		return errors.New("invalid provider or folder authority public key")
+	}
+	if a.Start.IsZero() || !a.Expiry.After(a.Start) {
+		return errors.New("invalid enrolled agreement term")
+	}
+	return nil
 }
 
 // NewReadProvider provisions an immutable committed catalog and object. Their
@@ -105,7 +113,7 @@ func (p *ReadProvider) applyGrant(raw []byte, requireDurable bool) error {
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if p.offline || (requireDurable && p.store == nil) {
+	if p.offline || p.upload != nil || (requireDurable && p.store == nil) {
 		return ErrGrantUnavailable
 	}
 	if !p.agreement.readable(time.Now()) {

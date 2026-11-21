@@ -28,16 +28,19 @@ const (
 )
 
 type Store struct {
-	mu       sync.Mutex
-	dir      *os.File
-	rootStat unix.Stat_t
-	indexIno uint64
-	db       *index
-	scope    []byte
-	record   []byte
-	pending  *revocationIntent
-	lastUTC  int64
-	fault    error
+	mu          sync.Mutex
+	dir         *os.File
+	rootStat    unix.Stat_t
+	indexIno    uint64
+	db          *index
+	scope       []byte
+	record      []byte
+	pending     *revocationIntent
+	lastUTC     int64
+	fault       error
+	fresh       bool // only a new, unused enrollment may initialize upload tables
+	uploads     bool
+	uploadScope [96]byte // exact provider, uploader, folder and agreement
 }
 
 func open(dir string, binding [32]byte, create bool) (_ *Store, err error) {
@@ -66,7 +69,7 @@ func open(dir string, binding [32]byte, create bool) (_ *Store, err error) {
 	if err != nil {
 		return nil, err
 	}
-	s := &Store{dir: os.NewFile(uintptr(fd), path)}
+	s := &Store{dir: os.NewFile(uintptr(fd), path), fresh: create}
 	defer func() {
 		if err != nil {
 			s.Close()
@@ -348,6 +351,9 @@ func (s *Store) Replace(previous, next []byte) error {
 	}
 	if s.db == nil {
 		return os.ErrClosed
+	}
+	if s.uploads {
+		return errors.New("an upload store cannot accept read grants")
 	}
 	if s.pending != nil {
 		return ErrPendingRevocation

@@ -1,4 +1,4 @@
-<!-- docs-pair: provider-persistence; revision: 3 -->
+<!-- docs-pair: provider-persistence; revision: 4 -->
 
 [English](provider-persistence.md) | [Español](../es/provider-persistence.md) | [Index](README.md)
 
@@ -90,6 +90,23 @@ files from a different volume cannot initialize an existing store.
 [Local identity and grant custody](identity-custody.md)
 
 ## Reserving the last space
+
+The first admission trial starts with an empty, dedicated Linux provider store,
+one locally enrolled agreement and one uploader. `RESERVE` and `STATUS` use
+the authenticated device identity. One SQLite transaction claims both item
+slots, records the exact manifest and accounts for space before a pending
+reply can leave the provider. On reconnect the client can query the same ID
+and fingerprint or resend the original manifest. The deadline and charge
+belong to the original admission. A reservation alone publishes no data.
+The trial uses a trusted lab clock and retains expired IDs. Staging bytes
+and confirming storage with a signed receipt are subsequent steps.
+
+This store retains up to 64 request IDs, subject to a lower local limit.
+It rounds each item separately and budgets extra blocks for file extents
+and directory entries. On a 4 KiB allocation unit the five-byte example
+therefore holds 16 KiB for the pair. SQLite and its rollback journal have
+a separate allowance. The admission records a commitment to future writes.
+Actual file allocation starts when the uploader sends an item.
 
 1. Set the host cap and free-space margin in physical bytes. Bound live
    requests, retained terminal IDs and concurrent writers. Reserve host-wide

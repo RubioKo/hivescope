@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 17 -->
+<!-- docs-pair: readiness; revision: 18 -->
 
 [English](readiness.md) | [Español](../es/readiness.md) | [Index](README.md)
 
@@ -14,7 +14,8 @@ the first desktop prototype.
 Loopback TCP tests cover provider identity and separate single-use proofs
 for reading the catalog and its encrypted object. Linux tests also check provider
 identity on isolated virtual hosts. The restart trials cover a confirmed
-revocation and an interrupted revocation that the owner resubmits. Recovery
+revocation and an interrupted revocation that the owner resubmits. A separate
+upload trial checks that losing a reservation reply leaves one charge. Recovery
 on a separate replacement computer remains part of the LAN trial.
 
 ## Scope and contracts
@@ -96,6 +97,16 @@ contents, private paths and identifying logs out of the evidence. One successful
 read exercises one snapshot. Repeat on each platform before claiming support.
 
 ## Reproduce the local results
+
+With Linux, cgo and system SQLite, run
+`go test -mod=readonly -count=1 -run '^TestLostReservationReplyKeepsOneCharge$' ./internal/conformance`.
+The original device requests space for a 21-byte sealed object and its
+250-byte signed catalog. The test drops the connection after the provider
+records the reservation. After reopening the store, the enrolled uploader
+queries its status and submits the same manifest again. The provider returns
+the pending state with the original deadline and one physical charge. The
+client must retain the original manifest, request ID and sealed source while
+confirmation is pending. [Reservation trial](../../internal/conformance/reserve_linux_test.go)
 
 From the repository root with Go 1.26 or later, run `go mod download` once,
 then `go test -mod=readonly -count=1 ./...`. The tests use synthetic data.

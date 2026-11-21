@@ -1,4 +1,4 @@
-<!-- docs-pair: provider-persistence; revision: 3 -->
+<!-- docs-pair: provider-persistence; revision: 4 -->
 
 [English](../en/provider-persistence.md) | [Español](provider-persistence.md) | [Índice](README.md)
 
@@ -99,6 +99,25 @@ cifrados. El estado o los archivos de otro volumen no pueden inicializar un
 almacén existente. [Custodia local de identidades y permisos](identity-custody.md)
 
 ## Cómo reservar el último espacio disponible
+
+El primer ensayo de admisión parte de un almacén Linux vacío y dedicado, un
+acuerdo registrado localmente y un dispositivo autorizado para subir archivos.
+`RESERVE` y `STATUS` comprueban la identidad autenticada del dispositivo.
+Una transacción SQLite asigna ambos elementos, registra el manifiesto exacto
+y contabiliza el espacio antes de responder con el estado pendiente. Al volver
+a conectarse, el cliente puede consultar el mismo ID y resumen o reenviar el
+manifiesto original. El plazo y el cargo se fijan en la primera admisión.
+La reserva por sí sola no publica datos. El ensayo utiliza un reloj de
+laboratorio confiable y conserva los ID vencidos. La transferencia y la
+confirmación mediante un recibo firmado se probarán en pasos posteriores.
+
+Este almacén conserva hasta 64 identificadores de solicitud, sujetos a un
+límite local menor. Redondea por separado el tamaño de cada elemento y
+presupuesta bloques adicionales para los segmentos de archivo y las entradas
+del directorio. Con bloques de 4 KiB, el ejemplo de cinco bytes compromete
+16 KiB para el par. SQLite y su diario de transacciones tienen un presupuesto
+separado. La reserva contabiliza espacio para escrituras futuras. La asignación
+de los archivos empieza cuando el dispositivo envía un elemento.
 
 1. Definir el límite del anfitrión y el margen libre en bytes físicos. Limitar
    las solicitudes activas, los identificadores terminales conservados y los
