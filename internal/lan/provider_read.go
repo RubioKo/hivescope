@@ -103,16 +103,46 @@ func (p *ReadProvider) serveStream(stream network.MuxedStream, replacement [32]b
 	if _, _, err := protocols.Negotiate(stream); err != nil {
 		return err
 	}
-	if err := stream.SetDeadline(time.Now().Add(30 * time.Second)); err != nil {
+	firstFrameWindow := 30 * time.Second
+	controlOnly := false
+	if p.upload != nil {
+		allowed, last := p.upload.enterStream(replacement)
+		if !allowed {
+			return writeFrame(stream, errorOp, []byte{4})
+		}
+		defer p.upload.leaveStream(replacement)
+		if last {
+			controlOnly = true
+			firstFrameWindow = 2 * time.Second
+		}
+	}
+	if err := stream.SetDeadline(time.Now().Add(firstFrameWindow)); err != nil {
 		return err
 	}
-	op, request, err := readFrame(stream, grantRecordSize)
+	op, request, err := readFrame(stream, uploadManifestSize)
 	if err != nil {
 		stream.Reset()
 		return err
 	}
+	if controlOnly {
+		switch op {
+		case reserveOp, readBegin:
+			return writeFrame(stream, errorOp, []byte{4})
+		case statusOp, grantUpdateOp:
+			// A complete, supported control operation met the shorter deadline.
+		default:
+			stream.Reset()
+			return errors.New("unrecognized operation in the control slot")
+		}
+		if err := stream.SetDeadline(time.Now().Add(30 * time.Second)); err != nil {
+			return err
+		}
+	}
 	if op == grantUpdateOp {
 		return p.serveGrantUpdate(stream, request)
+	}
+	if op == reserveOp || op == statusOp {
+		return p.serveUpload(stream, replacement, op, request)
 	}
 	if op != readBegin || len(request) != 73 || (request[0] != catalogKind && request[0] != objectKind) || binary.BigEndian.Uint64(request[33:41]) == 0 {
 		return writeFrame(stream, errorOp, []byte{1})

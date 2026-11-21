@@ -35,15 +35,16 @@ jobs:
           go version
           go mod download
           go mod verify
-      - name: Check that the Linux build includes both revocation restart trials
+      - name: Check that the Linux build includes the persistent provider trials
         if: runner.os == 'Linux'
         env:
           GOPROXY: 'off'
         run: |
           test "$(go env CGO_ENABLED)" = 1
-          trials=$(go test -mod=readonly -list '^Test(AcknowledgedRevocationSurvivesRestart|InterruptedRevocationCanBeRetried)$' ./internal/conformance)
+          trials=$(go test -mod=readonly -list '^Test(AcknowledgedRevocationSurvivesRestart|InterruptedRevocationCanBeRetried|LostReservationReplyKeepsOneCharge)$' ./internal/conformance)
           grep -Fx TestAcknowledgedRevocationSurvivesRestart <<< "$trials"
           grep -Fx TestInterruptedRevocationCanBeRetried <<< "$trials"
+          grep -Fx TestLostReservationReplyKeepsOneCharge <<< "$trials"
       - name: Run the offline vectors
         env:
           GOPROXY: 'off'

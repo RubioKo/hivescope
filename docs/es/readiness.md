@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 17 -->
+<!-- docs-pair: readiness; revision: 18 -->
 
 [English](../en/readiness.md) | [Español](readiness.md) | [Índice](README.md)
 
@@ -16,8 +16,9 @@ local comprueban la identidad del proveedor y las firmas de un solo uso para
 leer por separado el catálogo y su objeto cifrado. En Linux también se comprueba
 la identidad del proveedor en equipos virtuales aislados. Las pruebas de
 reinicio cubren una revocación confirmada y otra interrumpida que el
-propietario reenvía. Recuperar el archivo en otra computadora sigue siendo
-parte del ensayo en red local.
+propietario reenvía. Otro ensayo comprueba que perder la respuesta a una
+reserva deja un solo cargo de espacio. Recuperar el archivo en otra computadora
+sigue siendo parte del ensayo en red local.
 
 ## Alcance y contratos
 
@@ -105,6 +106,16 @@ evidencia. Una lectura correcta comprueba una sola versión. Repetir en cada
 plataforma antes de anunciar compatibilidad.
 
 ## Cómo reproducir los resultados locales
+
+En Linux, con cgo y la biblioteca SQLite del sistema, ejecuta
+`go test -mod=readonly -count=1 -run '^TestLostReservationReplyKeepsOneCharge$' ./internal/conformance`.
+El equipo original solicita espacio para un objeto cifrado de 21 bytes y su
+catálogo firmado de 250 bytes. La prueba corta la conexión una vez registrada
+la reserva. Tras reabrir el almacén, el dispositivo autorizado consulta el
+estado y reenvía el mismo manifiesto. El proveedor devuelve la reserva
+pendiente con su plazo original y un solo cargo de espacio. El cliente debe
+conservar el manifiesto, el ID de solicitud y los datos cifrados de origen
+mientras espera la confirmación. [Prueba de reserva](../../internal/conformance/reserve_linux_test.go)
 
 Desde la raíz del repositorio, con Go 1.26 o posterior, ejecutar una vez
 `go mod download` y después `go test -mod=readonly -count=1 ./...`. Las

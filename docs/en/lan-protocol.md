@@ -1,4 +1,4 @@
-<!-- docs-pair: lan-protocol; revision: 6 -->
+<!-- docs-pair: lan-protocol; revision: 7 -->
 
 [English](lan-protocol.md) | [Español](../es/lan-protocol.md) | [Index](README.md)
 
@@ -11,7 +11,10 @@ proof have the same meaning across reconnects. In the Go loopback trial, the
 provider starts with the sealed catalog and object already provisioned. The client
 verifies the catalog before requesting the object under a fresh proof. The Linux
 provider with a SQLite grant store acknowledges signed grant updates and reloads
-the latest grant after a process restart. Uploads remain a later step.
+the latest grant after a process restart. A separate upload trial starts with
+an empty Linux provider. The enrolled uploader can reserve disk space for both
+items and query the original deadline after losing the reply. Sending the
+sealed bytes and issuing a storage receipt remain subsequent steps.
 [Recovery trial](readiness.md)
 
 ## Connection and framing
