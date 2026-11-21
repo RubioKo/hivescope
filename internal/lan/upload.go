@@ -100,25 +100,15 @@ func ReservationStatus(ctx context.Context, endpoint netip.AddrPort, pin [32]byt
 func requestReservation(ctx context.Context, endpoint netip.AddrPort, pin [32]byte, device crypto.PrivKey,
 	m [uploadManifestSize]byte, op byte) (grantstore.UploadState, error) {
 	var state grantstore.UploadState
-	if err := validateUploadManifest(m); err != nil {
+	if err := checkUploadIdentity(pin, device, m); err != nil {
 		return state, err
-	}
-	if [32]byte(m[20:52]) != pin {
-		return state, ErrProviderIdentity
-	}
-	if device == nil || device.Type() != crypto.Ed25519 {
-		return state, ErrUploadDenied
-	}
-	uploader, err := device.GetPublic().Raw()
-	if err != nil || len(uploader) != ed25519.PublicKeySize || [32]byte(uploader) != [32]byte(m[52:84]) {
-		return state, ErrUploadDenied
 	}
 	payload := m[:]
 	if op == statusOp {
 		ref := uploadReference(m)
 		payload = ref[:]
 	}
-	err = withStorageStream(ctx, endpoint, pin, device, func(stream network.MuxedStream) error {
+	err := withStorageStream(ctx, endpoint, pin, device, func(stream network.MuxedStream) error {
 		if err := writeFrame(stream, op, payload); err != nil {
 			return err
 		}
@@ -135,6 +125,23 @@ func requestReservation(ctx context.Context, endpoint netip.AddrPort, pin [32]by
 	return state, nil
 }
 
+func checkUploadIdentity(pin [32]byte, device crypto.PrivKey, m [uploadManifestSize]byte) error {
+	if err := validateUploadManifest(m); err != nil {
+		return err
+	}
+	if [32]byte(m[20:52]) != pin {
+		return ErrProviderIdentity
+	}
+	if device == nil || device.Type() != crypto.Ed25519 {
+		return ErrUploadDenied
+	}
+	uploader, err := device.GetPublic().Raw()
+	if err != nil || len(uploader) != ed25519.PublicKeySize || [32]byte(uploader) != [32]byte(m[52:84]) {
+		return ErrUploadDenied
+	}
+	return nil
+}
+
 // This admission client accepts states that require no signed receipt. Future
 // committed and unavailable states must be verified by the receipt path.
 func readReservationState(r io.Reader, requestOp byte) (grantstore.UploadState, error) {
@@ -146,13 +153,22 @@ func readReservationState(r io.Reader, requestOp byte) (grantstore.UploadState, 
 	if err := expectEOF(r); err != nil {
 		return state, err
 	}
+	return decodeUploadState(requestOp, op, payload)
+}
+
+func decodeUploadState(requestOp, op byte, payload []byte) (grantstore.UploadState, error) {
+	var state grantstore.UploadState
 	if op == errorOp {
 		if len(payload) == 1 {
 			switch payload[0] {
+			case 1:
+				return state, grantstore.ErrUploadInvalid
 			case 2:
 				return state, ErrUploadDenied
 			case 3:
 				return state, grantstore.ErrUploadConflict
+			case 4:
+				return state, grantstore.ErrUploadBusy
 			case 5:
 				return state, grantstore.ErrUploadCapacity
 			case 6:
@@ -168,7 +184,7 @@ func readReservationState(r io.Reader, requestOp byte) (grantstore.UploadState, 
 	}
 	switch payload[0] {
 	case 0:
-		if requestOp == statusOp && len(payload) == 1 {
+		if (requestOp == statusOp || requestOp == putOp) && len(payload) == 1 {
 			return state, nil
 		}
 	case 1:

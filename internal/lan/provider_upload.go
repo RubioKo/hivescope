@@ -120,6 +120,10 @@ func (p *ReadProvider) serveUpload(stream io.ReadWriter, peer [32]byte, op byte,
 	if code != 0 {
 		return writeFrame(stream, errorOp, []byte{code})
 	}
+	return writeUploadState(stream, state)
+}
+
+func writeUploadState(stream io.Writer, state grantstore.UploadState) error {
 	reply := []byte{state.Code}
 	if state.Code == 1 {
 		reply = append(reply, state.Mask)
@@ -134,12 +138,8 @@ func (p *ReadProvider) admitUpload(peer [32]byte, op byte, request []byte) (gran
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	var state grantstore.UploadState
-	u := p.upload
-	if u == nil || peer != u.writer {
-		return state, 2
-	}
-	if p.offline {
-		return state, 7
+	if code := p.checkUploader(peer); code != 0 {
+		return state, code
 	}
 	a := p.agreement
 	var manifest [uploadManifestSize]byte
@@ -165,35 +165,63 @@ func (p *ReadProvider) admitUpload(peer [32]byte, op byte, request []byte) (gran
 	default:
 		return state, 1
 	}
-	if [16]byte(ref[:16]) != a.FolderID || [16]byte(ref[16:32]) != a.AgreementID {
-		return state, 2
-	}
 	now := time.Now()
-	drift := (now.Unix() - u.opened.Unix()) - int64(now.Sub(u.opened)/time.Second)
-	if drift > 2 || drift < -2 {
-		return state, 7
-	}
-	if !a.readable(now) {
-		return state, 2
+	if code := p.checkUploadReference(ref, now); code != 0 {
+		return state, code
 	}
 	var err error
+	u := p.upload
 	if op == statusOp {
 		state, err = u.store.UploadStatus([16]byte(ref[32:48]), [32]byte(ref[48:]), now.Unix())
 	} else {
 		state, err = u.store.ReserveUpload(manifest, u.limits, now.Unix(), a.Expiry.Unix())
 	}
+	return state, uploadErrorCode(err)
+}
+
+func (p *ReadProvider) checkUploader(peer [32]byte) byte {
+	if p.upload == nil || peer != p.upload.writer {
+		return 2
+	}
+	if p.offline {
+		return 7
+	}
+	return 0
+}
+
+func (p *ReadProvider) checkUploadReference(ref [80]byte, now time.Time) byte {
+	a := p.agreement
+	if [16]byte(ref[:16]) != a.FolderID || [16]byte(ref[16:32]) != a.AgreementID {
+		return 2
+	}
+	opened := p.upload.opened
+	drift := (now.Unix() - opened.Unix()) - int64(now.Sub(opened)/time.Second)
+	if drift > 2 || drift < -2 {
+		return 7
+	}
+	if !a.readable(now) {
+		return 2
+	}
+	return 0
+}
+
+func uploadErrorCode(err error) byte {
 	switch {
 	case err == nil:
-		return state, 0
+		return 0
+	case errors.Is(err, grantstore.ErrUploadInvalid):
+		return 1
 	case errors.Is(err, grantstore.ErrUploadDenied):
-		return state, 2
+		return 2
 	case errors.Is(err, grantstore.ErrUploadConflict):
-		return state, 3
+		return 3
+	case errors.Is(err, grantstore.ErrUploadBusy):
+		return 4
 	case errors.Is(err, grantstore.ErrUploadCapacity):
-		return state, 5
+		return 5
 	case errors.Is(err, grantstore.ErrUploadPaused):
-		return state, 6
+		return 6
 	default:
-		return state, 7
+		return 7
 	}
 }

@@ -1,4 +1,4 @@
-<!-- docs-pair: lan-protocol; revision: 7 -->
+<!-- docs-pair: lan-protocol; revision: 8 -->
 
 [English](../en/lan-protocol.md) | [Español](lan-protocol.md) | [Índice](README.md)
 
@@ -14,8 +14,10 @@ antes de firmar otro reto para leer el objeto. En Linux, el proveedor con un
 almacén de permisos SQLite confirma los cambios de permiso firmados y vuelve
 a cargar el último permiso tras reiniciar el proceso. Otro ensayo parte de
 un proveedor Linux vacío. El dispositivo autorizado puede reservar disco para
-ambos elementos y consultar el plazo original si pierde la respuesta. El envío
-de los datos cifrados y la emisión de un recibo quedan para pasos posteriores.
+ambos elementos y consultar el plazo original si pierde la respuesta. Con
+`PUT` puede enviar primero el objeto, reconectarse tras un corte en la
+transferencia del catálogo y reenviar solo el catálogo desde el byte cero.
+Ambos elementos siguen privados y pendientes hasta la futura confirmación final.
 [Prueba de recuperación](readiness.md)
 
 ## Conexión y tramas

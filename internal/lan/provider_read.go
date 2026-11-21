@@ -126,7 +126,7 @@ func (p *ReadProvider) serveStream(stream network.MuxedStream, replacement [32]b
 	}
 	if controlOnly {
 		switch op {
-		case reserveOp, readBegin:
+		case reserveOp, putOp, readBegin:
 			return writeFrame(stream, errorOp, []byte{4})
 		case statusOp, grantUpdateOp:
 			// A complete, supported control operation met the shorter deadline.
@@ -143,6 +143,9 @@ func (p *ReadProvider) serveStream(stream network.MuxedStream, replacement [32]b
 	}
 	if op == reserveOp || op == statusOp {
 		return p.serveUpload(stream, replacement, op, request)
+	}
+	if op == putOp {
+		return p.servePut(stream, replacement, request)
 	}
 	if op != readBegin || len(request) != 73 || (request[0] != catalogKind && request[0] != objectKind) || binary.BigEndian.Uint64(request[33:41]) == 0 {
 		return writeFrame(stream, errorOp, []byte{1})
