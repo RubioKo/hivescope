@@ -4,6 +4,7 @@ package lan
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"io"
 	"net/netip"
@@ -24,9 +25,24 @@ const (
 
 // PutUploadItem stages one complete sealed item from offset zero. An early
 // STATE leaves source unread. After an interrupted transfer, query STATUS with
-// the saved manifest and reopen the source for each missing item.
+// the saved manifest and reopen the source for each missing item. UploadTerms.Put
+// also handles retries that may already have a signed publication receipt.
 func PutUploadItem(ctx context.Context, endpoint netip.AddrPort, pin [32]byte, device crypto.PrivKey,
 	manifest [uploadManifestSize]byte, kind byte, source io.Reader) (grantstore.UploadState, error) {
+	return putUploadItem(ctx, endpoint, pin, device, manifest, kind, source, 0)
+}
+
+// Put stages an item or verifies the provider's receipt on a committed retry.
+func (t UploadTerms) Put(ctx context.Context, endpoint netip.AddrPort, pin [32]byte, device crypto.PrivKey,
+	manifest [uploadManifestSize]byte, kind byte, source io.Reader) (grantstore.UploadState, error) {
+	if t.Expiry <= 0 {
+		return grantstore.UploadState{}, ErrUploadTermsRequired
+	}
+	return putUploadItem(ctx, endpoint, pin, device, manifest, kind, source, t.Expiry)
+}
+
+func putUploadItem(ctx context.Context, endpoint netip.AddrPort, pin [32]byte, device crypto.PrivKey,
+	manifest [uploadManifestSize]byte, kind byte, source io.Reader, expiry int64) (grantstore.UploadState, error) {
 	var state grantstore.UploadState
 	if err := checkUploadIdentity(pin, device, manifest); err != nil {
 		return state, err
@@ -49,7 +65,7 @@ func PutUploadItem(ctx context.Context, endpoint netip.AddrPort, pin [32]byte, d
 			return err
 		}
 		var err error
-		state, err = exchangePut(stream, kind, size, source)
+		state, err = exchangePut(stream, kind, size, source, receiptExpectation{pin, sha256.Sum256(manifest[:]), expiry})
 		return err
 	})
 	if err != nil {
@@ -58,9 +74,9 @@ func PutUploadItem(ctx context.Context, endpoint netip.AddrPort, pin [32]byte, d
 	return state, nil
 }
 
-func exchangePut(stream network.MuxedStream, kind byte, size uint64, source io.Reader) (grantstore.UploadState, error) {
+func exchangePut(stream network.MuxedStream, kind byte, size uint64, source io.Reader, want receiptExpectation) (grantstore.UploadState, error) {
 	var state grantstore.UploadState
-	op, payload, err := readFrame(stream, 10)
+	op, payload, err := readFrame(stream, maxUploadState)
 	if err != nil {
 		return state, err
 	}
@@ -78,7 +94,7 @@ func exchangePut(stream network.MuxedStream, kind byte, size uint64, source io.R
 	}
 	reply := idleReadStream{stream}
 	if op == readyOp {
-		state, err = readReservationState(reply, putOp)
+		state, err = readReservationState(reply, putOp, want)
 		if err == nil && state.Code == 0 {
 			return grantstore.UploadState{}, errors.New("provider lost the reservation during PUT")
 		}
@@ -86,7 +102,7 @@ func exchangePut(stream network.MuxedStream, kind byte, size uint64, source io.R
 		if err := expectEOF(reply); err != nil {
 			return state, err
 		}
-		state, err = decodeUploadState(putOp, op, payload)
+		state, err = decodeUploadState(putOp, op, payload, want)
 	}
 	if err == nil && state.Code == 1 && state.Mask&kind == 0 {
 		return grantstore.UploadState{}, errors.New("provider did not stage the requested item")

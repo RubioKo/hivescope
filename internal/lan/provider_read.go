@@ -3,6 +3,7 @@
 package lan
 
 import (
+	"bytes"
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
@@ -12,6 +13,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/RubioKo/hivescope/internal/grantstore"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/p2p/muxer/yamux"
@@ -86,14 +88,14 @@ func (p *ReadProvider) ServeRead(ctx context.Context, socket net.Conn, identity 
 			stream.Reset()
 			return err
 		}
-		if err := p.serveStream(stream, [32]byte(replacement), negotiationDeadline); err != nil {
+		if err := p.serveStream(stream, [32]byte(replacement), negotiationDeadline, identity); err != nil {
 			return err
 		}
 		negotiationDeadline = time.Now().Add(10 * time.Second)
 	}
 }
 
-func (p *ReadProvider) serveStream(stream network.MuxedStream, replacement [32]byte, negotiationDeadline time.Time) error {
+func (p *ReadProvider) serveStream(stream network.MuxedStream, replacement [32]byte, negotiationDeadline time.Time, identity crypto.PrivKey) error {
 	defer stream.Close()
 	if err := stream.SetDeadline(negotiationDeadline); err != nil {
 		return err
@@ -126,7 +128,7 @@ func (p *ReadProvider) serveStream(stream network.MuxedStream, replacement [32]b
 	}
 	if controlOnly {
 		switch op {
-		case reserveOp, putOp, readBegin:
+		case reserveOp, putOp, finalizeOp, readBegin:
 			return writeFrame(stream, errorOp, []byte{4})
 		case statusOp, grantUpdateOp:
 			// A complete, supported control operation met the shorter deadline.
@@ -141,8 +143,8 @@ func (p *ReadProvider) serveStream(stream network.MuxedStream, replacement [32]b
 	if op == grantUpdateOp {
 		return p.serveGrantUpdate(stream, request)
 	}
-	if op == reserveOp || op == statusOp {
-		return p.serveUpload(stream, replacement, op, request)
+	if op == reserveOp || op == statusOp || op == finalizeOp {
+		return p.serveUpload(stream, replacement, op, request, identity.Sign)
 	}
 	if op == putOp {
 		return p.servePut(stream, replacement, request)
@@ -188,19 +190,41 @@ func (p *ReadProvider) serveStream(stream network.MuxedStream, replacement [32]b
 	return p.releaseRead(send, request, nonce, replacement, proof, issuedGeneration, deadline)
 }
 
-func (p *ReadProvider) authorizedItem(request []byte, nonce, replacement [32]byte, proof []byte, issuedGeneration uint64, deadline time.Time) ([]byte, byte) {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
+type readableItem struct {
+	io.ReadCloser
+	size uint64
+}
+
+func (p *ReadProvider) authorizedItem(request []byte, nonce, replacement [32]byte, proof []byte, issuedGeneration uint64, deadline time.Time) (*readableItem, byte) {
+	// Order the clock sample and the durable lookup with grant and upload updates.
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	if p.offline {
 		return nil, 7
 	}
 	now := time.Now()
 	a := p.agreement
-	if p.pendingRevocation || !now.Before(deadline) || !a.readable(now) || p.recovery == [32]byte{} || p.generation != issuedGeneration ||
+	if p.pendingRevocation || !now.Before(deadline) || p.recovery == [32]byte{} || p.generation != issuedGeneration ||
 		p.generation != binary.BigEndian.Uint64(request[33:41]) || a.FolderID != [16]byte(request[1:17]) ||
 		a.AgreementID != [16]byte(request[17:33]) ||
 		!ed25519.Verify(p.recovery[:], readTranscript(a.ProviderKey, replacement, request, nonce), proof) {
 		return nil, 2
+	}
+	if p.upload != nil && !p.upload.clockCertain(now) {
+		return nil, 7
+	}
+	if !a.readable(now) {
+		return nil, 2
+	}
+	if p.upload != nil {
+		file, size, err := p.upload.store.OpenPublishedItem(request[0], [32]byte(request[41:73]), now.Unix())
+		if errors.Is(err, grantstore.ErrUploadDenied) {
+			return nil, 2
+		}
+		if err != nil {
+			return nil, 7
+		}
+		return &readableItem{ReadCloser: file, size: size}, 0
 	}
 	var item *CommittedItem
 	switch request[0] {
@@ -217,28 +241,30 @@ func (p *ReadProvider) authorizedItem(request []byte, nonce, replacement [32]byt
 	if p.catalog.Sealed == nil || (p.object != nil && p.object.Sealed == nil) {
 		return nil, 7
 	}
-	return item.Sealed, 0
+	return &readableItem{ReadCloser: io.NopCloser(bytes.NewReader(item.Sealed)), size: uint64(len(item.Sealed))}, 0
 }
 
 func (p *ReadProvider) releaseRead(send func(byte, []byte) error, request []byte, nonce, replacement [32]byte, proof []byte, issuedGeneration uint64, deadline time.Time) error {
-	sealed, code := p.authorizedItem(request, nonce, replacement, proof, issuedGeneration, deadline)
+	item, code := p.authorizedItem(request, nonce, replacement, proof, issuedGeneration, deadline)
 	if code != 0 {
 		return send(errorOp, []byte{code})
 	}
+	defer item.Close()
 	// A grant change can run between any two frames, including after PROOF
 	// but before READ_SIZE. A pending writer has priority over new read locks.
 	sendCurrent := func(op byte, payload []byte) error {
 		p.mu.RLock()
 		defer p.mu.RUnlock()
-		if p.offline {
+		now := time.Now()
+		if p.offline || (p.upload != nil && !p.upload.clockCertain(now)) {
 			return ErrGrantUnavailable
 		}
-		if p.pendingRevocation || p.generation != issuedGeneration || !p.agreement.readable(time.Now()) {
+		if p.pendingRevocation || p.generation != issuedGeneration || !p.agreement.readable(now) {
 			return ErrReadDenied
 		}
 		return send(op, payload)
 	}
-	err := sendItem(sendCurrent, sealed)
+	err := sendItem(sendCurrent, item)
 	if err == ErrReadDenied {
 		return send(errorOp, []byte{2})
 	}
@@ -248,16 +274,20 @@ func (p *ReadProvider) releaseRead(send func(byte, []byte) error, request []byte
 	return err
 }
 
-func sendItem(send func(byte, []byte) error, sealed []byte) error {
-	if err := send(readSizeOp, binary.BigEndian.AppendUint64(nil, uint64(len(sealed)))); err != nil {
+func sendItem(send func(byte, []byte) error, item *readableItem) error {
+	if err := send(readSizeOp, binary.BigEndian.AppendUint64(nil, item.size)); err != nil {
 		return err
 	}
-	for len(sealed) > 0 {
-		n := min(maxDataPayload, len(sealed))
-		if err := send(dataOp, sealed[:n]); err != nil {
+	buf := make([]byte, min(uint64(maxDataPayload), item.size))
+	for remaining := item.size; remaining > 0; {
+		frame := buf[:min(uint64(len(buf)), remaining)]
+		if _, err := io.ReadFull(item, frame); err != nil {
 			return err
 		}
-		sealed = sealed[n:]
+		if err := send(dataOp, frame); err != nil {
+			return err
+		}
+		remaining -= uint64(len(frame))
 	}
 	return send(endOp, nil)
 }

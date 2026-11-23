@@ -42,9 +42,12 @@ func TestReservationRefusalsPrecedeLookupAndAllocation(t *testing.T) {
 		{"different agreement", writer, statusOp, wrongAgreement[:], 2},
 		{"short reserve", writer, reserveOp, m[:275], 1},
 		{"short status", writer, statusOp, ref[:79], 1},
+		{"wrong TLS peer on finalize", host, finalizeOp, ref[:], 2},
+		{"wrong agreement on finalize", writer, finalizeOp, wrongAgreement[:], 2},
+		{"short finalize", writer, finalizeOp, ref[:79], 1},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			if state, code := p.admitUpload(tc.peer, tc.op, tc.payload); code != tc.code || state != (grantstore.UploadState{}) {
+			if state, code := p.admitUpload(tc.peer, tc.op, tc.payload, nil); code != tc.code || state != (grantstore.UploadState{}) {
 				t.Fatalf("got state %+v, error %d", state, code)
 			}
 		})
@@ -55,7 +58,7 @@ func TestReservationRefusalsPrecedeLookupAndAllocation(t *testing.T) {
 			io.Reader
 			io.Writer
 		}{reader, &reply}
-		if err := p.serveUpload(stream, writer, reserveOp, m[:]); err != nil {
+		if err := p.serveUpload(stream, writer, reserveOp, m[:], nil); err != nil {
 			t.Fatal(err)
 		}
 		op, payload, err := readFrame(&reply, 1)

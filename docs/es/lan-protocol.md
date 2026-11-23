@@ -1,4 +1,4 @@
-<!-- docs-pair: lan-protocol; revision: 8 -->
+<!-- docs-pair: lan-protocol; revision: 9 -->
 
 [English](../en/lan-protocol.md) | [Español](lan-protocol.md) | [Índice](README.md)
 
@@ -17,7 +17,9 @@ un proveedor Linux vacío. El dispositivo autorizado puede reservar disco para
 ambos elementos y consultar el plazo original si pierde la respuesta. Con
 `PUT` puede enviar primero el objeto, reconectarse tras un corte en la
 transferencia del catálogo y reenviar solo el catálogo desde el byte cero.
-Ambos elementos siguen privados y pendientes hasta la futura confirmación final.
+`FINALIZE` publica ambos elementos juntos para las lecturas autorizadas. Si se
+pierde la respuesta, el dispositivo que realizó la subida puede recuperar el
+recibo firmado original después de que el proveedor reabra su almacén.
 [Prueba de recuperación](readiness.md)
 
 ## Conexión y tramas

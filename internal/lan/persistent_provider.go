@@ -105,6 +105,12 @@ func (p *ReadProvider) restoreGrant(store grantPersistence) error {
 		if err != nil {
 			return err
 		}
+		if len(raw) == 0 && p.upload != nil {
+			// A newly enrolled upload provider has no readers until the
+			// folder authority issues its first signed grant.
+			p.store = store
+			return nil
+		}
 	}
 	grant, err := p.agreement.verifyGrant(raw)
 	if err != nil {
@@ -125,9 +131,6 @@ func (p *ReadProvider) Close() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.offline = true
-	if p.upload != nil {
-		return p.upload.store.Close()
-	}
 	if p.store == nil {
 		return nil
 	}

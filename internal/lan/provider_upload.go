@@ -98,7 +98,11 @@ func openUploadProvider(dir string, id [32]byte, a CatalogAgreement, uploader [3
 	if err != nil {
 		return nil, errors.Join(err, s.Close())
 	}
-	return &ReadProvider{agreement: a, upload: &uploadAdmission{store: s, writer: uploader, limits: limits, opened: time.Now()}}, nil
+	p := &ReadProvider{agreement: a, upload: &uploadAdmission{store: s, writer: uploader, limits: limits, opened: time.Now()}}
+	if err := p.restoreGrant(s); err != nil {
+		return nil, errors.Join(err, s.Close())
+	}
+	return p, nil
 }
 
 // UploadUsage reports retained request IDs and outstanding physical charges.
@@ -112,11 +116,21 @@ func (p *ReadProvider) UploadUsage() (int, uint64, error) {
 	return p.upload.store.UploadUsage()
 }
 
-func (p *ReadProvider) serveUpload(stream io.ReadWriter, peer [32]byte, op byte, request []byte) error {
+// UploadAccounting reports the local physical charge in each stage of publication.
+func (p *ReadProvider) UploadAccounting() (reserved, stored uint64, err error) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	if p.offline || p.upload == nil {
+		return 0, 0, ErrUploadUnavailable
+	}
+	return p.upload.store.UploadAccounting()
+}
+
+func (p *ReadProvider) serveUpload(stream io.ReadWriter, peer [32]byte, op byte, request []byte, sign func([]byte) ([]byte, error)) error {
 	if err := expectEOF(stream); err != nil {
 		return writeFrame(stream, errorOp, []byte{1})
 	}
-	state, code := p.admitUpload(peer, op, request)
+	state, code := p.admitUpload(peer, op, request, sign)
 	if code != 0 {
 		return writeFrame(stream, errorOp, []byte{code})
 	}
@@ -128,11 +142,13 @@ func writeUploadState(stream io.Writer, state grantstore.UploadState) error {
 	if state.Code == 1 {
 		reply = append(reply, state.Mask)
 		reply = binary.BigEndian.AppendUint64(reply, uint64(state.Deadline))
+	} else if state.Code == 2 || state.Code == 5 {
+		reply = append(reply, state.Receipt[:]...)
 	}
 	return writeFrame(stream, stateOp, reply)
 }
 
-func (p *ReadProvider) admitUpload(peer [32]byte, op byte, request []byte) (grantstore.UploadState, byte) {
+func (p *ReadProvider) admitUpload(peer [32]byte, op byte, request []byte, sign func([]byte) ([]byte, error)) (grantstore.UploadState, byte) {
 	// Serialize the clock sample with admission. A slower goroutine must not
 	// submit an older time after another request advances the durable clock.
 	p.mu.Lock()
@@ -157,7 +173,7 @@ func (p *ReadProvider) admitUpload(peer [32]byte, op byte, request []byte) (gran
 			return state, 1
 		}
 		ref = uploadReference(manifest)
-	case statusOp:
+	case statusOp, finalizeOp:
 		if len(request) != len(ref) {
 			return state, 1
 		}
@@ -171,9 +187,12 @@ func (p *ReadProvider) admitUpload(peer [32]byte, op byte, request []byte) (gran
 	}
 	var err error
 	u := p.upload
-	if op == statusOp {
+	switch op {
+	case finalizeOp:
+		state, err = u.store.FinalizeUpload([16]byte(ref[32:48]), [32]byte(ref[48:]), u.limits, now, a.Expiry.Unix(), sign)
+	case statusOp:
 		state, err = u.store.UploadStatus([16]byte(ref[32:48]), [32]byte(ref[48:]), now.Unix())
-	} else {
+	case reserveOp:
 		state, err = u.store.ReserveUpload(manifest, u.limits, now.Unix(), a.Expiry.Unix())
 	}
 	return state, uploadErrorCode(err)
@@ -194,15 +213,18 @@ func (p *ReadProvider) checkUploadReference(ref [80]byte, now time.Time) byte {
 	if [16]byte(ref[:16]) != a.FolderID || [16]byte(ref[16:32]) != a.AgreementID {
 		return 2
 	}
-	opened := p.upload.opened
-	drift := (now.Unix() - opened.Unix()) - int64(now.Sub(opened)/time.Second)
-	if drift > 2 || drift < -2 {
+	if !p.upload.clockCertain(now) {
 		return 7
 	}
 	if !a.readable(now) {
 		return 2
 	}
 	return 0
+}
+
+func (u *uploadAdmission) clockCertain(now time.Time) bool {
+	drift := (now.Unix() - u.opened.Unix()) - int64(now.Sub(u.opened)/time.Second)
+	return drift >= -2 && drift <= 2
 }
 
 func uploadErrorCode(err error) byte {

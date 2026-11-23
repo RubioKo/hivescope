@@ -1,4 +1,4 @@
-<!-- docs-pair: upload-confirmation; revision: 2 -->
+<!-- docs-pair: upload-confirmation; revision: 3 -->
 
 [English](../en/upload-confirmation.md) | [Español](upload-confirmation.md) | [Índice](README.md)
 
@@ -91,6 +91,16 @@ datos en cada sistema de archivos y sistema operativo que admita.
 
 ## Qué acredita el recibo en un reintento
 
+En la primera implementación, ambos espacios ya pertenecen al mismo
+manifiesto. Guardar el recibo firmado en la fila confirmada de SQLite hace
+visibles ambos localizadores para quienes tienen permiso de recuperación y
+convierte el único cargo de espacio reservado en espacio almacenado. Un
+reintento recupera el recibo original. El solicitante comprueba la identidad
+fijada del proveedor, el manifiesto y el vencimiento pactado. Guarda esos
+132 bytes en su estado privado antes de confirmar la copia. Si se pierde
+un elemento confirmado, ambas lecturas quedan indisponibles y se conservan
+el recibo original y el cargo de esa solicitud.
+
 El proveedor firma con su identidad Ed25519 fijada de antemano la concatenación
 de `HiveScope/stored/v1`, un byte cero, la huella del manifiesto, el instante
 de confirmación (8) y el vencimiento del acuerdo vigente en ese instante (8).
@@ -156,8 +166,8 @@ d391894a4b1772edefcca619d2ffad9cc9d67e223a3f0f8f643bfc1a4db85377
 
 La firma del ejemplo se verificó con la clave pública del proveedor. Al cambiar
 únicamente la longitud del objeto de 21 a 22 bytes, cambió la huella y la firma
-original dejó de ser válida para ese manifiesto. El ensayo de subida en Linux
-utiliza ese mismo objeto y catálogo para comprobar una transferencia
-interrumpida. La copia sigue pendiente después de que llegan ambos elementos.
-La publicación y la entrega del recibo firmado por la red siguen siendo
-criterios de aceptación. [Ensayo de subida interrumpida](readiness.md)
+original dejó de ser válida para ese manifiesto. Los ensayos TCP en Linux usan
+el mismo objeto y catálogo para probar un envío interrumpido y la pérdida de
+la respuesta de publicación. Al reintentar, el propietario guarda el recibo
+firmado original y un equipo de reemplazo autorizado recupera los cinco bytes.
+[Ensayos de subida y recuperación](readiness.md)

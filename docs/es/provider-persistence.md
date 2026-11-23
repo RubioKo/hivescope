@@ -1,4 +1,4 @@
-<!-- docs-pair: provider-persistence; revision: 5 -->
+<!-- docs-pair: provider-persistence; revision: 6 -->
 
 [English](../en/provider-persistence.md) | [Español](provider-persistence.md) | [Índice](README.md)
 
@@ -109,8 +109,9 @@ a conectarse, el cliente puede consultar el mismo ID y resumen o reenviar el
 manifiesto original. El plazo y el cargo se fijan en la primera admisión.
 La reserva por sí sola no publica datos. El ensayo utiliza un reloj de
 laboratorio confiable y conserva los ID vencidos. Cada elemento preparado
-utiliza la reserva inicial. La emisión del recibo firmado requiere todavía
-el paso final de publicación.
+utiliza la reserva inicial. `FINALIZE` guarda el recibo firmado en la fila del
+manifiesto que identifica ambos archivos. En un reintento el proveedor verifica
+ambos archivos y devuelve el recibo guardado junto con la disponibilidad actual.
 
 Este almacén conserva hasta 64 identificadores de solicitud, sujetos a un
 límite local menor. Redondea por separado el tamaño de cada elemento y

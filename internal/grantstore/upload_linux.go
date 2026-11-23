@@ -38,6 +38,12 @@ const stagingSchema = `ALTER TABLE upload_v1 ADD COLUMN mask INTEGER NOT NULL DE
 	ALTER TABLE upload_v1 ADD COLUMN cleanup INTEGER NOT NULL DEFAULT 0 CHECK(cleanup IN (0,1) AND (cleanup=0 OR expired=1));
 	PRAGMA user_version=2;`
 
+// A committed row publishes both manifest locators in a single SQLite
+// commit. Its immutable receipt changes the classification of the existing
+// charge; reservation expiry can no longer remove either member.
+const publicationSchema = `ALTER TABLE upload_v1 ADD COLUMN receipt BLOB NOT NULL DEFAULT X'' CHECK(typeof(receipt)='blob' AND (length(receipt)=0 OR (length(receipt)=132 AND mask=3 AND expired=0 AND cleanup=0)));
+	PRAGMA user_version=3;`
+
 // InitUploads is an explicit provisioning step on a new dedicated store. A
 // missing upload table on an existing store must never look like no uploads.
 func (s *Store) InitUploads(scope [96]byte) error {
@@ -47,7 +53,7 @@ func (s *Store) InitUploads(scope [96]byte) error {
 		return errors.New("upload enrollment requires a new empty store")
 	}
 	s.fresh = false
-	s.fault = s.db.exec(fmt.Sprintf("BEGIN IMMEDIATE; CREATE TABLE upload_profile(id INTEGER PRIMARY KEY CHECK(id=1), scope BLOB NOT NULL CHECK(length(scope)=96)); INSERT INTO upload_profile VALUES(1,X'%x'); %s; %s COMMIT", scope, uploadTable, stagingSchema))
+	s.fault = s.db.exec(fmt.Sprintf("BEGIN IMMEDIATE; CREATE TABLE upload_profile(id INTEGER PRIMARY KEY CHECK(id=1), scope BLOB NOT NULL CHECK(length(scope)=96)); INSERT INTO upload_profile VALUES(1,X'%x'); %s; %s %s COMMIT", scope, uploadTable, stagingSchema, publicationSchema))
 	s.uploadScope = scope
 	s.uploads = s.fault == nil
 	return s.fault
@@ -59,10 +65,14 @@ func (s *Store) InitUploads(scope [96]byte) error {
 func (s *Store) CheckUploads(scope [96]byte) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.db == nil || s.fault != nil || len(s.record) != 0 || s.pending != nil {
+	if s.db == nil || s.fault != nil {
 		return errors.New("cannot reopen upload store")
 	}
-	if err := s.checkBacking(time.Now().Unix()); err != nil {
+	verify := s.checkBacking
+	if s.pending != nil {
+		verify = s.checkPending
+	}
+	if err := verify(time.Now().Unix()); err != nil {
 		return err
 	}
 	s.uploadScope = scope
@@ -140,6 +150,9 @@ func (s *Store) uploadReady(now int64) error {
 	if !s.uploads {
 		return errors.New("upload ledger has not been reconciled")
 	}
+	if s.pending != nil {
+		return ErrPendingRevocation
+	}
 	// A backwards clock holds state and commitments until trusted time returns.
 	if now < s.lastUTC {
 		return errors.New("clock behind persisted upload state")
@@ -212,6 +225,10 @@ func (s *Store) lookupUpload(id [16]byte, fingerprint [32]byte, exact []byte) (U
 	if deadline == 0 {
 		return UploadState{Code: 3}, nil
 	}
+	published, _, _, err := s.publication([276]byte(manifest), 0)
+	if err != nil || published.Code != 0 {
+		return published, err
+	}
 	mask, err := s.uploadNumber(fmt.Sprintf("SELECT mask FROM upload_v1 WHERE id=X'%x'", id))
 	if err != nil || mask > 3 {
 		return UploadState{}, errors.Join(errors.New("invalid staged item mask"), err)
@@ -264,8 +281,8 @@ func (s *Store) UploadStatus(id [16]byte, fingerprint [32]byte, now int64) (Uplo
 	})
 }
 
-// UploadUsage reports retained request IDs and bytes committed to pending
-// payload slots. The fixed index and journal allowance is budgeted separately.
+// UploadUsage reports retained request IDs and the total held and stored
+// bytes. The fixed index and journal allowance is budgeted separately.
 func (s *Store) UploadUsage() (int, uint64, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

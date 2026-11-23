@@ -46,13 +46,13 @@ func (item CommittedItem) owned(minSize, maxSize int) CommittedItem {
 	return item
 }
 
-// ReadProvider serves the prototype's single committed pair. Persistent
+// ReadProvider serves sealed items for one enrolled agreement. Persistent
 // providers serialize durable updates and read admission under the same lock.
 type ReadProvider struct {
 	agreement CatalogAgreement
 	catalog   CommittedCatalog
 	object    *CommittedObject // absent on catalog-only providers
-	upload    *uploadAdmission // dedicated, initially empty upload store
+	upload    *uploadAdmission // when present, the store indexes the published pairs
 
 	mu                sync.RWMutex     // a grant change excludes writes of individual frames
 	store             grantPersistence // nil on an in-memory provider
@@ -113,7 +113,7 @@ func (p *ReadProvider) applyGrant(raw []byte, requireDurable bool) error {
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if p.offline || p.upload != nil || (requireDurable && p.store == nil) {
+	if p.offline || (requireDurable && p.store == nil) {
 		return ErrGrantUnavailable
 	}
 	if !p.agreement.readable(time.Now()) {

@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 19 -->
+<!-- docs-pair: readiness; revision: 20 -->
 
 [English](../en/readiness.md) | [Español](readiness.md) | [Índice](README.md)
 
@@ -18,7 +18,9 @@ la identidad del proveedor en equipos virtuales aislados. Las pruebas de
 reinicio cubren una revocación confirmada y otra interrumpida que el
 propietario reenvía. Los ensayos de subida comprueban que perder la respuesta a
 una reserva deja un solo cargo de espacio y que, tras un corte en el envío del
-catálogo, el proveedor conserva el objeto ya recibido. Recuperar el archivo en otra computadora
+catálogo, el proveedor conserva el objeto ya recibido. Si se pierde la respuesta
+de publicación, el ensayo reabre el proveedor, reintenta y comprueba el recibo
+firmado original, el cargo único y los bytes recuperados. Recuperar el archivo en otra computadora
 sigue siendo parte del ensayo en red local.
 
 ## Alcance y contratos
@@ -125,8 +127,17 @@ El equipo de origen envía el objeto cifrado de 21 bytes, transmite 125 de los
 indica que solo el objeto está preparado (máscara `02`). Reintentar ese objeto
 consume cero bytes del archivo de origen. Enviar el catálogo completo cambia
 la máscara a `03` con la reserva y el vencimiento originales. En ese punto,
-ambos localizadores siguen sin permitir lecturas. El recibo firmado y la
-publicación del par son la siguiente parte de M1-05. [Prueba de PUT interrumpido](../../internal/conformance/put_linux_test.go)
+ambos localizadores siguen privados. [Prueba de PUT interrumpido](../../internal/conformance/put_linux_test.go)
+
+En Linux con cgo, ejecuta
+`go test -mod=readonly -count=1 -run '^TestLostFinalizeReplyReturnsOriginalReceipt$' ./internal/conformance`.
+La prueba corta la respuesta a `FINALIZE` después de convertir la reserva en
+espacio almacenado. El propietario aún carece del recibo local. Tras reabrir el
+proveedor, dos reintentos devuelven los mismos 132 bytes firmados y el propietario
+los guarda. Una identidad de reemplazo con un permiso vigente lee ambos elementos
+y recupera los cinco bytes originales. El ensayo cubre la pérdida de una respuesta
+y la reapertura del almacén en un solo equipo. El corte eléctrico y la recuperación
+en equipos físicos distintos quedan para el ensayo en red local. [Prueba de pérdida de la respuesta](../../internal/conformance/finalize_linux_test.go)
 
 Desde la raíz del repositorio, con Go 1.26 o posterior, ejecutar una vez
 `go mod download` y después `go test -mod=readonly -count=1 ./...`. Las
