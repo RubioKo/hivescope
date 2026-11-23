@@ -48,6 +48,7 @@ jobs:
           grep -Fx TestInterruptedCatalogPutKeepsStagedObject <<< "$trials"
           grep -Fx TestLostFinalizeReplyReturnsOriginalReceipt <<< "$trials"
           grep -Fx TestCancelAndFinalizeKeepOneOutcome <<< "$trials"
+          grep -Fx TestUploadAndRecoverBoundaryFiles <<< "$trials"
       - name: Run the offline vectors
         env:
           GOPROXY: 'off'

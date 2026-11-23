@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 21 -->
+<!-- docs-pair: readiness; revision: 22 -->
 
 [English](readiness.md) | [Español](../es/readiness.md) | [Index](README.md)
 
@@ -18,8 +18,10 @@ revocation and an interrupted revocation that the owner resubmits. Upload trials
 check that losing a reservation reply leaves one charge and that retrying an
 interrupted catalog transfer preserves the object already staged. A lost
 publication reply can be retried after reopening the provider. The trial
-checks the original signed receipt, a single charge and the recovered bytes. Recovery
-on a separate replacement computer remains part of the LAN trial.
+checks the original signed receipt, a single charge and the recovered bytes.
+The empty file and the file that crosses the first 4 MiB block boundary also
+go through upload, confirmation, provider reopen and recovery to a chosen path.
+Recovery on a separate physical computer remains part of the LAN trial.
 
 ## Scope and contracts
 
@@ -233,6 +235,29 @@ The three [published fixtures](file-catalog.md) recover byte for byte offline.
 `edge.bin` yields 4 MiB plus one byte from the second block. If that block is
 altered or truncated, the caller receives an error before it can read any
 plaintext. M1-02 still requires recovery over the LAN on a clean replacement.
+
+### Upload and recover the two boundary files
+
+On Linux with cgo and SQLite, run
+`go test -mod=readonly -count=1 -v -run '^TestUploadAndRecoverBoundaryFiles$' ./internal/conformance`.
+Each case starts with an empty provider. The owner reserves space, uploads the
+object and catalog, verifies and saves the 132-byte receipt, then removes the
+source file. After reopening the store, the provider returns the same receipt.
+The replacement unlocks the password-protected export and uses its own device
+identity to read both items over TCP. `RecoverFileTo` publishes the verified
+file at the chosen path and records the restore intent in a separate private
+directory. A companion test damages the last block before an authorized
+replacement. The existing destination keeps its original bytes and a later
+verified attempt replaces it. [Remote save tests](../../internal/conformance/object_read_test.go)
+
+| File | Sealed object | Result checked on disk |
+| --- | ---: | --- |
+| `empty.bin` | 16 bytes | The destination exists and contains zero bytes. |
+| `edge.bin` | 4,194,337 bytes | All 4,194,305 bytes match, including the final byte in the second block. |
+
+The test builds the synthetic ciphertext and recovery export with fixture
+encoders. The provider, requester and replacement run on one host.
+[Upload and recovery trial](../../internal/conformance/upload_recovery_linux_test.go)
 
 ### Save at a chosen destination
 

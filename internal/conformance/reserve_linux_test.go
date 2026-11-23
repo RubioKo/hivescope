@@ -142,9 +142,15 @@ func TestLostReservationReplyKeepsOneCharge(t *testing.T) {
 
 func fiveByteReservationManifest(t *testing.T) [276]byte {
 	t.Helper()
-	f := hiveFixture()
-	scope := f.context(t)
 	object, catalog := fiveByteSnapshot(t)
+	m := hiveFixture().reservationManifest(t, object, catalog)
+	requireDigest(t, m[:], "5cef2907ccccffa568c547206a2a4324294367cb9d54695ba33671d48a149e03")
+	return m
+}
+
+func (f snapshotFixture) reservationManifest(t *testing.T, object, catalog []byte) [276]byte {
+	t.Helper()
+	scope := f.context(t)
 	objectDigest, catalogDigest := sha256.Sum256(object), sha256.Sum256(catalog)
 	m, err := lan.NewUploadManifest([32]byte(mustHex(t, readFixtureProviderPublic)),
 		[32]byte(mustHex(t, "ec172b93ad5e563bf4932c70e1245034c35467ef2efd4d64ebf819683467e2bf")),
@@ -154,7 +160,6 @@ func fiveByteReservationManifest(t *testing.T) [276]byte {
 	if err != nil {
 		t.Fatal(err)
 	}
-	requireDigest(t, m[:], "5cef2907ccccffa568c547206a2a4324294367cb9d54695ba33671d48a149e03")
 	return m
 }
 
