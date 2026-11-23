@@ -39,15 +39,42 @@ func RecoverFile(ctx context.Context, pkg *storageformat.RecoveryPackage, device
 	if privateDir == "" {
 		return nil, errors.New("missing private staging directory")
 	}
-	snapshot, err := ReadCatalog(ctx, pkg, device)
+	var verified io.ReadCloser
+	err := withRecoveryObject(ctx, pkg, device, func(snapshot *storageformat.Snapshot, sealed io.Reader) error {
+		var err error
+		verified, err = snapshot.OpenObject(sealed, privateDir)
+		return err
+	})
 	if err != nil {
 		return nil, err
+	}
+	return verified, nil
+}
+
+// RecoverFileTo verifies the remote snapshot and atomically publishes it at
+// the selected destination. The caller supplies a private destination directory
+// and a separate private state directory dedicated to this attempt. The latter
+// retains the restore intent if the final directory sync is uncertain.
+func RecoverFileTo(ctx context.Context, pkg *storageformat.RecoveryPackage, device crypto.PrivKey,
+	destination string, replace bool, stateDir string) error {
+	if destination == "" || stateDir == "" {
+		return errors.New("recovery requires a destination and a private restore state directory")
+	}
+	return withRecoveryObject(ctx, pkg, device, func(snapshot *storageformat.Snapshot, sealed io.Reader) error {
+		return snapshot.SaveRecoverableObject(sealed, destination, replace, stateDir)
+	})
+}
+
+func withRecoveryObject(ctx context.Context, pkg *storageformat.RecoveryPackage, device crypto.PrivKey,
+	receive func(*storageformat.Snapshot, io.Reader) error) error {
+	snapshot, err := ReadCatalog(ctx, pkg, device)
+	if err != nil {
+		return err
 	}
 	request, err := objectRequest(pkg, snapshot)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	var verified io.ReadCloser
 	err = withAuthorizedRead(ctx, pkg, device, request, func(r io.Reader) error {
 		size, err := readSealedSize(r)
 		if err != nil {
@@ -56,11 +83,10 @@ func RecoverFile(ctx context.Context, pkg *storageformat.RecoveryPackage, device
 		if size != snapshot.SealedObjectSize() {
 			return errors.New("declared object size differs from the verified catalog")
 		}
-		verified, err = snapshot.OpenObject(&sealedItemReader{wire: r, remaining: size}, privateDir)
-		return err
+		return receive(snapshot, &sealedItemReader{wire: r, remaining: size})
 	})
 	if err != nil {
-		return nil, fmt.Errorf("recover object: %w", err)
+		return fmt.Errorf("recover object: %w", err)
 	}
-	return verified, nil
+	return nil
 }

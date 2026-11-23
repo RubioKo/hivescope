@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 21 -->
+<!-- docs-pair: readiness; revision: 22 -->
 
 [English](../en/readiness.md) | [Español](readiness.md) | [Índice](README.md)
 
@@ -20,8 +20,10 @@ propietario reenvía. Los ensayos de subida comprueban que perder la respuesta a
 una reserva deja un solo cargo de espacio y que, tras un corte en el envío del
 catálogo, el proveedor conserva el objeto ya recibido. Si se pierde la respuesta
 de publicación, el ensayo reabre el proveedor, reintenta y comprueba el recibo
-firmado original, el cargo único y los bytes recuperados. Recuperar el archivo en otra computadora
-sigue siendo parte del ensayo en red local.
+firmado original, el cargo único y los bytes recuperados. El archivo vacío y el
+que supera el primer bloque de 4 MiB también pasan por la subida, la confirmación,
+la reapertura del proveedor y la recuperación en el destino elegido. Recuperar el
+archivo en otra computadora física sigue siendo parte del ensayo en red local.
 
 ## Alcance y contratos
 
@@ -255,6 +257,29 @@ cinco bytes. De `edge.bin` se recuperan 4 MiB y un byte más en el segundo
 bloque. Si ese bloque llega alterado o truncado, el cliente recibe un error
 antes de poder leer el contenido. M1-02 aún requiere recuperar los archivos
 por la LAN en un equipo de reemplazo con un perfil limpio.
+
+### Subir y recuperar los dos archivos de prueba
+
+En Linux con cgo y SQLite, ejecuta
+`go test -mod=readonly -count=1 -v -run '^TestUploadAndRecoverBoundaryFiles$' ./internal/conformance`.
+Cada caso empieza con un proveedor vacío. El propietario reserva espacio, sube el
+objeto y el catálogo, verifica y guarda el recibo de 132 bytes y retira el archivo
+de origen. Al reabrir el almacén, el proveedor devuelve el mismo recibo. El
+dispositivo de reemplazo abre el paquete con su contraseña, se autentica con su
+propia identidad y lee ambos elementos por TCP. `RecoverFileTo` publica el
+archivo verificado en la ruta elegida y registra el intento de recuperación en
+un directorio privado separado. Otro ensayo daña el último bloque cuando ya se
+autorizó reemplazar el archivo. El destino conserva sus bytes originales y el
+siguiente intento verificado los reemplaza. [Pruebas de guardado por red](../../internal/conformance/object_read_test.go)
+
+| Archivo | Objeto cifrado | Resultado comprobado en disco |
+| --- | ---: | --- |
+| `empty.bin` | 16 bytes | El archivo de destino existe y contiene cero bytes. |
+| `edge.bin` | 4.194.337 bytes | Coinciden los 4.194.305 bytes, incluido el último, que pertenece al segundo bloque. |
+
+El ensayo genera los datos cifrados y el paquete sintético con herramientas de
+prueba. El proveedor, el solicitante y el dispositivo de reemplazo se ejecutan
+en un solo equipo. [Ensayo de subida y recuperación](../../internal/conformance/upload_recovery_linux_test.go)
 
 ### Guardar en el destino elegido
 

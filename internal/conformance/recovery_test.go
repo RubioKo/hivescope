@@ -7,8 +7,10 @@ import (
 	"crypto/cipher"
 	"crypto/ed25519"
 	"encoding/binary"
+	"net/netip"
 	"testing"
 
+	"github.com/RubioKo/hivescope/internal/storageformat"
 	"golang.org/x/crypto/argon2"
 )
 
@@ -42,17 +44,31 @@ func recoveryFixture(t *testing.T, passphrase string, variant byte) recoveryExam
 	// different authenticated payload its own synthetic salt and nonce.
 	salt[0] ^= variant
 	nonce[0] ^= variant
+	pkg := &storageformat.RecoveryPackage{
+		Catalog: hiveFixture().context(t), Generation: 7,
+		ProviderKey:  [32]byte(mustHex(t, readFixtureProviderPublic)),
+		Endpoint:     netip.MustParseAddrPort("192.0.2.10:4001"),
+		RecoverySeed: [32]byte(mustHex(t, readFixtureRecoverySeed)),
+	}
+	return encodeRecoveryExample(t, pkg, passphrase, salt, nonce)
+}
+
+func encodeRecoveryExample(t *testing.T, pkg *storageformat.RecoveryPackage, passphrase string, salt, nonce []byte) recoveryExample {
+	t.Helper()
 	header := append([]byte("HSRP\x01"), salt...)
 	header = append(header, nonce...)
-	payload := append(repeated(0xa1, 16), repeated(0xb2, 16)...)
-	payload = binary.BigEndian.AppendUint64(payload, 7)
-	payload = append(payload, mustHex(t, readFixtureProviderPublic)...)
-	payload = append(payload, 192, 0, 2, 10)
-	payload = binary.BigEndian.AppendUint16(payload, 4001)
-	payload = append(payload, mustHex(t, readFixtureRecoverySeed)...)
-	payload = append(payload, repeated(0xe5, 32)...)
-	payload = append(payload, mustHex(t, readFixtureCatalogPublic)...)
-	payload = append(payload, repeated(0xc3, 32)...)
+	scope := pkg.Catalog
+	payload := append([]byte{}, scope.FolderID[:]...)
+	payload = append(payload, scope.AgreementID[:]...)
+	payload = binary.BigEndian.AppendUint64(payload, pkg.Generation)
+	payload = append(payload, pkg.ProviderKey[:]...)
+	ip := pkg.Endpoint.Addr().As4()
+	payload = append(payload, ip[:]...)
+	payload = binary.BigEndian.AppendUint16(payload, pkg.Endpoint.Port())
+	payload = append(payload, pkg.RecoverySeed[:]...)
+	payload = append(payload, scope.FolderReadKey[:]...)
+	payload = append(payload, scope.CatalogVerifyKey[:]...)
+	payload = append(payload, scope.CatalogLocator[:]...)
 
 	return recoveryExample{header, payload, recoveryFixtureAEAD(t, passphrase, salt)}
 }

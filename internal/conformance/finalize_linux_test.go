@@ -40,6 +40,12 @@ type publicationTrial struct {
 
 func newPublicationTrial(t *testing.T) *publicationTrial {
 	t.Helper()
+	object, catalog := fiveByteSnapshot(t)
+	return newSnapshotPublicationTrial(t, hiveFixture(), object, catalog)
+}
+
+func newSnapshotPublicationTrial(t *testing.T, fixture snapshotFixture, object, catalog []byte) *publicationTrial {
+	t.Helper()
 	// The sealed pair and its manifest use two public RFC 8032 identities.
 	fixtureKey := func(seed string) crypto.PrivKey {
 		t.Helper()
@@ -55,8 +61,7 @@ func newPublicationTrial(t *testing.T) *publicationTrial {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m := fiveByteReservationManifest(t)
-	fixture := hiveFixture()
+	m := fixture.reservationManifest(t, object, catalog)
 	start := time.Now().Truncate(time.Second)
 	agreement := lan.CatalogAgreement{
 		ProviderKey: [32]byte(m[20:52]), AuthorityKey: [32]byte(authorityKey),
@@ -101,6 +106,17 @@ func newPublicationTrial(t *testing.T) *publicationTrial {
 	}
 	return &publicationTrial{reservationTrial: trial, reads: reads, manifest: m, uploader: uploader,
 		agreement: agreement, limits: limits, storeID: storeID, dir: dir}
+}
+
+// Use fresh salt and nonce for the actual endpoint and newly enrolled recovery
+// key. Deterministic header bytes belong only to the published vectors.
+func (trial *publicationTrial) recoveryExport(t *testing.T, passphrase string) []byte {
+	t.Helper()
+	var salt [16]byte
+	var nonce [12]byte
+	rand.Read(salt[:])
+	rand.Read(nonce[:])
+	return encodeRecoveryExample(t, trial.reads.pkg, passphrase, salt[:], nonce[:]).seal()
 }
 
 func (trial *publicationTrial) reopen(t *testing.T) {

@@ -14,6 +14,9 @@ import (
 	"io"
 	"net"
 	"net/netip"
+	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -255,6 +258,48 @@ func TestCorruptRemoteObjectDiscardsStaging(t *testing.T) {
 	object[len(object)-1] ^= 1
 	trial := newLoopbackRead(t, f, object, catalog)
 	checkRejectedObject(t, trial)
+}
+
+func TestRemoteSavePreservesDestinationUntilLastBlockVerifies(t *testing.T) {
+	if runtime.GOOS != "linux" && runtime.GOOS != "windows" {
+		t.Skip("local atomic publication currently targets Linux and Windows")
+	}
+	f := edgeFixture()
+	object := f.sealObject(t)
+	catalog := f.sealCatalog(t, f.entry(object))
+	damaged := bytes.Clone(object)
+	damaged[len(damaged)-1] ^= 1
+	destination, stateDir := filepath.Join(t.TempDir(), "chosen.bin"), t.TempDir()
+	previous := []byte("previous contents")
+	if err := os.WriteFile(destination, previous, 0600); err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name   string
+		sealed []byte
+		valid  bool
+	}{
+		{"damaged final block", damaged, false},
+		{"verified retry", object, true},
+	} {
+		trial := newLoopbackRead(t, f, tc.sealed, catalog)
+		trial.session(t, tc.name, 2, func(ctx context.Context) error {
+			err := lan.RecoverFileTo(ctx, trial.pkg, trial.device, destination, true, stateDir)
+			if tc.valid {
+				return err
+			}
+			if err == nil {
+				return errors.New("published a corrupt remote object")
+			}
+			return nil
+		})
+		if tc.valid {
+			requireFileBytes(t, destination, f.plaintext)
+		} else {
+			requireFileBytes(t, destination, previous)
+			expectEmptyDir(t, stateDir)
+		}
+	}
 }
 
 func checkRejectedObject(t *testing.T, trial *loopbackRead) {
