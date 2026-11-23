@@ -254,8 +254,8 @@ func TestUploadFailedWriteRequiresReopen(t *testing.T) {
 	if err := s.InitUploads(scope); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.Replace(nil, recordAt(7)); err == nil {
-		t.Fatal("read grant installed in an upload enrollment")
+	if err := s.Replace(nil, recordAt(7)); err != nil {
+		t.Fatal(err)
 	}
 	if err := s.db.exec("PRAGMA query_only=ON"); err != nil {
 		t.Fatal(err)

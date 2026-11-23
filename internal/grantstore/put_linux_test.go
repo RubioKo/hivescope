@@ -28,11 +28,17 @@ type putTrial struct {
 
 func reservePutTrial(t *testing.T) *putTrial {
 	t.Helper()
+	return reservePutTrialForProvider(t, nil)
+}
+
+func reservePutTrialForProvider(t *testing.T, provider []byte) *putTrial {
+	t.Helper()
 	dir, binding, s := newStore(t)
 	tr := &putTrial{
 		dir: dir, binding: binding, store: s, m: testManifest(1),
 		object: bytes.Repeat([]byte{0xa7}, 21), catalog: bytes.Repeat([]byte{0x81}, 250),
 	}
+	copy(tr.m[20:52], provider)
 	objectDigest, catalogDigest := sha256.Sum256(tr.object), sha256.Sum256(tr.catalog)
 	copy(tr.m[172:204], objectDigest[:])
 	copy(tr.m[244:], catalogDigest[:])

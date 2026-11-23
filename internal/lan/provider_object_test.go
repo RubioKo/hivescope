@@ -8,10 +8,33 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
+	"io"
 	"runtime"
 	"testing"
 	"time"
 )
+
+func TestReadStopsWhenVerifiedItemBecomesShort(t *testing.T) {
+	// The open descriptor was verified at admission, but the volume stops
+	// supplying bytes during the second frame.
+	item := &readableItem{
+		ReadCloser: io.NopCloser(bytes.NewReader(make([]byte, maxDataPayload+1))),
+		size:       maxDataPayload + 2,
+	}
+	var wire bytes.Buffer
+	send := func(op byte, payload []byte) error { return writeFrame(&wire, op, payload) }
+	if err := sendItem(send, item); !errors.Is(err, io.ErrUnexpectedEOF) {
+		t.Fatalf("expected a truncated item error, got %v", err)
+	}
+	op, size, err := readFrame(&wire, 8)
+	if err != nil || op != readSizeOp || len(size) != 8 || binary.BigEndian.Uint64(size) != item.size {
+		t.Fatalf("invalid READ_SIZE: op=%x size=%x err=%v", op, size, err)
+	}
+	op, data, err := readFrame(&wire, maxDataPayload)
+	if err != nil || op != dataOp || len(data) != maxDataPayload || wire.Len() != 0 {
+		t.Fatal("expected one complete DATA frame and no END after read failure")
+	}
+}
 
 func TestCommittedObjectRead(t *testing.T) {
 	providerKey, _ := grantTestKey(t)
@@ -49,9 +72,13 @@ func TestCommittedObjectRead(t *testing.T) {
 	check := func(provider *ReadProvider, kind byte, locator [32]byte, want byte) {
 		t.Helper()
 		proof := signed(kind, locator)
-		sealed, code := provider.authorizedItem(request, nonce, replacement, proof, 7, now.Add(time.Minute))
-		if code != want || sealed != nil {
-			t.Fatalf("read kind %d: code %d, bytes %d, want code %d only", kind, code, len(sealed), want)
+		item, code := provider.authorizedItem(request, nonce, replacement, proof, 7, now.Add(time.Minute))
+		if item != nil {
+			item.Close()
+			t.Fatalf("read kind %d returned content for a refused read", kind)
+		}
+		if code != want {
+			t.Fatalf("read kind %d: code %d, want %d", kind, code, want)
 		}
 	}
 	check(p, objectKind, catalog.Locator, 2)

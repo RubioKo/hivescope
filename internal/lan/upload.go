@@ -21,14 +21,17 @@ import (
 const (
 	reserveOp          = 0x01
 	statusOp           = 0x02
+	finalizeOp         = 0x04
 	stateOp            = 0x23
+	maxUploadState     = 1 + 132
 	uploadManifestSize = 276
 	uploadDomain       = "HiveScope/upload/v1\x00"
 )
 
 var (
-	ErrUploadDenied      = grantstore.ErrUploadDenied
-	ErrUploadUnavailable = errors.New("provider cannot determine the upload state")
+	ErrUploadDenied        = grantstore.ErrUploadDenied
+	ErrUploadUnavailable   = errors.New("provider cannot determine the upload state")
+	ErrUploadTermsRequired = errors.New("receipt verification requires the locally agreed expiry")
 )
 
 // UploadItem describes the exact sealed object or signed catalog. Digest is
@@ -84,27 +87,77 @@ func uploadReference(m [uploadManifestSize]byte) [80]byte {
 // SubmitReservation asks the pinned provider to reserve both items described
 // by the uploader's saved manifest. If the reply is lost, keep the same
 // manifest and query ReservationStatus before retrying. Success with a pending
-// state reserves capacity, without confirming that either item is stored.
+// state reserves capacity. Use UploadTerms.Reserve for retries that may return a receipt.
 func SubmitReservation(ctx context.Context, endpoint netip.AddrPort, pin [32]byte, device crypto.PrivKey,
 	manifest [uploadManifestSize]byte) (grantstore.UploadState, error) {
-	return requestReservation(ctx, endpoint, pin, device, manifest, reserveOp)
+	return requestReservation(ctx, endpoint, pin, device, manifest, reserveOp, 0)
 }
 
 // ReservationStatus asks for the state of a saved upload without allocating
 // capacity. An unknown state permits retrying the original manifest and ID.
+// Use UploadStatus with the saved expiry once the provider may have published the pair.
 func ReservationStatus(ctx context.Context, endpoint netip.AddrPort, pin [32]byte, device crypto.PrivKey,
 	manifest [uploadManifestSize]byte) (grantstore.UploadState, error) {
-	return requestReservation(ctx, endpoint, pin, device, manifest, statusOp)
+	return requestReservation(ctx, endpoint, pin, device, manifest, statusOp, 0)
+}
+
+// UploadTerms come from the caller's saved agreement, independent of the provider's reply.
+type UploadTerms struct{ Expiry int64 }
+
+// Reserve also verifies the historical receipt if the reservation already committed.
+func (t UploadTerms) Reserve(ctx context.Context, endpoint netip.AddrPort, pin [32]byte, device crypto.PrivKey,
+	m [uploadManifestSize]byte) (grantstore.UploadState, error) {
+	if t.Expiry <= 0 {
+		return grantstore.UploadState{}, ErrUploadTermsRequired
+	}
+	return requestReservation(ctx, endpoint, pin, device, m, reserveOp, t.Expiry)
+}
+
+// UploadStatus verifies historical receipts against the saved manifest and agreement.
+func UploadStatus(ctx context.Context, endpoint netip.AddrPort, pin [32]byte, device crypto.PrivKey,
+	m [uploadManifestSize]byte, expiry int64) (grantstore.UploadState, error) {
+	if expiry <= 0 {
+		return grantstore.UploadState{}, ErrUploadTermsRequired
+	}
+	return requestReservation(ctx, endpoint, pin, device, m, statusOp, expiry)
+}
+
+// FinalizeUpload publishes both staged items and verifies any signed receipt.
+// ConfirmUpload also persists it before the caller counts a healthy copy.
+func FinalizeUpload(ctx context.Context, endpoint netip.AddrPort, pin [32]byte, device crypto.PrivKey,
+	m [uploadManifestSize]byte, expiry int64) (grantstore.UploadState, error) {
+	if expiry <= 0 {
+		return grantstore.UploadState{}, ErrUploadTermsRequired
+	}
+	return requestReservation(ctx, endpoint, pin, device, m, finalizeOp, expiry)
+}
+
+// ConfirmUpload returns committed only after saving that exact receipt locally.
+func ConfirmUpload(ctx context.Context, endpoint netip.AddrPort, pin [32]byte, device crypto.PrivKey,
+	m [uploadManifestSize]byte, expiry int64, receiptDir string) (grantstore.UploadState, error) {
+	state, err := FinalizeUpload(ctx, endpoint, pin, device, m, expiry)
+	if err != nil || state.Code != 2 {
+		return state, err
+	}
+	if err := storageformat.SaveVerifiedReceipt(receiptDir, sha256.Sum256(m[:]), state.Receipt); err != nil {
+		return grantstore.UploadState{}, err
+	}
+	return state, nil
+}
+
+type receiptExpectation struct {
+	provider, fingerprint [32]byte
+	expiry                int64
 }
 
 func requestReservation(ctx context.Context, endpoint netip.AddrPort, pin [32]byte, device crypto.PrivKey,
-	m [uploadManifestSize]byte, op byte) (grantstore.UploadState, error) {
+	m [uploadManifestSize]byte, op byte, expiry int64) (grantstore.UploadState, error) {
 	var state grantstore.UploadState
 	if err := checkUploadIdentity(pin, device, m); err != nil {
 		return state, err
 	}
 	payload := m[:]
-	if op == statusOp {
+	if op != reserveOp {
 		ref := uploadReference(m)
 		payload = ref[:]
 	}
@@ -116,7 +169,7 @@ func requestReservation(ctx context.Context, endpoint netip.AddrPort, pin [32]by
 			return err
 		}
 		var err error
-		state, err = readReservationState(stream, op)
+		state, err = readReservationState(stream, op, receiptExpectation{pin, sha256.Sum256(m[:]), expiry})
 		return err
 	})
 	if err != nil {
@@ -142,21 +195,19 @@ func checkUploadIdentity(pin [32]byte, device crypto.PrivKey, m [uploadManifestS
 	return nil
 }
 
-// This admission client accepts states that require no signed receipt. Future
-// committed and unavailable states must be verified by the receipt path.
-func readReservationState(r io.Reader, requestOp byte) (grantstore.UploadState, error) {
+func readReservationState(r io.Reader, requestOp byte, want receiptExpectation) (grantstore.UploadState, error) {
 	var state grantstore.UploadState
-	op, payload, err := readFrame(r, 10)
+	op, payload, err := readFrame(r, maxUploadState)
 	if err != nil {
 		return state, err
 	}
 	if err := expectEOF(r); err != nil {
 		return state, err
 	}
-	return decodeUploadState(requestOp, op, payload)
+	return decodeUploadState(requestOp, op, payload, want)
 }
 
-func decodeUploadState(requestOp, op byte, payload []byte) (grantstore.UploadState, error) {
+func decodeUploadState(requestOp, op byte, payload []byte, want receiptExpectation) (grantstore.UploadState, error) {
 	var state grantstore.UploadState
 	if op == errorOp {
 		if len(payload) == 1 {
@@ -184,7 +235,7 @@ func decodeUploadState(requestOp, op byte, payload []byte) (grantstore.UploadSta
 	}
 	switch payload[0] {
 	case 0:
-		if (requestOp == statusOp || requestOp == putOp) && len(payload) == 1 {
+		if (requestOp == statusOp || requestOp == putOp || requestOp == finalizeOp) && len(payload) == 1 {
 			return state, nil
 		}
 	case 1:
@@ -195,6 +246,17 @@ func decodeUploadState(requestOp, op byte, payload []byte) (grantstore.UploadSta
 			if deadline > 0 && deadline <= math.MaxInt64 {
 				return grantstore.UploadState{Code: 1, Mask: payload[1], Deadline: int64(deadline)}, nil
 			}
+		}
+	case 2, 5:
+		if len(payload) == maxUploadState {
+			if want.expiry <= 0 {
+				return state, ErrUploadTermsRequired
+			}
+			receipt := [132]byte(payload[1:])
+			if err := grantstore.VerifyUploadReceipt(receipt, want.provider, want.fingerprint, want.expiry); err != nil {
+				return state, err
+			}
+			return grantstore.UploadState{Code: payload[0], Receipt: receipt}, nil
 		}
 	case 3, 4:
 		if len(payload) == 1 {

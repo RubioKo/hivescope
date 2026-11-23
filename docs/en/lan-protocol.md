@@ -1,4 +1,4 @@
-<!-- docs-pair: lan-protocol; revision: 8 -->
+<!-- docs-pair: lan-protocol; revision: 9 -->
 
 [English](lan-protocol.md) | [Español](../es/lan-protocol.md) | [Index](README.md)
 
@@ -15,8 +15,9 @@ the latest grant after a process restart. A separate upload trial starts with
 an empty Linux provider. The enrolled uploader can reserve disk space for both
 items and query the original deadline after losing the reply. With `PUT`,
 it can stage the object first, reconnect after an interrupted catalog
-transfer, and send just the catalog from byte zero. Both items remain
-private and pending until the future finalization step.
+transfer, and send just the catalog from byte zero. `FINALIZE` publishes both
+items together for authorized reads. If the reply is lost, the uploader can
+retrieve the original signed receipt after the provider reopens.
 [Recovery trial](readiness.md)
 
 ## Connection and framing

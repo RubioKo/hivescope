@@ -1,4 +1,4 @@
-<!-- docs-pair: provider-persistence; revision: 5 -->
+<!-- docs-pair: provider-persistence; revision: 6 -->
 
 [English](provider-persistence.md) | [Español](../es/provider-persistence.md) | [Index](README.md)
 
@@ -99,8 +99,9 @@ reply can leave the provider. On reconnect the client can query the same ID
 and fingerprint or resend the original manifest. The deadline and charge
 belong to the original admission. A reservation alone publishes no data.
 The trial uses a trusted lab clock and retains expired IDs. Each staged
-item uses the original reservation. A signed storage receipt still requires
-the final publication step.
+item uses the original reservation. `FINALIZE` commits the signed receipt on the
+manifest row that owns both files. On retry the provider checks both files and
+returns the stored receipt alongside the current availability.
 
 This store retains up to 64 request IDs, subject to a lower local limit.
 It rounds each item separately and budgets extra blocks for file extents

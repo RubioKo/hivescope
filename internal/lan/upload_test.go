@@ -132,13 +132,13 @@ func TestReservationStateRequiresCanonicalReplyAndEOF(t *testing.T) {
 	}
 	for _, mask := range []byte{0, 1, 2, 3} {
 		pending := binary.BigEndian.AppendUint64([]byte{1, mask}, 1_700_000_000)
-		got, err := readReservationState(bytes.NewReader(frame(stateOp, pending)), reserveOp)
+		got, err := readReservationState(bytes.NewReader(frame(stateOp, pending)), reserveOp, receiptExpectation{})
 		if err != nil || got != (grantstore.UploadState{Code: 1, Mask: mask, Deadline: 1_700_000_000}) {
 			t.Fatalf("pending state with mask %d: %+v, %v", mask, got, err)
 		}
 	}
 	for _, state := range []byte{0, 3, 4} {
-		got, err := readReservationState(bytes.NewReader(frame(stateOp, []byte{state})), statusOp)
+		got, err := readReservationState(bytes.NewReader(frame(stateOp, []byte{state})), statusOp, receiptExpectation{})
 		if err != nil || got != (grantstore.UploadState{Code: state}) {
 			t.Fatalf("state %d: %+v, %v", state, got, err)
 		}
@@ -156,7 +156,7 @@ func TestReservationStateRequiresCanonicalReplyAndEOF(t *testing.T) {
 		"malformed error":        frame(errorOp, []byte{3, 0}),
 	} {
 		t.Run(name, func(t *testing.T) {
-			if got, err := readReservationState(bytes.NewReader(wire), reserveOp); err == nil || got != (grantstore.UploadState{}) {
+			if got, err := readReservationState(bytes.NewReader(wire), reserveOp, receiptExpectation{}); err == nil || got != (grantstore.UploadState{}) {
 				t.Fatal("unverified provider reply returned a state")
 			}
 		})
@@ -166,8 +166,49 @@ func TestReservationStateRequiresCanonicalReplyAndEOF(t *testing.T) {
 		6: grantstore.ErrUploadPaused, 7: ErrUploadUnavailable,
 	} {
 		wire := frame(errorOp, []byte{code})
-		if got, err := readReservationState(bytes.NewReader(wire), reserveOp); !errors.Is(err, want) || got != (grantstore.UploadState{}) {
+		if got, err := readReservationState(bytes.NewReader(wire), reserveOp, receiptExpectation{}); !errors.Is(err, want) || got != (grantstore.UploadState{}) {
 			t.Fatalf("error %d: %+v, %v", code, got, err)
+		}
+	}
+}
+
+func TestSignedUploadStateBindsProviderManifestAndAgreedExpiry(t *testing.T) {
+	m := wireTestManifest(t)
+	want := receiptExpectation{[32]byte(m[20:52]), sha256.Sum256(m[:]), 1702592000}
+	body := append([]byte("HiveScope/stored/v1\x00"), want.fingerprint[:]...)
+	body = binary.BigEndian.AppendUint64(body, 1700000000)
+	body = binary.BigEndian.AppendUint64(body, uint64(want.expiry))
+	sig, err := hex.DecodeString("d391894a4b1772edefcca619d2ffad9cc9d67e223a3f0f8f643bfc1a4db853778fc23139c2702f0713d2d5d9635ea5222935924ecfac6d115465a0b228510405")
+	if err != nil {
+		t.Fatal(err)
+	}
+	receipt := [132]byte(append(body, sig...))
+	for _, code := range []byte{2, 5} {
+		var wire bytes.Buffer
+		state := grantstore.UploadState{Code: code, Receipt: receipt}
+		if err := writeUploadState(&wire, state); err != nil {
+			t.Fatal(err)
+		}
+		b := wire.Bytes()
+		got, err := readReservationState(bytes.NewReader(b), finalizeOp, want)
+		if err != nil || got != state {
+			t.Fatalf("state %d: %+v, %v", code, got, err)
+		}
+		wrongKey, otherManifest, otherTerms := want, want, want
+		wrongKey.provider = [32]byte(m[52:84])
+		otherManifest.fingerprint[20] ^= 1
+		otherTerms.expiry++
+		for _, expected := range []receiptExpectation{wrongKey, otherManifest, otherTerms, {}} {
+			if got, err := readReservationState(bytes.NewReader(b), statusOp, expected); err == nil || got != (grantstore.UploadState{}) {
+				t.Fatal("returned a receipt without verifying all local terms")
+			}
+		}
+		damaged := bytes.Clone(b)
+		damaged[len(damaged)-1] ^= 1
+		for _, bad := range [][]byte{damaged, b[:len(b)-1], append(bytes.Clone(b), 0)} {
+			if got, err := readReservationState(bytes.NewReader(bad), finalizeOp, want); err == nil || got != (grantstore.UploadState{}) {
+				t.Fatal("accepted an invalid receipt or trailing data")
+			}
 		}
 	}
 }

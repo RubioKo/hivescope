@@ -37,7 +37,7 @@ func TestPutRequiresCompleteDataEndAndEOF(t *testing.T) {
 	if err := writeUploadState(&stream.reply, want); err != nil {
 		t.Fatal(err)
 	}
-	got, err := exchangePut(stream, UploadObject, uint64(len(sealed)), bytes.NewReader(sealed))
+	got, err := exchangePut(stream, UploadObject, uint64(len(sealed)), bytes.NewReader(sealed), receiptExpectation{})
 	if err != nil || got != want || !stream.closed || stream.reset {
 		t.Fatalf("PUT exchange returned %+v, %v", got, err)
 	}
@@ -70,7 +70,7 @@ func TestPutEarlyStateSendsNoPayload(t *testing.T) {
 			t.Fatal(err)
 		}
 		source := bytes.NewReader(make([]byte, 250))
-		got, err := exchangePut(stream, UploadCatalog, 250, source)
+		got, err := exchangePut(stream, UploadCatalog, 250, source, receiptExpectation{})
 		if err != nil || got != state || !stream.closed || stream.sent.Len() != 0 || source.Len() != 250 {
 			t.Fatalf("early state %+v consumed source bytes: %+v %v", state, got, err)
 		}
@@ -79,7 +79,7 @@ func TestPutEarlyStateSendsNoPayload(t *testing.T) {
 	if err := writeUploadState(&stream.reply, grantstore.UploadState{Code: 1, Mask: UploadObject, Deadline: 1700000800}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := exchangePut(stream, UploadCatalog, 250, bytes.NewReader(nil)); err == nil {
+	if _, err := exchangePut(stream, UploadCatalog, 250, bytes.NewReader(nil), receiptExpectation{}); err == nil {
 		t.Fatal("object bit alone acknowledged the catalog")
 	}
 }
@@ -90,7 +90,7 @@ func TestPutLocalSourceMustMatchDeclaredLength(t *testing.T) {
 		if err := writeFrame(&stream.reply, readyOp, nil); err != nil {
 			t.Fatal(err)
 		}
-		state, err := exchangePut(stream, UploadCatalog, 250, bytes.NewReader(make([]byte, n)))
+		state, err := exchangePut(stream, UploadCatalog, 250, bytes.NewReader(make([]byte, n)), receiptExpectation{})
 		if err == nil || state.Code != 0 || !stream.reset || stream.closed {
 			t.Fatalf("source length %d returned %+v, %v", n, state, err)
 		}

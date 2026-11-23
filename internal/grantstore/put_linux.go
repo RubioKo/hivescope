@@ -104,8 +104,8 @@ func putIOError(err error) error {
 
 // Validate the wall clock against monotonic time elapsed since admission.
 // A retry may use another stream after the trusted clock has been verified.
-func (w *PutWriter) checkClock(now time.Time) error {
-	drift := now.Round(0).Sub(w.started.Round(0)) - now.Sub(w.started)
+func checkUploadClock(started, now time.Time) error {
+	drift := now.Round(0).Sub(started.Round(0)) - now.Sub(started)
 	if drift > 2*time.Second || drift < -2*time.Second {
 		return errors.New("clock changed during upload")
 	}
@@ -123,7 +123,7 @@ func (w *PutWriter) Write(data []byte) (int, error) {
 		return 0, errors.Join(ErrUploadInvalid, w.abortLocked())
 	}
 	now := time.Now()
-	if err := w.checkClock(now); err != nil {
+	if err := checkUploadClock(w.started, now); err != nil {
 		return 0, errors.Join(err, w.abortLocked())
 	}
 	if now.Unix() >= w.deadline {
@@ -167,7 +167,7 @@ func (w *PutWriter) Finish() (UploadState, error) {
 		return UploadState{}, errors.Join(ErrUploadInvalid, w.abortLocked())
 	}
 	now := time.Now()
-	if err := w.checkClock(now); err != nil {
+	if err := checkUploadClock(w.started, now); err != nil {
 		return UploadState{}, errors.Join(err, w.abortLocked())
 	}
 	if err := s.uploadReady(now.Unix()); err != nil {
@@ -188,7 +188,7 @@ func (w *PutWriter) Finish() (UploadState, error) {
 	// fsync can materialize delayed allocations or run past the deadline.
 	// Sample the clock and check capacity again before linking the slot.
 	now = time.Now()
-	if err := w.checkClock(now); err != nil {
+	if err := checkUploadClock(w.started, now); err != nil {
 		return UploadState{}, errors.Join(err, w.abortLocked())
 	}
 	state, err := s.uploadTransactionLocked(now.Unix(), nil, func() (UploadState, error) {

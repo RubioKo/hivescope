@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 19 -->
+<!-- docs-pair: readiness; revision: 20 -->
 
 [English](readiness.md) | [Español](../es/readiness.md) | [Index](README.md)
 
@@ -16,7 +16,9 @@ for reading the catalog and its encrypted object. Linux tests also check provide
 identity on isolated virtual hosts. The restart trials cover a confirmed
 revocation and an interrupted revocation that the owner resubmits. Upload trials
 check that losing a reservation reply leaves one charge and that retrying an
-interrupted catalog transfer preserves the object already staged. Recovery
+interrupted catalog transfer preserves the object already staged. A lost
+publication reply can be retried after reopening the provider. The trial
+checks the original signed receipt, a single charge and the recovered bytes. Recovery
 on a separate replacement computer remains part of the LAN trial.
 
 ## Scope and contracts
@@ -115,8 +117,16 @@ then sends 125 of the 250 catalog payload bytes and closes the stream.
 After reopening the store, `STATUS` reports only the object staged (mask
 `02`). Retrying that object consumes zero source bytes. Sending the complete
 catalog changes the mask to `03` under the original reservation and deadline.
-Neither locator is readable at this point. The signed receipt and publication
-of the pair are the next part of M1-05. [Interrupted PUT trial](../../internal/conformance/put_linux_test.go)
+Both locators remain private at this point. [Interrupted PUT trial](../../internal/conformance/put_linux_test.go)
+
+Run `go test -mod=readonly -count=1 -run '^TestLostFinalizeReplyReturnsOriginalReceipt$' ./internal/conformance`
+on Linux with cgo. The test drops the `FINALIZE` reply after the charge has
+moved to stored usage. The owner still has no saved receipt. After the provider
+reopens, two retries return the same signed 132 bytes and the owner saves them.
+A replacement identity with a valid grant reads both items and recovers the
+original five bytes. This exercises a lost network reply and a store reopen on
+one host. A physical power cut and recovery on separate hardware still require a
+LAN trial. [Lost publication reply trial](../../internal/conformance/finalize_linux_test.go)
 
 From the repository root with Go 1.26 or later, run `go mod download` once,
 then `go test -mod=readonly -count=1 ./...`. The tests use synthetic data.

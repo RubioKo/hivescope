@@ -146,10 +146,10 @@ func open(dir string, binding [32]byte, create bool) (_ *Store, err error) {
 		}
 	}
 	version, err := s.db.scalar("PRAGMA user_version")
-	if err != nil || (string(version) != "1" && string(version) != "2") {
+	if err != nil || (string(version) != "1" && string(version) != "2" && string(version) != "3") {
 		return nil, errors.Join(errors.New("unsupported store schema"), err)
 	}
-	if string(version) == "2" {
+	if string(version) == "2" || string(version) == "3" {
 		if err := s.db.expect("SELECT count(*) FROM sqlite_master WHERE type='table' AND name IN ('upload_profile','upload_v1')", "2"); err != nil {
 			return nil, err
 		}
@@ -369,9 +369,6 @@ func (s *Store) Replace(previous, next []byte) error {
 	}
 	if s.db == nil {
 		return os.ErrClosed
-	}
-	if s.uploads {
-		return errors.New("an upload store cannot accept read grants")
 	}
 	if s.pending != nil {
 		return ErrPendingRevocation

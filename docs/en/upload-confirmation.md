@@ -1,4 +1,4 @@
-<!-- docs-pair: upload-confirmation; revision: 2 -->
+<!-- docs-pair: upload-confirmation; revision: 3 -->
 
 [English](upload-confirmation.md) | [Español](../es/upload-confirmation.md) | [Index](README.md)
 
@@ -77,6 +77,15 @@ prototype before advertising this guarantee. [SQLite atomic commit](https://www.
 
 ## What the receipt means on retry
 
+In the first implementation the two slots already belong to one manifest.
+The presence of its signed receipt in the committed SQLite row makes both
+locators visible to authorized recovery readers and moves the single charge
+from reserved to stored. A retry reads the original receipt. The requester
+checks its pinned provider, exact manifest and locally agreed expiry, then
+saves those 132 bytes in its private upload state before confirming the copy.
+If a committed item is lost, both reads become unavailable. The original
+receipt and charge remain associated with that request.
+
 Sign, using the provider's pinned Ed25519 identity, the concatenation of
 `HiveScope/stored/v1`, one zero byte, the manifest fingerprint, the commit
 timestamp (8) and the agreement expiry at commit (8), both in UTC Unix seconds.
@@ -135,7 +144,7 @@ d391894a4b1772edefcca619d2ffad9cc9d67e223a3f0f8f643bfc1a4db85377
 
 The example signature was verified with the public provider key. Changing
 only the object length from 21 to 22 changed the fingerprint and invalidated
-the original signature for that manifest. The Linux upload trial exercises
-interrupted staging with this same object and catalog. The pair is still
-pending after both items arrive. Publication and a signed receipt over
-the network remain acceptance criteria. [Interrupted upload trial](readiness.md)
+the original signature for that manifest. The Linux TCP trials use these same
+items to exercise interrupted staging and a lost publication reply. On retry
+the owner saves the original signed receipt and an authorized replacement
+recovers the five bytes. [Upload and recovery trials](readiness.md)

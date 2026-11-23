@@ -19,13 +19,15 @@ type UploadLimits struct {
 type UploadState struct {
 	Code, Mask byte
 	Deadline   int64
+	Receipt    [132]byte
 }
 
 var (
-	ErrUploadConflict = errors.New("conflicting upload request or locator")
-	ErrUploadCapacity = errors.New("upload reservation exceeds capacity")
-	ErrUploadPaused   = errors.New("new upload reservations are paused")
-	ErrUploadDenied   = errors.New("upload scope or agreement denies admission")
+	ErrUploadConflict         = errors.New("conflicting upload request or locator")
+	ErrUploadCapacity         = errors.New("upload reservation exceeds capacity")
+	ErrUploadPaused           = errors.New("new upload reservations are paused")
+	ErrUploadDenied           = errors.New("upload scope or agreement denies admission")
+	ErrPublicationUnavailable = errors.New("committed upload pair is unavailable")
 )
 
 // UploadItemSizes validates the sealed lengths, encoding domain and two
