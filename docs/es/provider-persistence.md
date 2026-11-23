@@ -1,4 +1,4 @@
-<!-- docs-pair: provider-persistence; revision: 6 -->
+<!-- docs-pair: provider-persistence; revision: 7 -->
 
 [English](../en/provider-persistence.md) | [Español](provider-persistence.md) | [Índice](README.md)
 
@@ -112,6 +112,13 @@ laboratorio confiable y conserva los ID vencidos. Cada elemento preparado
 utiliza la reserva inicial. `FINALIZE` guarda el recibo firmado en la fila del
 manifiesto que identifica ambos archivos. En un reintento el proveedor verifica
 ambos archivos y devuelve el recibo guardado junto con la disponibilidad actual.
+
+La versión 4 del esquema registra si el dispositivo que realizó la subida
+canceló la reserva. Al abrir un almacén de la versión 3, el proveedor conserva
+las reservas pendientes, los ID vencidos y los recibos firmados. El vencimiento
+y la cancelación comparten el mismo procedimiento de limpieza. Si la cancelación
+llega después de publicar, devuelve el recibo histórico incluso cuando uno de
+los archivos ha dejado de estar disponible.
 
 Este almacén conserva hasta 64 identificadores de solicitud, sujetos a un
 límite local menor. Redondea por separado el tamaño de cada elemento y

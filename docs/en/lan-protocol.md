@@ -1,4 +1,4 @@
-<!-- docs-pair: lan-protocol; revision: 9 -->
+<!-- docs-pair: lan-protocol; revision: 10 -->
 
 [English](lan-protocol.md) | [Español](../es/lan-protocol.md) | [Index](README.md)
 
@@ -68,7 +68,7 @@ manifest or verified catalog. [Sealed item formats](file-catalog.md)
 | `02 STATUS` | `U` | Return `STATE` without allocating space. Check uploader authorization before disclosing any state. |
 | `03 PUT` | `U, K` | For a missing item under a live reservation, take its request's writer lock and send `20 READY` (empty). The uploader sends consecutive `21 DATA` frames from byte zero and one `22 END` (empty). Return `STATE` with the staged bit after length, digest and durability checks. An already staged item or terminal request returns `STATE` immediately. |
 | `04 FINALIZE` | `U` | Finalize under the request lock when both staged items, authorization and deadlines are valid. A pending request missing an item returns its current `STATE`. A committed request returns its original receipt. |
-| `05 CANCEL` | `U` | Serialize with the writer and commit. Return the resulting `STATE`. If commit won the race, the stored pair and receipt stand. |
+| `05 CANCEL` | `U` | For a pending request, return cancelled (`04`) after durable cleanup. If publication won, return the original receipt and current availability (`02` or `05`). A request already expired stays expired (`03`). |
 
 For `02`–`05`, a known ID with the wrong fingerprint yields `CONFLICT` for
 the authorized uploader. An unknown ID returns unknown state. Retrying a

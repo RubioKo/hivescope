@@ -98,7 +98,7 @@ func TestReservationRejectsMismatchedLocalIdentityBeforeDial(t *testing.T) {
 	pin, _ := grantTestKey(t)
 	copy(m[52:84], uploader)
 	// An invalid endpoint would fail inside withStorageStream. Both identity
-	// checks must finish before a RESERVE or STATUS can be sent there.
+	// checks must finish before any upload request can be sent there.
 	for _, action := range []func([276]byte) error{
 		func(m [276]byte) error {
 			_, err := SubmitReservation(t.Context(), netip.AddrPort{}, pin, device, m)
@@ -106,6 +106,10 @@ func TestReservationRejectsMismatchedLocalIdentityBeforeDial(t *testing.T) {
 		},
 		func(m [276]byte) error {
 			_, err := ReservationStatus(t.Context(), netip.AddrPort{}, pin, device, m)
+			return err
+		},
+		func(m [276]byte) error {
+			_, err := CancelUpload(t.Context(), netip.AddrPort{}, pin, device, m, 1702592000)
 			return err
 		},
 	} {
@@ -144,6 +148,17 @@ func TestReservationStateRequiresCanonicalReplyAndEOF(t *testing.T) {
 		}
 	}
 	pending := frame(stateOp, binary.BigEndian.AppendUint64([]byte{1, 0}, 1))
+	for _, code := range []byte{0, 3, 4} {
+		got, err := readReservationState(bytes.NewReader(frame(stateOp, []byte{code})), cancelOp, receiptExpectation{})
+		if err != nil || got != (grantstore.UploadState{Code: code}) {
+			t.Fatalf("cancel returned %+v, %v for state %d", got, err, code)
+		}
+	}
+	for _, bad := range [][]byte{pending, frame(stateOp, []byte{4, 0}), frame(stateOp, []byte{2}), frame(stateOp, []byte{5})} {
+		if got, err := readReservationState(bytes.NewReader(bad), cancelOp, receiptExpectation{}); err == nil || got != (grantstore.UploadState{}) {
+			t.Fatal("accepted a pending or malformed cancellation reply")
+		}
+	}
 	for name, wire := range map[string][]byte{
 		"missing": nil, "truncated": pending[:len(pending)-1], "extra frame": bytes.Repeat(pending, 2),
 		"wrong op": frame(grantAckOp, []byte{1}), "empty": frame(stateOp, nil),
@@ -190,9 +205,11 @@ func TestSignedUploadStateBindsProviderManifestAndAgreedExpiry(t *testing.T) {
 			t.Fatal(err)
 		}
 		b := wire.Bytes()
-		got, err := readReservationState(bytes.NewReader(b), finalizeOp, want)
-		if err != nil || got != state {
-			t.Fatalf("state %d: %+v, %v", code, got, err)
+		for _, op := range []byte{finalizeOp, cancelOp} {
+			got, err := readReservationState(bytes.NewReader(b), op, want)
+			if err != nil || got != state {
+				t.Fatalf("request %x state %d: %+v, %v", op, code, got, err)
+			}
 		}
 		wrongKey, otherManifest, otherTerms := want, want, want
 		wrongKey.provider = [32]byte(m[52:84])

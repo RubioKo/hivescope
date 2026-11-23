@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 20 -->
+<!-- docs-pair: readiness; revision: 21 -->
 
 [English](readiness.md) | [Español](../es/readiness.md) | [Index](README.md)
 
@@ -127,6 +127,14 @@ A replacement identity with a valid grant reads both items and recovers the
 original five bytes. This exercises a lost network reply and a store reopen on
 one host. A physical power cut and recovery on separate hardware still require a
 LAN trial. [Lost publication reply trial](../../internal/conformance/finalize_linux_test.go)
+
+On Linux with cgo, run
+`go test -mod=readonly -count=1 -run '^TestCancelAndFinalizeKeepOneOutcome$' ./internal/conformance`.
+The uploader stages both items and tries the two orders of `CANCEL` and `FINALIZE`.
+When cancellation wins, the provider retains the request ID, releases the space
+and denies reads of either item. When publication wins, the uploader gets the
+original receipt and the replacement can recover the five-byte file. Reopening
+the store and retrying must preserve the winning outcome. [Cancellation trial](../../internal/conformance/cancel_linux_test.go)
 
 From the repository root with Go 1.26 or later, run `go mod download` once,
 then `go test -mod=readonly -count=1 ./...`. The tests use synthetic data.

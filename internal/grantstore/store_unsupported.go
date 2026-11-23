@@ -26,6 +26,9 @@ func (*Store) ReserveUpload([276]byte, UploadLimits, int64, int64) (UploadState,
 func (*Store) UploadStatus([16]byte, [32]byte, int64) (UploadState, error) {
 	return UploadState{}, ErrUnsupported
 }
+func (*Store) CancelUpload([16]byte, [32]byte, int64) (UploadState, error) {
+	return UploadState{}, ErrUnsupported
+}
 func (*Store) UploadUsage() (int, uint64, error)         { return 0, 0, ErrUnsupported }
 func (*Store) UploadAccounting() (uint64, uint64, error) { return 0, 0, ErrUnsupported }
 func (*Store) FinalizeUpload([16]byte, [32]byte, UploadLimits, time.Time, int64, func([]byte) ([]byte, error)) (UploadState, error) {

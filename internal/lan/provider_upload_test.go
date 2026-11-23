@@ -45,6 +45,9 @@ func TestReservationRefusalsPrecedeLookupAndAllocation(t *testing.T) {
 		{"wrong TLS peer on finalize", host, finalizeOp, ref[:], 2},
 		{"wrong agreement on finalize", writer, finalizeOp, wrongAgreement[:], 2},
 		{"short finalize", writer, finalizeOp, ref[:79], 1},
+		{"wrong TLS peer on cancel", host, cancelOp, ref[:], 2},
+		{"wrong agreement on cancel", writer, cancelOp, wrongAgreement[:], 2},
+		{"short cancel", writer, cancelOp, ref[:79], 1},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if state, code := p.admitUpload(tc.peer, tc.op, tc.payload, nil); code != tc.code || state != (grantstore.UploadState{}) {
@@ -52,18 +55,20 @@ func TestReservationRefusalsPrecedeLookupAndAllocation(t *testing.T) {
 			}
 		})
 	}
-	for _, reader := range []io.Reader{bytes.NewReader([]byte{0}), failingUploadReader{}} {
-		var reply bytes.Buffer
-		stream := struct {
-			io.Reader
-			io.Writer
-		}{reader, &reply}
-		if err := p.serveUpload(stream, writer, reserveOp, m[:], nil); err != nil {
-			t.Fatal(err)
-		}
-		op, payload, err := readFrame(&reply, 1)
-		if err != nil || op != errorOp || !bytes.Equal(payload, []byte{1}) || expectEOF(&reply) != nil {
-			t.Fatalf("incomplete request produced %x %x, %v", op, payload, err)
+	for op, request := range map[byte][]byte{reserveOp: m[:], cancelOp: ref[:]} {
+		for _, reader := range []io.Reader{bytes.NewReader([]byte{0}), failingUploadReader{}} {
+			var reply bytes.Buffer
+			stream := struct {
+				io.Reader
+				io.Writer
+			}{reader, &reply}
+			if err := p.serveUpload(stream, writer, op, request, nil); err != nil {
+				t.Fatal(err)
+			}
+			got, payload, err := readFrame(&reply, 1)
+			if err != nil || got != errorOp || !bytes.Equal(payload, []byte{1}) || expectEOF(&reply) != nil {
+				t.Fatalf("incomplete request %x produced %x %x, %v", op, got, payload, err)
+			}
 		}
 	}
 	// PUT must apply the same independent enrollment before creating a writer.

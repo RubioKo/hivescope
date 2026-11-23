@@ -1,4 +1,4 @@
-<!-- docs-pair: provider-persistence; revision: 6 -->
+<!-- docs-pair: provider-persistence; revision: 7 -->
 
 [English](provider-persistence.md) | [Español](../es/provider-persistence.md) | [Index](README.md)
 
@@ -102,6 +102,12 @@ The trial uses a trusted lab clock and retains expired IDs. Each staged
 item uses the original reservation. `FINALIZE` commits the signed receipt on the
 manifest row that owns both files. On retry the provider checks both files and
 returns the stored receipt alongside the current availability.
+
+Schema version 4 records whether the uploader cancelled a reservation. On
+opening a version 3 store, the provider preserves pending reservations,
+expired IDs and signed receipts. Expiry and cancellation share the same
+cleanup procedure. A cancellation that arrives after publication returns the
+historical receipt even if one of the files has since become unavailable.
 
 This store retains up to 64 request IDs, subject to a lower local limit.
 It rounds each item separately and budgets extra blocks for file extents
