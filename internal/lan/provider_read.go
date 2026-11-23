@@ -130,7 +130,7 @@ func (p *ReadProvider) serveStream(stream network.MuxedStream, replacement [32]b
 		switch op {
 		case reserveOp, putOp, finalizeOp, readBegin:
 			return writeFrame(stream, errorOp, []byte{4})
-		case statusOp, grantUpdateOp:
+		case statusOp, cancelOp, grantUpdateOp:
 			// A complete, supported control operation met the shorter deadline.
 		default:
 			stream.Reset()
@@ -143,7 +143,7 @@ func (p *ReadProvider) serveStream(stream network.MuxedStream, replacement [32]b
 	if op == grantUpdateOp {
 		return p.serveGrantUpdate(stream, request)
 	}
-	if op == reserveOp || op == statusOp || op == finalizeOp {
+	if op == reserveOp || op == statusOp || op == finalizeOp || op == cancelOp {
 		return p.serveUpload(stream, replacement, op, request, identity.Sign)
 	}
 	if op == putOp {

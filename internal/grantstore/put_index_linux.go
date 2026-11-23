@@ -57,9 +57,19 @@ func (s *Store) reopenUploadSlots() error {
 	if err := s.db.expect("SELECT count(*) FROM pragma_table_info('upload_v1') WHERE name='receipt' AND type='BLOB' AND \"notnull\"=1 AND hex(dflt_value)='582727'", "1"); err != nil {
 		return err
 	}
-	// Check the terminal rows before any expiry cleanup. A contradictory
+	if version <= 3 {
+		if err := s.db.exec("BEGIN IMMEDIATE; " + cancellationSchema + " COMMIT"); err != nil {
+			return err
+		}
+	}
+	if err := s.db.expect("SELECT count(*) FROM pragma_table_info('upload_v1') WHERE name='cancelled' AND type='INTEGER' AND \"notnull\"=1 AND dflt_value='0'", "1"); err != nil {
+		return err
+	}
+	// Check terminal and committed state before any cleanup. A contradictory
 	// index must never turn a publication into reclaimable staged bytes.
 	if err := s.db.expect(`SELECT count(*) FROM upload_v1 WHERE typeof(receipt)!='blob'
+		OR typeof(cancelled)!='integer' OR cancelled NOT IN (0,1)
+		OR (cancelled=1 AND (expired!=1 OR length(receipt)!=0))
 		OR NOT(length(receipt)=0 OR (length(receipt)=132 AND mask=3 AND expired=0 AND cleanup=0))`, "0"); err != nil {
 		return err
 	}
@@ -158,18 +168,23 @@ func (s *Store) expireUploads(now int64) error {
 		}
 		s.lastUTC = now
 	}
+	return s.cleanTerminalUploads()
+}
+
+// Called under the exclusive store lock after the terminal intent commits.
+func (s *Store) cleanTerminalUploads() error {
 	remaining, err := s.uploadNumber("SELECT count(*) FROM upload_v1 WHERE cleanup=1")
 	if err != nil || remaining > uploadCeiling {
 		return errors.Join(errors.New("invalid pending cleanup count"), err)
 	}
 	for i := uint64(0); i < remaining; i++ {
-		slot, err := s.uploadNumber("SELECT slot FROM upload_v1 WHERE expired=1 AND cleanup=1 ORDER BY slot LIMIT 1")
+		slot, err := s.uploadNumber("SELECT slot FROM upload_v1 WHERE expired=1 AND cleanup=1 AND length(receipt)=0 ORDER BY slot LIMIT 1")
 		if err != nil || slot == 0 || slot > uploadCeiling {
-			return errors.Join(errors.New("invalid expired slot"), err)
+			return errors.Join(errors.New("invalid terminal slot"), err)
 		}
 		raw, err := s.db.scalar(fmt.Sprintf("SELECT id FROM upload_v1 WHERE slot=%d", slot))
 		if err != nil || len(raw) != 16 {
-			return errors.Join(errors.New("missing expired request identity"), err)
+			return errors.Join(errors.New("missing terminal request identity"), err)
 		}
 		if w := s.writers[[16]byte(raw)]; w != nil {
 			if err := w.abortLocked(); err != nil {
@@ -184,7 +199,10 @@ func (s *Store) expireUploads(now int64) error {
 		if err := s.dir.Sync(); err != nil {
 			return err
 		}
-		if err := s.db.exec(fmt.Sprintf("UPDATE upload_v1 SET mask=0,cleanup=0 WHERE slot=%d", slot)); err != nil {
+		if err := s.db.exec(fmt.Sprintf("UPDATE upload_v1 SET mask=0,cleanup=0 WHERE slot=%d AND expired=1 AND cleanup=1 AND length(receipt)=0", slot)); err != nil {
+			return err
+		}
+		if err := s.db.expect("SELECT changes()", "1"); err != nil {
 			return err
 		}
 	}

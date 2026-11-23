@@ -173,7 +173,7 @@ func (p *ReadProvider) admitUpload(peer [32]byte, op byte, request []byte, sign 
 			return state, 1
 		}
 		ref = uploadReference(manifest)
-	case statusOp, finalizeOp:
+	case statusOp, finalizeOp, cancelOp:
 		if len(request) != len(ref) {
 			return state, 1
 		}
@@ -190,6 +190,8 @@ func (p *ReadProvider) admitUpload(peer [32]byte, op byte, request []byte, sign 
 	switch op {
 	case finalizeOp:
 		state, err = u.store.FinalizeUpload([16]byte(ref[32:48]), [32]byte(ref[48:]), u.limits, now, a.Expiry.Unix(), sign)
+	case cancelOp:
+		state, err = u.store.CancelUpload([16]byte(ref[32:48]), [32]byte(ref[48:]), now.Unix())
 	case statusOp:
 		state, err = u.store.UploadStatus([16]byte(ref[32:48]), [32]byte(ref[48:]), now.Unix())
 	case reserveOp:

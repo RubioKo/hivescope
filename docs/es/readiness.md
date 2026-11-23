@@ -1,4 +1,4 @@
-<!-- docs-pair: readiness; revision: 20 -->
+<!-- docs-pair: readiness; revision: 21 -->
 
 [English](../en/readiness.md) | [Español](readiness.md) | [Índice](README.md)
 
@@ -138,6 +138,15 @@ los guarda. Una identidad de reemplazo con un permiso vigente lee ambos elemento
 y recupera los cinco bytes originales. El ensayo cubre la pérdida de una respuesta
 y la reapertura del almacén en un solo equipo. El corte eléctrico y la recuperación
 en equipos físicos distintos quedan para el ensayo en red local. [Prueba de pérdida de la respuesta](../../internal/conformance/finalize_linux_test.go)
+
+En Linux con cgo, ejecuta
+`go test -mod=readonly -count=1 -run '^TestCancelAndFinalizeKeepOneOutcome$' ./internal/conformance`.
+El dispositivo prepara ambos elementos y prueba los dos órdenes de `CANCEL` y
+`FINALIZE`. Si gana la cancelación, el proveedor conserva el ID, libera el espacio
+y deniega la lectura de ambos elementos. Si gana la publicación, el dispositivo
+obtiene el recibo original y el equipo de reemplazo recupera los cinco bytes.
+Tras reabrir el almacén, cada reintento debe conservar el resultado que ganó.
+[Prueba de cancelación](../../internal/conformance/cancel_linux_test.go)
 
 Desde la raíz del repositorio, con Go 1.26 o posterior, ejecutar una vez
 `go mod download` y después `go test -mod=readonly -count=1 ./...`. Las

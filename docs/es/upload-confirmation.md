@@ -1,4 +1,4 @@
-<!-- docs-pair: upload-confirmation; revision: 3 -->
+<!-- docs-pair: upload-confirmation; revision: 4 -->
 
 [English](../en/upload-confirmation.md) | [Español](upload-confirmation.md) | [Índice](README.md)
 
@@ -58,6 +58,15 @@ sola escritura a la vez. La cancelación, la limpieza y la confirmación se coor
 con esa escritura para que se ejecuten en un orden definido. Si se confirma
 primero, una cancelación posterior devuelve el recibo y ambos archivos siguen
 sujetos a las condiciones de retención del acuerdo.
+
+Si la reserva está pendiente, el proveedor registra primero la cancelación
+solicitada y la limpieza que falta. Cierra la escritura en curso, elimina
+los archivos de esa reserva y sincroniza su directorio antes de liberar el
+espacio y confirmar la cancelación. Si se reinicia, termina la limpieza
+pendiente. El ID conserva el resultado original, incluido el vencimiento
+si el plazo ya había pasado. Si se pierde la respuesta, el dispositivo que
+subió los datos puede repetir `CANCEL` con el mismo manifiesto o consultar
+`STATUS`.
 
 | Último estado duradero | Qué hace el proveedor | Qué indica un reintento |
 | --- | --- | --- |

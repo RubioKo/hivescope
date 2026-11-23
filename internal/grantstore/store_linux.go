@@ -146,15 +146,20 @@ func open(dir string, binding [32]byte, create bool) (_ *Store, err error) {
 		}
 	}
 	version, err := s.db.scalar("PRAGMA user_version")
-	if err != nil || (string(version) != "1" && string(version) != "2" && string(version) != "3") {
-		return nil, errors.Join(errors.New("unsupported store schema"), err)
+	if err != nil {
+		return nil, err
 	}
-	if string(version) == "2" || string(version) == "3" {
+	switch string(version) {
+	case "1":
+		if len(linkedSlots) != 0 {
+			return nil, errors.New("unexpected item in a grant or reservation-only store")
+		}
+	case "2", "3", "4":
 		if err := s.db.expect("SELECT count(*) FROM sqlite_master WHERE type='table' AND name IN ('upload_profile','upload_v1')", "2"); err != nil {
 			return nil, err
 		}
-	} else if len(linkedSlots) != 0 {
-		return nil, errors.New("unexpected item in a grant or reservation-only store")
+	default:
+		return nil, errors.New("unsupported store schema")
 	}
 	for _, slot := range linkedSlots {
 		if err := s.db.expect(fmt.Sprintf("SELECT count(*) FROM upload_v1 WHERE slot=%d AND (expired=0 OR cleanup=1)", slot), "1"); err != nil {

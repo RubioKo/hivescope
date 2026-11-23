@@ -22,6 +22,7 @@ const (
 	reserveOp          = 0x01
 	statusOp           = 0x02
 	finalizeOp         = 0x04
+	cancelOp           = 0x05
 	stateOp            = 0x23
 	maxUploadState     = 1 + 132
 	uploadManifestSize = 276
@@ -132,6 +133,17 @@ func FinalizeUpload(ctx context.Context, endpoint netip.AddrPort, pin [32]byte, 
 	return requestReservation(ctx, endpoint, pin, device, m, finalizeOp, expiry)
 }
 
+// CancelUpload settles a pending reservation. If publication already won,
+// it verifies the historical receipt against the independently saved expiry.
+// A lost reply can be resolved with UploadStatus or an identical retry.
+func CancelUpload(ctx context.Context, endpoint netip.AddrPort, pin [32]byte, device crypto.PrivKey,
+	m [uploadManifestSize]byte, expiry int64) (grantstore.UploadState, error) {
+	if expiry <= 0 {
+		return grantstore.UploadState{}, ErrUploadTermsRequired
+	}
+	return requestReservation(ctx, endpoint, pin, device, m, cancelOp, expiry)
+}
+
 // ConfirmUpload returns committed only after saving that exact receipt locally.
 func ConfirmUpload(ctx context.Context, endpoint netip.AddrPort, pin [32]byte, device crypto.PrivKey,
 	m [uploadManifestSize]byte, expiry int64, receiptDir string) (grantstore.UploadState, error) {
@@ -235,11 +247,11 @@ func decodeUploadState(requestOp, op byte, payload []byte, want receiptExpectati
 	}
 	switch payload[0] {
 	case 0:
-		if (requestOp == statusOp || requestOp == putOp || requestOp == finalizeOp) && len(payload) == 1 {
+		if (requestOp == statusOp || requestOp == putOp || requestOp == finalizeOp || requestOp == cancelOp) && len(payload) == 1 {
 			return state, nil
 		}
 	case 1:
-		if len(payload) == 10 && payload[1] <= 3 {
+		if requestOp != cancelOp && len(payload) == 10 && payload[1] <= 3 {
 			// Absolute time belongs to the provider. The client's wall clock
 			// cannot decide whether a reservation has expired.
 			deadline := binary.BigEndian.Uint64(payload[2:])

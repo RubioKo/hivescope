@@ -1,4 +1,4 @@
-<!-- docs-pair: upload-confirmation; revision: 3 -->
+<!-- docs-pair: upload-confirmation; revision: 4 -->
 
 [English](upload-confirmation.md) | [Español](../es/upload-confirmation.md) | [Index](README.md)
 
@@ -49,6 +49,14 @@ Only the committed index makes them visible to authorized readers. One writer
 at a time owns a request. Cancellation, cleanup and commit serialize with it.
 If commit wins, a later cancellation returns the receipt and leaves the stored
 pair under its retention agreement.
+
+For a pending reservation, the provider first records the uploader's
+cancellation and the cleanup still owed. It closes any active writer,
+removes the request's files and syncs their directory before releasing
+the space and acknowledging cancellation. After a restart it finishes
+outstanding cleanup. The retained ID keeps its original outcome, including
+expiry if the deadline had already passed. If the reply is lost, the
+uploader can repeat `CANCEL` with the same manifest or query `STATUS`.
 
 | Last durable state | What the provider does | What a retry learns |
 | --- | --- | --- |

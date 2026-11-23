@@ -1,4 +1,4 @@
-<!-- docs-pair: lan-protocol; revision: 9 -->
+<!-- docs-pair: lan-protocol; revision: 10 -->
 
 [English](../en/lan-protocol.md) | [Español](lan-protocol.md) | [Índice](README.md)
 
@@ -76,7 +76,7 @@ exactas de su manifiesto o del catálogo verificado.
 | `02 STATUS` | `U` | Devuelve `STATE` sin asignar espacio. Comprueba la autorización del dispositivo que sube antes de revelar el estado. |
 | `03 PUT` | `U, K` | Para un elemento pendiente con reserva vigente, obtiene el bloqueo de escritura de la solicitud y envía `20 READY` (vacío). El dispositivo envía tramas consecutivas `21 DATA` desde el byte cero y una sola `22 END` (vacía). Devuelve `STATE` con el bit del elemento preparado tras comprobar longitud, huella y persistencia. Si el elemento ya está preparado o la solicitud terminó, devuelve `STATE` de inmediato. |
 | `04 FINALIZE` | `U` | Bajo el bloqueo de la solicitud, confirma la subida si ambos elementos están preparados, la autorización sigue vigente y se cumplen los plazos. Si falta un elemento, devuelve el `STATE` pendiente. Si ya se confirmó, devuelve el recibo original. |
-| `05 CANCEL` | `U` | Serializa la cancelación con la escritura y la confirmación. Devuelve el `STATE` resultante. Si se confirmó primero, conserva ambos elementos y el recibo. |
+| `05 CANCEL` | `U` | Si la reserva está pendiente, devuelve cancelada (`04`) tras completar la limpieza en disco. Si la publicación ganó, devuelve el recibo original y la disponibilidad actual (`02` o `05`). Una reserva ya vencida conserva su estado (`03`). |
 
 En `02`–`05`, un ID conocido con huella distinta devuelve `CONFLICT` al
 dispositivo autorizado que sube. Un ID desconocido devuelve el estado

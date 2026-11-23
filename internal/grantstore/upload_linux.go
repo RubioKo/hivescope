@@ -44,6 +44,13 @@ const stagingSchema = `ALTER TABLE upload_v1 ADD COLUMN mask INTEGER NOT NULL DE
 const publicationSchema = `ALTER TABLE upload_v1 ADD COLUMN receipt BLOB NOT NULL DEFAULT X'' CHECK(typeof(receipt)='blob' AND (length(receipt)=0 OR (length(receipt)=132 AND mask=3 AND expired=0 AND cleanup=0)));
 	PRAGMA user_version=3;`
 
+// The v1 expired flag closes a reservation to writers and removes its live
+// locator claims. Keep that invariant for both reasons that can end staging.
+// Existing terminal rows retain their original expiry result on migration.
+const cancellationSchema = `ALTER TABLE upload_v1 ADD COLUMN cancelled INTEGER NOT NULL DEFAULT 0
+	CHECK(cancelled IN (0,1) AND (cancelled=0 OR (expired=1 AND length(receipt)=0)));
+	PRAGMA user_version=4;`
+
 // InitUploads is an explicit provisioning step on a new dedicated store. A
 // missing upload table on an existing store must never look like no uploads.
 func (s *Store) InitUploads(scope [96]byte) error {
@@ -53,7 +60,7 @@ func (s *Store) InitUploads(scope [96]byte) error {
 		return errors.New("upload enrollment requires a new empty store")
 	}
 	s.fresh = false
-	s.fault = s.db.exec(fmt.Sprintf("BEGIN IMMEDIATE; CREATE TABLE upload_profile(id INTEGER PRIMARY KEY CHECK(id=1), scope BLOB NOT NULL CHECK(length(scope)=96)); INSERT INTO upload_profile VALUES(1,X'%x'); %s; %s %s COMMIT", scope, uploadTable, stagingSchema, publicationSchema))
+	s.fault = s.db.exec(fmt.Sprintf("BEGIN IMMEDIATE; CREATE TABLE upload_profile(id INTEGER PRIMARY KEY CHECK(id=1), scope BLOB NOT NULL CHECK(length(scope)=96)); INSERT INTO upload_profile VALUES(1,X'%x'); %s; %s %s %s COMMIT", scope, uploadTable, stagingSchema, publicationSchema, cancellationSchema))
 	s.uploadScope = scope
 	s.uploads = s.fault == nil
 	return s.fault
@@ -223,7 +230,11 @@ func (s *Store) lookupUpload(id [16]byte, fingerprint [32]byte, exact []byte) (U
 		return UploadState{}, err
 	}
 	if deadline == 0 {
-		return UploadState{Code: 3}, nil
+		code, err := s.uploadNumber(fmt.Sprintf("SELECT CASE cancelled WHEN 0 THEN 3 WHEN 1 THEN 4 END FROM upload_v1 WHERE id=X'%x'", id))
+		if err != nil {
+			return UploadState{}, err
+		}
+		return UploadState{Code: byte(code)}, nil
 	}
 	published, _, _, err := s.publication([276]byte(manifest), 0)
 	if err != nil || published.Code != 0 {
@@ -279,6 +290,36 @@ func (s *Store) UploadStatus(id [16]byte, fingerprint [32]byte, now int64) (Uplo
 	return s.uploadTransaction(now, nil, func() (UploadState, error) {
 		return s.lookupUpload(id, fingerprint, nil)
 	})
+}
+
+// CancelUpload serializes with PUT and FINALIZE. Only a live, unpublished
+// request can enter cleanup. A published pair returns its original receipt.
+func (s *Store) CancelUpload(id [16]byte, fingerprint [32]byte, now int64) (UploadState, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	state, err := s.uploadTransactionLocked(now, nil, func() (UploadState, error) {
+		state, err := s.lookupUpload(id, fingerprint, nil)
+		if err != nil || state.Code != 1 {
+			return state, err
+		}
+		if err := s.db.exec(fmt.Sprintf("UPDATE upload_v1 SET expired=1,cancelled=1,cleanup=1 WHERE id=X'%x' AND expired=0 AND length(receipt)=0", id)); err != nil {
+			return UploadState{}, err
+		}
+		if err := s.db.expect("SELECT changes()", "1"); err != nil {
+			return UploadState{}, err
+		}
+		return UploadState{Code: 4}, nil
+	})
+	if err != nil || state.Code != 4 {
+		return state, err
+	}
+	// The terminal decision is durable. A cleanup failure keeps the row
+	// charged and requires reconciliation before this store can serve again.
+	if err := s.cleanTerminalUploads(); err != nil {
+		s.fault = err
+		return UploadState{}, err
+	}
+	return state, nil
 }
 
 // UploadUsage reports retained request IDs and the total held and stored

@@ -27,7 +27,19 @@ import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 )
 
-func TestLostFinalizeReplyReturnsOriginalReceipt(t *testing.T) {
+type publicationTrial struct {
+	reservationTrial
+	reads     *loopbackRead
+	manifest  [276]byte
+	uploader  crypto.PrivKey
+	agreement lan.CatalogAgreement
+	limits    grantstore.UploadLimits
+	storeID   [32]byte
+	dir       string
+}
+
+func newPublicationTrial(t *testing.T) *publicationTrial {
+	t.Helper()
 	// The sealed pair and its manifest use two public RFC 8032 identities.
 	fixtureKey := func(seed string) crypto.PrivKey {
 		t.Helper()
@@ -45,7 +57,6 @@ func TestLostFinalizeReplyReturnsOriginalReceipt(t *testing.T) {
 	}
 	m := fiveByteReservationManifest(t)
 	fixture := hiveFixture()
-	object, catalog := fiveByteSnapshot(t)
 	start := time.Now().Truncate(time.Second)
 	agreement := lan.CatalogAgreement{
 		ProviderKey: [32]byte(m[20:52]), AuthorityKey: [32]byte(authorityKey),
@@ -58,12 +69,12 @@ func TestLostFinalizeReplyReturnsOriginalReceipt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer provider.Close()
+	t.Cleanup(func() { provider.Close() })
 	listener, err := net.ListenTCP("tcp4", &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1)})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer listener.Close()
+	t.Cleanup(func() { listener.Close() })
 	trial := reservationTrial{listener, host, agreement.ProviderKey, provider}
 
 	// Install a valid read grant before the upload. The replacement has its
@@ -88,7 +99,52 @@ func TestLostFinalizeReplyReturnsOriginalReceipt(t *testing.T) {
 	if err := provider.LoadGrant(reads.signedGrant(pkg.Generation, 1, recoveryKey)); err != nil {
 		t.Fatal(err)
 	}
-	expiry := agreement.Expiry.Unix()
+	return &publicationTrial{reservationTrial: trial, reads: reads, manifest: m, uploader: uploader,
+		agreement: agreement, limits: limits, storeID: storeID, dir: dir}
+}
+
+func (trial *publicationTrial) reopen(t *testing.T) {
+	t.Helper()
+	if err := trial.provider.Close(); err != nil {
+		t.Fatal(err)
+	}
+	reopened, err := lan.OpenUploadProvider(trial.dir, trial.storeID, trial.agreement, [32]byte(trial.manifest[52:84]), trial.limits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { reopened.Close() })
+	trial.provider, trial.reads.provider = reopened, reopened
+}
+
+func (trial *publicationTrial) reserve(t *testing.T) (grantstore.UploadState, uint64) {
+	t.Helper()
+	state, err := trial.exchange(t, lan.SubmitReservation, trial.uploader, trial.manifest, false)
+	if err != nil || state.Code != 1 || state.Mask != 0 {
+		t.Fatalf("RESERVE: %+v, %v", state, err)
+	}
+	rows, charge, err := trial.provider.UploadUsage()
+	if err != nil || rows != 1 || charge == 0 {
+		t.Fatalf("reservation: rows=%d charge=%d err=%v", rows, charge, err)
+	}
+	return state, charge
+}
+
+func (trial *publicationTrial) stage(t *testing.T, kind byte, sealed []byte, mask byte, deadline int64) {
+	t.Helper()
+	put := func(ctx context.Context, addr netip.AddrPort, pin [32]byte, key crypto.PrivKey, manifest [276]byte) (grantstore.UploadState, error) {
+		return lan.PutUploadItem(ctx, addr, pin, key, manifest, kind, bytes.NewReader(sealed))
+	}
+	got, err := trial.exchange(t, put, trial.uploader, trial.manifest, false)
+	if err != nil || got.Code != 1 || got.Mask != mask || got.Deadline != deadline {
+		t.Fatalf("PUT kind %d: %+v, %v", kind, got, err)
+	}
+}
+
+func TestLostFinalizeReplyReturnsOriginalReceipt(t *testing.T) {
+	trial := newPublicationTrial(t)
+	m, uploader, reads := trial.manifest, trial.uploader, trial.reads
+	object, catalog := fiveByteSnapshot(t)
+	expiry := trial.agreement.Expiry.Unix()
 	receiptDir := t.TempDir()
 	confirm := func(ctx context.Context, addr netip.AddrPort, pin [32]byte, key crypto.PrivKey, manifest [276]byte) (grantstore.UploadState, error) {
 		return lan.ConfirmUpload(ctx, addr, pin, key, manifest, expiry, receiptDir)
@@ -96,34 +152,17 @@ func TestLostFinalizeReplyReturnsOriginalReceipt(t *testing.T) {
 	status := func(ctx context.Context, addr netip.AddrPort, pin [32]byte, key crypto.PrivKey, manifest [276]byte) (grantstore.UploadState, error) {
 		return lan.UploadStatus(ctx, addr, pin, key, manifest, expiry)
 	}
-	state, err := trial.exchange(t, lan.SubmitReservation, uploader, m, false)
-	if err != nil || state.Code != 1 || state.Mask != 0 {
-		t.Fatalf("RESERVE: %+v, %v", state, err)
-	}
-	rows, charge, err := provider.UploadUsage()
-	if err != nil || rows != 1 || charge == 0 {
-		t.Fatalf("reservation: rows=%d charge=%d err=%v", rows, charge, err)
-	}
-	put := func(kind byte, sealed []byte, mask byte) {
-		t.Helper()
-		putItem := func(ctx context.Context, addr netip.AddrPort, pin [32]byte, key crypto.PrivKey, manifest [276]byte) (grantstore.UploadState, error) {
-			return lan.PutUploadItem(ctx, addr, pin, key, manifest, kind, bytes.NewReader(sealed))
-		}
-		got, err := trial.exchange(t, putItem, uploader, m, false)
-		if err != nil || got.Code != 1 || got.Mask != mask || got.Deadline != state.Deadline {
-			t.Fatalf("PUT kind %d: %+v, %v", kind, got, err)
-		}
-	}
-	put(2, object, 2)
+	state, charge := trial.reserve(t)
+	trial.stage(t, 2, object, 2, state.Deadline)
 	partial, err := trial.exchange(t, confirm, uploader, m, false)
 	if err != nil || partial.Code != 1 || partial.Mask != 2 || partial.Deadline != state.Deadline || partial.Receipt != [132]byte{} {
 		t.Fatalf("FINALIZE with only the object: %+v, %v", partial, err)
 	}
 	expectEmptyDir(t, receiptDir)
-	put(1, catalog, 3)
-	objectPath, catalogPath := filepath.Join(dir, "item-1-2"), filepath.Join(dir, "item-1-1")
+	trial.stage(t, 1, catalog, 3, state.Deadline)
+	objectPath, catalogPath := filepath.Join(trial.dir, "item-1-2"), filepath.Join(trial.dir, "item-1-1")
 	stagedObject, stagedCatalog := checkStagedBytes(t, objectPath, object), checkStagedBytes(t, catalogPath, catalog)
-	snapshot, err := storageformat.OpenCatalog(bytes.NewReader(catalog), pkg.Catalog)
+	snapshot, err := storageformat.OpenCatalog(bytes.NewReader(catalog), reads.pkg.Catalog)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -131,12 +170,12 @@ func TestLostFinalizeReplyReturnsOriginalReceipt(t *testing.T) {
 		assertOldReadsDenied(t, ctx, reads, snapshot)
 		return nil
 	})
-	reserved, stored, err := provider.UploadAccounting()
+	reserved, stored, err := trial.provider.UploadAccounting()
 	if err != nil || reserved != charge || stored != 0 {
 		t.Fatalf("staged pair: reserved=%d stored=%d err=%v", reserved, stored, err)
 	}
 	before := time.Now().Unix()
-	firstSignature := loseFinalizeReply(t, trial, confirm, uploader, m)
+	firstSignature := loseFinalizeReply(t, trial.reservationTrial, confirm, uploader, m, charge)
 	after := time.Now().Unix()
 	expectEmptyDir(t, receiptDir)
 	original, err := trial.exchange(t, status, uploader, m, false)
@@ -151,18 +190,10 @@ func TestLostFinalizeReplyReturnsOriginalReceipt(t *testing.T) {
 	commitTime := int64(binary.BigEndian.Uint64(receipt[52:60]))
 	if !bytes.Equal(receipt[:20], []byte("HiveScope/stored/v1\x00")) || !bytes.Equal(receipt[20:52], fingerprint[:]) ||
 		commitTime < before || commitTime > after || int64(binary.BigEndian.Uint64(receipt[60:68])) != expiry ||
-		!ed25519.Verify(agreement.ProviderKey[:], receipt[:68], receipt[68:]) {
+		!ed25519.Verify(trial.pin[:], receipt[:68], receipt[68:]) {
 		t.Fatal("receipt did not authenticate the original manifest, commit time and agreement expiry")
 	}
-	if err := provider.Close(); err != nil {
-		t.Fatal(err)
-	}
-	reopened, err := lan.OpenUploadProvider(dir, storeID, agreement, writer, limits)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer reopened.Close()
-	trial.provider, reads.provider = reopened, reopened
+	trial.reopen(t)
 	// A newly signed receipt using the current time must now be different.
 	time.Sleep(time.Until(time.Unix(commitTime+1, 0)))
 	badPath := filepath.Join(receiptDir, "missing-directory")
@@ -199,11 +230,11 @@ func TestLostFinalizeReplyReturnsOriginalReceipt(t *testing.T) {
 	if !errors.Is(err, grantstore.ErrUploadConflict) || conflict != (grantstore.UploadState{}) {
 		t.Fatalf("changed manifest reused the committed ID: %+v, %v", conflict, err)
 	}
-	rows, total, err := reopened.UploadUsage()
+	rows, total, err := trial.provider.UploadUsage()
 	if err != nil || rows != 1 || total != charge {
 		t.Fatalf("retried upload: rows=%d total=%d original charge=%d err=%v", rows, total, charge, err)
 	}
-	reserved, stored, err = reopened.UploadAccounting()
+	reserved, stored, err = trial.provider.UploadAccounting()
 	if err != nil || reserved != 0 || stored != charge {
 		t.Fatalf("retried pair: reserved=%d stored=%d err=%v", reserved, stored, err)
 	}
@@ -216,20 +247,22 @@ func TestLostFinalizeReplyReturnsOriginalReceipt(t *testing.T) {
 	t.Logf("lost FINALIZE reply: original 132-byte receipt, 1 committed upload, 271 sealed bytes, 1 quota conversion (%d bytes), 5 verified plaintext bytes", charge)
 }
 
-// Drop all outgoing TLS data as soon as the durable store reports stored
-// bytes. Negotiation and submission use the production transport unchanged.
-type dropCommittedReply struct {
+// The trial holds one live reservation with a positive charge before the
+// request. Drop outgoing TLS data once that charge is durably converted or
+// released. Negotiation and submission use the production transport unchanged.
+type dropTerminalReply struct {
 	net.Conn
-	provider *lan.ReadProvider
-	dropped  *atomic.Bool
+	provider   *lan.ReadProvider
+	dropped    *atomic.Bool
+	wantStored uint64
 }
 
-func (c dropCommittedReply) Write(b []byte) (int, error) {
-	_, stored, err := c.provider.UploadAccounting()
+func (c dropTerminalReply) Write(b []byte) (int, error) {
+	reserved, stored, err := c.provider.UploadAccounting()
 	if err != nil {
 		return 0, err
 	}
-	if stored != 0 {
+	if reserved == 0 && stored == c.wantStored {
 		c.dropped.Store(true)
 		c.Conn.Close()
 		return 0, net.ErrClosed
@@ -259,7 +292,21 @@ func (w receiptWitness) Sign(message []byte) ([]byte, error) {
 	return signature, err
 }
 
-func loseFinalizeReply(t *testing.T, trial reservationTrial, confirm reservationCall, uploader crypto.PrivKey, m [276]byte) [132]byte {
+func loseFinalizeReply(t *testing.T, trial reservationTrial, confirm reservationCall, uploader crypto.PrivKey, m [276]byte, charge uint64) [132]byte {
+	t.Helper()
+	host := receiptWitness{trial.host, make(chan [132]byte, 1)}
+	trial.host = host
+	loseTerminalReply(t, trial, confirm, uploader, m, charge)
+	select {
+	case signed := <-host.signed:
+		return signed
+	default:
+		t.Fatal("missing provider signature before the connection was closed")
+		return [132]byte{}
+	}
+}
+
+func loseTerminalReply(t *testing.T, trial reservationTrial, operation reservationCall, uploader crypto.PrivKey, m [276]byte, wantStored uint64) {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
@@ -268,26 +315,18 @@ func loseFinalizeReply(t *testing.T, trial reservationTrial, confirm reservation
 		t.Fatal(err)
 	}
 	var dropped atomic.Bool
-	host := receiptWitness{trial.host, make(chan [132]byte, 1)}
 	served := make(chan error, 1)
 	go func() {
 		conn, err := trial.listener.Accept()
 		if err == nil {
-			err = trial.provider.ServeRead(ctx, dropCommittedReply{conn, trial.provider, &dropped}, host)
+			err = trial.provider.ServeRead(ctx, dropTerminalReply{conn, trial.provider, &dropped, wantStored}, trial.host)
 		}
 		served <- err
 	}()
 	endpoint := trial.listener.Addr().(*net.TCPAddr).AddrPort()
-	state, err := confirm(ctx, endpoint, trial.pin, uploader, m)
+	state, err := operation(ctx, endpoint, trial.pin, uploader, m)
 	serverErr := <-served
 	if err == nil || state != (grantstore.UploadState{}) || !dropped.Load() {
-		t.Fatalf("expected an unconfirmed client after the durable commit: state=%+v client=%v server=%v dropped=%t", state, err, serverErr, dropped.Load())
-	}
-	select {
-	case signed := <-host.signed:
-		return signed
-	default:
-		t.Fatal("missing provider signature before the connection was closed")
-		return [132]byte{}
+		t.Fatalf("expected an unconfirmed client after the durable transition: state=%+v client=%v server=%v dropped=%t", state, err, serverErr, dropped.Load())
 	}
 }
