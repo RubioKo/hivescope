@@ -13,7 +13,7 @@
   "devDependencies": {
     "github-slugger": "2.0.0",
     "markdown-it": "15.0.3",
-    "markdownlint-cli2": "0.24.1"
+    "markdownlint-cli2": "0.24.2"
   },
   "overrides": {
     "micromark-extension-math": {
